@@ -1,17 +1,10 @@
 "use client";
 
 import React from "react";
-
-interface Blog {
-  _id: string;
-  date: string;
-  title: string;
-  image?: string;
-  slug: string;
-}
+import type { BlogData } from "@/types/blog";
 
 interface BlogSectionProps {
-  blogs: Blog[];
+  blogs: BlogData[];
   loading: boolean;
   error?: string | null;
 }
@@ -33,35 +26,40 @@ export default function BlogSection({
       </h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-        {blogs.map((blog) => (
-          <div
-            key={blog._id}
-            className="bg-gray-100 rounded-md overflow-hidden shadow-md flex flex-col"
-          >
-            {blog.image ? (
-              <img
-                src={blog.image}
-                alt={blog.title || "Blog image"}
-                className="h-32 w-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="h-32 bg-gray-300" />
-            )}
-            <div className="p-4 text-left">
-              <p className="text-sm text-gray-500">
-                {new Date(blog.date).toLocaleDateString()}
-              </p>
-              <h3 className="text-base font-semibold mb-2">{blog.title}</h3>
-              <a
-                href={`/blogs/${blog.slug || blog._id}`}
-                className="text-purple-700 font-semibold hover:underline flex items-center"
-              >
-                Read More... <span className="ml-1 text-purple-700">→</span>
-              </a>
+        {blogs.map((blog) => {
+          // Safely parse date or fallback to empty string
+          const formattedDate = blog.date
+            ? new Date(blog.date).toLocaleDateString()
+            : "";
+
+          return (
+            <div
+              key={blog._id}
+              className="bg-gray-100 rounded-md overflow-hidden shadow-md flex flex-col"
+            >
+              {blog.image ? (
+                <img
+                  src={blog.image}
+                  alt={blog.title || "Blog image"}
+                  className="h-32 w-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="h-32 bg-gray-300" />
+              )}
+              <div className="p-4 text-left">
+                <p className="text-sm text-gray-500">{formattedDate}</p>
+                <h3 className="text-base font-semibold mb-2">{blog.title}</h3>
+                <a
+                  href={`/blogs/${blog.slug || blog._id}`}
+                  className="text-purple-700 font-semibold hover:underline flex items-center"
+                >
+                  Read More... <span className="ml-1 text-purple-700">→</span>
+                </a>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

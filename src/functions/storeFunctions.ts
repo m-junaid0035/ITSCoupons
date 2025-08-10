@@ -85,10 +85,22 @@ export const createStore = async (data: {
 /**
  * Get all stores, sorted by newest first.
  */
-export const getAllStores = async (): Promise<
+export const getAllActiveStores = async (): Promise<
   ReturnType<typeof serializeStore>[]
 > => {
   const stores = await Store.find({ isActive: true })
+    .sort({ createdAt: -1 })
+    .lean();
+    console.log(stores)
+  return stores.map(serializeStore);
+};
+/**
+ * Get all stores, sorted by newest first.
+ */
+export const getAllStores = async (): Promise<
+  ReturnType<typeof serializeStore>[]
+> => {
+  const stores = await Store.find()
     .sort({ createdAt: -1 })
     .lean();
     console.log(stores)

@@ -1,16 +1,10 @@
 "use client";
 
 import React from "react";
-
-type Deal = {
-  _id?: string;
-  title: string;
-  description?: string;
-  couponCode?: string; // optional if you want to show code label dynamically
-};
+import type { CouponData } from "@/types/coupon"; // Adjust the path as needed
 
 interface TopDealsProps {
-  deals: Deal[];
+  deals: CouponData[];
   loading?: boolean;
 }
 

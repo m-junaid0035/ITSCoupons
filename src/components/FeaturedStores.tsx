@@ -1,18 +1,10 @@
 "use client";
 
 import Link from "next/link";
-
-interface Store {
-  _id: string;
-  name: string;
-  image?: string;
-  slug?: string;
-  isActive?: boolean;
-  isPopular?: boolean;
-}
+import type { StoreData } from "@/types/store";
 
 interface FeaturedStoresProps {
-  stores: Store[];
+  stores: StoreData[];
   loading?: boolean; // Optional if you want to show loading inside too
 }
 

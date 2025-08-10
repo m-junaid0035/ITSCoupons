@@ -1,14 +1,10 @@
 "use client";
 
 import React from "react";
-
-interface Store {
-  _id: string;
-  name: string;
-}
+import type { StoreData } from "@/types/store";
 
 interface ButtonGridProps {
-  stores: Store[];
+  stores: StoreData[];
 }
 
 const ButtonGrid: React.FC<ButtonGridProps> = ({ stores }) => (
@@ -25,8 +21,8 @@ const ButtonGrid: React.FC<ButtonGridProps> = ({ stores }) => (
 );
 
 interface StoresComponentProps {
-  recentlyUpdatedStores: Store[];
-  popularStores: Store[];
+  recentlyUpdatedStores: StoreData[];
+  popularStores: StoreData[];
 }
 
 const StoresComponent: React.FC<StoresComponentProps> = ({

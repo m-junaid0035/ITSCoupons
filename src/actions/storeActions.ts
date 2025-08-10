@@ -6,6 +6,7 @@ import {
   createStore,
   deleteStore,
   getAllStores,
+  getAllActiveStores,
   getStoreById,
   updateStore,
   getPopularStores,
@@ -138,6 +139,16 @@ export async function fetchAllStoresAction() {
   await connectToDatabase();
   try {
     const stores = await getAllStores();
+    return { data: stores };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch stores"] } };
+  }
+}
+// ✅ FETCH ALL STORES
+export async function fetchAllActiveStoresAction() {
+  await connectToDatabase();
+  try {
+    const stores = await getAllActiveStores();
     return { data: stores };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch stores"] } };

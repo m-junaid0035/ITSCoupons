@@ -111,6 +111,26 @@ export function getMenuList(pathname: string): Group[] {
       ]
     },
     {
+      groupLabel: "Information",
+      menus: [
+        {
+          href: "",
+          label: "Blogs",
+          icon: Key,
+          submenus: [
+            {
+              href: "/admin/blogs",
+              label: "All Blogs"
+            },
+            {
+              href: "/admin/blogs/new",
+              label: "New Blog"
+            }
+          ]
+        },
+      ]
+    },
+    {
       groupLabel: "Settings",
       menus: [
         {

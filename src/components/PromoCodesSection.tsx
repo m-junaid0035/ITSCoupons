@@ -1,17 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-
-type Coupon = {
-  _id?: string;
-  title: string;
-  couponCode: string;
-  expirationDate: string; // ISO string date
-  storeName?: string;
-};
+import type { CouponData } from "@/types/coupon";
 
 interface PromoCodesSectionProps {
-  coupons: Coupon[];
+  coupons: CouponData[];
   loading?: boolean;
 }
 

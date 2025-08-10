@@ -11,83 +11,34 @@ import PromoCodesSection from "@/components/PromoCodesSection";
 import StoresComponent from "@/components/StoresComponent";
 import TopDeals from "@/components/TopDeals";
 
-import {
-  fetchAllStoresAction,
-  fetchPopularStoresAction,
-  fetchRecentlyUpdatedStoresAction,
-} from "@/actions/storeActions";
-import {
-  fetchTopCouponsAction,
-  fetchTopDealsAction,
-} from "@/actions/couponActions";
+import { fetchAllActiveStoresAction } from "@/actions/storeActions";
+import { fetchTopCouponsAction, fetchTopDealsAction } from "@/actions/couponActions";
 import { fetchAllBlogsAction } from "@/actions/blogActions";
 
-interface Store {
-  _id: string;
-  name: string;
-  updatedAt?: string;
-}
-
-interface Coupon {
-  _id: string;
-  title: string;
-  couponCode: string;
-  expirationDate: string;
-  storeName?: string;
-  isTopOne?: boolean;
-}
-
-interface Deal {
-  _id: string;
-  title: string;
-  description?: string;
-  couponCode?: string;
-}
-
-interface Blog {
-  _id: string;
-  title: string;
-  slug: string;
-  description?: string;
-  image?: string;
-  date: string;
-  metaTitle?: string;
-  metaDescription?: string;
-  metaKeywords?: string[];
-  focusKeywords?: string[];
-}
+import type { StoreData } from "@/types/store";
+import type { CouponData } from "@/types/coupon";
+import type { BlogData } from "@/types/blog";
 
 export default function Home() {
-  const [stores, setStores] = useState<Store[]>([]);
-  const [popularStores, setPopularStores] = useState<Store[]>([]);
-  const [recentlyUpdatedStores, setRecentlyUpdatedStores] = useState<Store[]>([]);
-
-  const [coupons, setCoupons] = useState<Coupon[]>([]);
-  const [deals, setDeals] = useState<Deal[]>([]);
-
-  const [blogs, setBlogs] = useState<Blog[]>([]);
-  const [loadingBlogs, setLoadingBlogs] = useState(true);
-  const [errorBlogs, setErrorBlogs] = useState<string | null>(null);
+  const [stores, setStores] = useState<StoreData[]>([]);
+  const [coupons, setCoupons] = useState<CouponData[]>([]);
+  const [deals, setDeals] = useState<CouponData[]>([]);
+  const [blogs, setBlogs] = useState<BlogData[]>([]);
 
   const [loadingStores, setLoadingStores] = useState(true);
   const [loadingCoupons, setLoadingCoupons] = useState(true);
   const [loadingDeals, setLoadingDeals] = useState(true);
+  const [loadingBlogs, setLoadingBlogs] = useState(true);
+
+  const [errorBlogs, setErrorBlogs] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadStores() {
       setLoadingStores(true);
       try {
-        const allStoresResult = await fetchAllStoresAction();
-        const popularStoresResult = await fetchPopularStoresAction();
-        const recentlyUpdatedStoresResult = await fetchRecentlyUpdatedStoresAction();
-
-        setStores(Array.isArray(allStoresResult?.data) ? allStoresResult.data : []);
-        setPopularStores(Array.isArray(popularStoresResult?.data) ? popularStoresResult.data : []);
-        setRecentlyUpdatedStores(
-          Array.isArray(recentlyUpdatedStoresResult?.data)
-            ? recentlyUpdatedStoresResult.data
-            : []
-        );
+        const result = await fetchAllActiveStoresAction();
+        const storeArray = Array.isArray(result?.data) ? result.data : [];
+        setStores(storeArray);
       } catch (error) {
         console.error("Error fetching stores:", error);
       }
@@ -98,7 +49,8 @@ export default function Home() {
       setLoadingCoupons(true);
       try {
         const result = await fetchTopCouponsAction();
-        setCoupons(Array.isArray(result?.data) ? result.data : []);
+        const couponsArray = Array.isArray(result?.data) ? result.data : [];
+        setCoupons(couponsArray);
       } catch (error) {
         console.error("Error fetching coupons:", error);
       }
@@ -109,7 +61,8 @@ export default function Home() {
       setLoadingDeals(true);
       try {
         const result = await fetchTopDealsAction();
-        setDeals(Array.isArray(result?.data) ? result.data : []);
+        const dealsArray = Array.isArray(result?.data) ? result.data : [];
+        setDeals(dealsArray);
       } catch (error) {
         console.error("Error fetching deals:", error);
       }
@@ -121,7 +74,8 @@ export default function Home() {
       setErrorBlogs(null);
       try {
         const result = await fetchAllBlogsAction();
-        setBlogs(Array.isArray(result?.data) ? result.data : []);
+        const blogsArray = Array.isArray(result?.data) ? result.data : [];
+        setBlogs(blogsArray);
       } catch (error: any) {
         console.error("Error fetching blogs:", error);
         setErrorBlogs(error.message || "Error fetching blogs");
@@ -135,18 +89,22 @@ export default function Home() {
     loadBlogs();
   }, []);
 
+  const popularStores = stores.filter(store => store.isPopular);
+  const recentlyUpdatedStores = [...stores]
+    .sort((a, b) => new Date(b.updatedAt || "").getTime() - new Date(a.updatedAt || "").getTime())
+    .slice(0, 12);
+
   return (
     <main>
       <HeroSlider />
       <FeaturedStores stores={stores} loading={loadingStores} />
       <PromoCodesSection coupons={coupons} loading={loadingCoupons} />
       <TopDeals deals={deals} loading={loadingDeals} />
-      <StoresComponent
-        popularStores={popularStores}
-        recentlyUpdatedStores={recentlyUpdatedStores}
-      />
+      <StoresComponent popularStores={popularStores} recentlyUpdatedStores={recentlyUpdatedStores} />
       <BravoDealInfo />
+
       <BlogSection blogs={blogs} loading={loadingBlogs} error={errorBlogs} />
+
       <Newsletter />
     </main>
   );
