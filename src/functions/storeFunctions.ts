@@ -88,9 +88,12 @@ export const createStore = async (data: {
 export const getAllStores = async (): Promise<
   ReturnType<typeof serializeStore>[]
 > => {
-  const stores = await Store.find().sort({ createdAt: -1 }).lean();
+  const stores = await Store.find({ isActive: true })
+    .sort({ createdAt: -1 })
+    .lean();
   return stores.map(serializeStore);
 };
+
 
 /**
  * Get a store by its ID.
@@ -147,11 +150,12 @@ export const deleteStore = async (
 export const getPopularStores = async (): Promise<
   ReturnType<typeof serializeStore>[]
 > => {
-  const stores = await Store.find({ isPopular: true })
+  const stores = await Store.find({ isPopular: true, isActive: true })
     .sort({ createdAt: -1 })
     .lean();
   return stores.map(serializeStore);
 };
+
 
 /**
  * Get all recently updated stores, sorted by updatedAt descending (newest first).
@@ -159,8 +163,9 @@ export const getPopularStores = async (): Promise<
 export const getRecentlyUpdatedStores = async (): Promise<
   ReturnType<typeof serializeStore>[]
 > => {
-  const stores = await Store.find()
+  const stores = await Store.find({ isActive: true })
     .sort({ updatedAt: -1 })
     .lean();
   return stores.map(serializeStore);
 };
+

@@ -138,7 +138,6 @@ export async function fetchAllStoresAction() {
   await connectToDatabase();
   try {
     const stores = await getAllStores();
-    console.log(stores)
     return { data: stores };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch stores"] } };
