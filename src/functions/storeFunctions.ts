@@ -91,6 +91,7 @@ export const getAllStores = async (): Promise<
   const stores = await Store.find({ isActive: true })
     .sort({ createdAt: -1 })
     .lean();
+    console.log(stores)
   return stores.map(serializeStore);
 };
 
