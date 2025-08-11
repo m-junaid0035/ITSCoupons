@@ -42,12 +42,20 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
           <Link
             key={store._id}
             href={`/store/${store.slug || store._id}`}
-            className="w-24 h-24 md:w-28 md:h-28 flex items-center justify-center rounded-full border border-gray-300 shadow-sm overflow-hidden bg-white transition hover:scale-105"
+            className="flex items-center justify-center bg-white overflow-hidden transition hover:scale-105"
+            style={{
+              width: "178px",
+              height: "178px",
+              borderRadius: "100px",
+              border: "1px solid #C4C4C4",
+              boxShadow: "0px 4px 4px 0px #00000040"
+            }}
           >
             <img
               src={store.image || "/placeholder-store.png"}
               alt={store.name}
-              className="w-16 md:w-20 object-contain"
+              className="object-contain"
+              style={{ maxWidth: "70%", maxHeight: "70%" }}
             />
           </Link>
         ))}

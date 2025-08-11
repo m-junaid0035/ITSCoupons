@@ -12,7 +12,16 @@ function ButtonGrid({ stores }: ButtonGridProps) {
       {stores.map((store) => (
         <button
           key={store._id}
-          className="py-2 px-6 rounded-md border border-gray-300 bg-white shadow-sm hover:bg-gray-100 transition"
+          style={{
+            width: "166px",
+            height: "38px",
+            borderRadius: "12px",
+            borderWidth: "1px",
+            padding: "3px 14px",
+            gap: "10px",
+            boxShadow: "0px 4px 4px 0px #00000040",
+          }}
+          className="border border-gray-300 bg-white shadow-sm hover:bg-gray-100 transition font-medium"
         >
           {store.name}
         </button>
@@ -40,7 +49,7 @@ export default function StoresComponent({
         <h2 className="text-2xl font-bold text-center mb-8 text-purple-700">
           Stores Recently Updated
         </h2>
-        <div className="flex justify-center">
+        <div className="flex justify-center flex-wrap gap-4">
           {loadingRecentlyUpdatedStores ? (
             <div className="text-purple-700 font-semibold">Loading...</div>
           ) : (
@@ -52,7 +61,7 @@ export default function StoresComponent({
         <h2 className="text-2xl font-bold text-center mb-8 text-purple-700">
           Popular Stores
         </h2>
-        <div className="flex justify-center">
+        <div className="flex justify-center flex-wrap gap-4">
           {loadingPopularStores ? (
             <div className="text-purple-700 font-semibold">Loading...</div>
           ) : (
