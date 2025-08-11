@@ -27,7 +27,6 @@ export default function BlogSection({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
         {blogs.map((blog) => {
-          // Safely parse date or fallback to empty string
           const formattedDate = blog.date
             ? new Date(blog.date).toLocaleDateString()
             : "";
@@ -35,19 +34,20 @@ export default function BlogSection({
           return (
             <div
               key={blog._id}
-              className="bg-gray-100 rounded-md overflow-hidden shadow-md flex flex-col"
+              className="bg-gray-100 rounded-[12px] overflow-hidden shadow-md flex flex-col
+                w-full md:w-[301px] md:h-[298px] mx-auto"
             >
               {blog.image ? (
                 <img
                   src={blog.image}
                   alt={blog.title || "Blog image"}
-                  className="h-32 w-full object-cover"
+                  className="object-cover rounded-t-[12px] w-full h-[150px]"
                   loading="lazy"
                 />
               ) : (
-                <div className="h-32 bg-gray-300" />
+                <div className="h-[150px] bg-gray-300 rounded-t-[12px]" />
               )}
-              <div className="p-4 text-left">
+              <div className="p-4 text-left md:h-[148px] flex flex-col justify-between">
                 <p className="text-sm text-gray-500">{formattedDate}</p>
                 <h3 className="text-base font-semibold mb-2">{blog.title}</h3>
                 <a

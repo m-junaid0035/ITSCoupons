@@ -5,15 +5,17 @@ import { FaTelegramPlane, FaFacebookF, FaTwitter, FaInstagram } from "react-icon
 export default function Footer() {
   return (
     <footer className="bg-purple-800 text-white px-6 md:px-16 py-10">
-      <div className="grid md:grid-cols-5 gap-10 text-sm">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-sm">
         
-        {/* Logo + Description + Socials */}
-        <div className="space-y-4">
+        {/* Logo + Description + Socials (Full width on mobile by spanning 2 columns) */}
+        <div className="space-y-4 col-span-2 md:col-span-1 text-center md:text-left">
           <h2 className="text-2xl font-bold">
             Its<span className="font-light">Coupons</span>
           </h2>
-          <p>Helping you save money with verified coupons and deals from your favorite stores.</p>
-          <div className="flex space-x-4">
+          <p className="max-w-sm mx-auto md:mx-0">
+            Helping you save money with verified coupons and deals from your favorite stores.
+          </p>
+          <div className="flex justify-center md:justify-start space-x-4">
             <a href="#" className="bg-purple-900 p-2 rounded"><FaTelegramPlane /></a>
             <a href="#" className="bg-purple-900 p-2 rounded"><FaFacebookF /></a>
             <a href="#" className="bg-purple-900 p-2 rounded"><FaTwitter /></a>
