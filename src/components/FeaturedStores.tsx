@@ -5,7 +5,7 @@ import type { StoreData } from "@/types/store";
 
 interface FeaturedStoresProps {
   stores: StoreData[];
-  loading?: boolean; // Optional if you want to show loading inside too
+  loading?: boolean;
 }
 
 export default function FeaturedStores({ stores, loading = false }: FeaturedStoresProps) {

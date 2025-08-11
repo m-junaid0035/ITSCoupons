@@ -1,144 +1,185 @@
 "use client";
-import React, { useState } from 'react';
 
-export default function StoreCard() {
-  const [selectedCategory, setSelectedCategory] = useState('All');
+import React, { useState } from "react";
+import type { StoreWithCouponsData } from "@/types/storesWithCouponsData";
+import type { CategoryData } from "@/types/category";
 
-  const categories = ['All', 'Fashion', 'Food & Drinks', 'Travel', 'Entertainment', 'Grocery', 'Gaming', 'Shopping'];
+interface StoreCardProps {
+  stores: StoreWithCouponsData[];
+  categories: CategoryData[];
+  loading?: boolean;
+  error?: string | null;
+}
 
-  const stores = [
-    {
-      name: 'Starbucks',
-      logo: 'Starbucks',
-      color: '#006341',
-      category: 'Food & Drinks',
-      description: 'World’s largest coffeehouse chain offering coffee, tea, and food items with locations worldwide.',
-      coupons: [
-        { title: '20% Off Your First Order', code: 'WELCOME20', expiry: '2024-12-31' },
-        { title: 'Free Drink on Birthday', code: 'BIRTHDAY', expiry: '2024-12-31' },
-        { title: 'Buy 2 Get 1 Free', code: 'B2G1FREE', expiry: '2024-12-25' }
-      ]
-    },
-    {
-      name: 'Netflix',
-      logo: 'Netflix',
-      color: '#e50914',
-      category: 'Entertainment',
-      description: 'Leading streaming entertainment service with thousands of TV series, documentaries and feature films.',
-      coupons: [
-        { title: 'First Month Free', code: 'FIRSTFREE', expiry: '2024-12-31' },
-        { title: '30% Off Annual Plan', code: 'ANNUAL30', expiry: '2024-12-28' }
-      ]
-    },
-    {
-      name: 'Walmart',
-      logo: 'Walmart',
-      color: '#0071ce',
-      category: 'Grocery',
-      description: 'Retailer offering groceries, electronics, and essentials at low prices.',
-      coupons: [
-        { title: '$10 Off $50+ Orders', code: 'SAVE10', expiry: '2024-12-30' },
-        { title: 'Free Delivery on $35+', code: 'FREEDEL', expiry: '2024-12-31' },
-        { title: '15% Off Electronics', code: 'TECH15', expiry: '2024-12-27' }
-      ]
-    },
-    {
-      name: 'Ray-Ban',
-      logo: 'Ray-Ban',
-      color: '#000000',
-      category: 'Fashion',
-      description: 'Premium sunglasses and optical frames with timeless designs.',
-      coupons: [
-        { title: '25% Off Sunglasses', code: 'SUN25', expiry: '2024-12-29' },
-        { title: 'Buy One Get 50% Off', code: 'BOGO50', expiry: '2024-12-31' }
-      ]
-    },
-    {
-      name: 'Emirates',
-      logo: 'Emirates',
-      color: '#d71920',
-      category: 'Travel',
-      description: 'Award-winning airline offering luxury travel experiences to 150+ destinations.',
-      coupons: [
-        { title: '15% Off Flight Bookings', code: 'FLY15', expiry: '2024-12-31' },
-        { title: 'Free Upgrade to Business', code: 'UPGRADE', expiry: '2024-12-28' }
-      ]
-    },
-    {
-      name: 'Origin',
-      logo: 'Origin',
-      color: '#f26522',
-      category: 'Gaming',
-      description: 'Digital distribution platform for PC gaming with exclusive titles and deals.',
-      coupons: [
-        { title: '50% Off Selected Games', code: 'GAME50', expiry: '2024-12-28' },
-        { title: 'Free Game with Purchase', code: 'FREEGAME', expiry: '2024-12-31' }
-      ]
-    }
-  ];
+export default function StoreCard({
+  stores,
+  categories,
+  loading,
+  error,
+}: StoreCardProps) {
+  const [selectedCategoryId, setSelectedCategoryId] = useState("all");
 
+  // Add synthetic "All" category for filtering
+  const categoriesWithAll = [{ _id: "all", name: "All" }, ...categories];
+
+  // Filter stores by selected category id or show all
   const filteredStores =
-    selectedCategory === 'All' ? stores : stores.filter((store) => store.category === selectedCategory);
+    selectedCategoryId === "all"
+      ? stores
+      : stores.filter((store) =>
+          store.categories.includes(selectedCategoryId)
+        );
+
+  // Copy coupon code to clipboard
+  const copyCodeToClipboard = (code: string) => {
+    navigator.clipboard.writeText(code);
+    alert(`Copied coupon code: ${code}`);
+  };
+
+  if (loading)
+    return <div className="p-4 text-center">Loading stores...</div>;
+
+  if (error)
+    return (
+      <div className="p-4 text-center text-red-600 font-semibold">
+        {error}
+      </div>
+    );
+
+  if (stores.length === 0)
+    return (
+      <div className="p-4 text-center text-gray-500 font-semibold">
+        No stores available.
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <section className="min-h-screen bg-gray-50 p-6">
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Browse All Stores</h1>
 
       {/* Filter Buttons */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {categories.map((cat, idx) => (
+      <nav
+        aria-label="Store categories filter"
+        className="flex flex-wrap gap-2 mb-6"
+      >
+        {categoriesWithAll.map((cat) => (
           <button
-            key={idx}
-            onClick={() => setSelectedCategory(cat)}
-            className={`px-4 py-1 rounded-full text-sm font-medium border ${
-              selectedCategory === cat
-                ? 'bg-purple-700 text-white'
-                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+            key={cat._id}
+            onClick={() => setSelectedCategoryId(cat._id)}
+            className={`px-4 py-1 rounded-full text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-purple-600 ${
+              selectedCategoryId === cat._id
+                ? "bg-purple-700 text-white border-purple-700"
+                : "bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200"
             }`}
+            aria-pressed={selectedCategoryId === cat._id}
+            type="button"
           >
-            {cat}
+            {cat.name}
           </button>
         ))}
-      </div>
+      </nav>
 
-      {/* Store Cards */}
+      {/* Store Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredStores.map((store, index) => (
-          <div key={index} className="border rounded-xl shadow-md p-4 bg-white">
-            <div
-              className="h-10 w-24 rounded text-white text-sm font-semibold flex items-center justify-center mb-2"
-              style={{ backgroundColor: store.color }}
-            >
-              {store.logo}
-            </div>
-            <h3 className="text-lg font-bold text-center text-purple-800">{store.name}</h3>
-            <p className="text-sm text-gray-600 text-center my-2">{store.description}</p>
-
-            <div className="mt-4">
-              <h4 className="text-sm font-semibold text-gray-800 mb-2">Latest Coupons</h4>
-              {store.coupons.map((coupon, cIndex) => (
-                <div key={cIndex} className="flex justify-between items-start bg-gray-100 text-sm px-2 py-2 rounded mb-2">
-                  <div className="flex flex-col text-gray-700">
-                    <span className="font-medium">{coupon.title}</span>
-                    <span className="text-xs text-purple-600">{coupon.code}</span>
-                    <span className="text-xs text-gray-500">Expires: {coupon.expiry}</span>
-                  </div>
-                  <button className="text-purple-600 text-xs font-semibold">Copy Code</button>
-                </div>
-              ))}
+        {filteredStores.map((store) => (
+          <article
+            key={store._id}
+            className="border rounded-lg shadow-md p-6 bg-white flex flex-col"
+          >
+            {/* Store Image */}
+            <div className="flex justify-center mb-4">
+              <img
+                src={store.image}
+                alt={`${store.name} store image`}
+                className="h-20 w-32 object-contain rounded-md bg-gray-100"
+                loading="lazy"
+              />
             </div>
 
-            <div className="mt-4 flex justify-between">
-              <button className="text-white bg-purple-600 px-3 py-1 rounded text-sm hover:bg-purple-700 transition">
+            {/* Store Name */}
+            <h2 className="text-center text-purple-700 font-bold text-lg mb-2">
+              {store.name}
+            </h2>
+
+            {/* Store Description */}
+            <p className="text-center text-gray-600 text-sm mb-4">
+              {store.description}
+            </p>
+
+            <hr className="border-gray-300 mb-4" />
+
+            {/* Coupons Section */}
+            <div>
+              <h3 className="text-gray-800 font-semibold mb-3 text-sm">
+                Latest Coupons
+              </h3>
+
+              {store.coupons && store.coupons.length > 0 ? (
+                <ul className="space-y-3 max-h-48 overflow-y-auto">
+                  {store.coupons.map((coupon) => (
+                    <li
+                      key={coupon._id}
+                      className="bg-purple-50 rounded-md p-3 flex flex-col"
+                    >
+                      <div className="flex justify-between items-center mb-1">
+                        <p className="font-semibold text-gray-900 text-sm max-w-[70%]">
+                          {coupon.title}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => copyCodeToClipboard(coupon.couponCode)}
+                          className="text-purple-700 text-xs font-semibold bg-purple-200 rounded px-3 py-1 hover:bg-purple-300 transition"
+                        >
+                          Copy Code
+                        </button>
+                      </div>
+                      <div className="flex justify-between items-center text-xs text-gray-500">
+                        <span className="font-semibold text-purple-700">
+                          {coupon.couponCode}
+                        </span>
+                        {coupon.expirationDate && (
+                          <span>
+                            Expires:{" "}
+                            {new Date(coupon.expirationDate).toLocaleDateString(
+                              undefined,
+                              {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                              }
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 text-xs italic">No coupons available.</p>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-6 flex gap-3">
+              <a
+                href={`/stores/${store.slug}/coupons`}
+                className="flex-grow bg-purple-700 text-white text-center py-2 rounded-md text-sm font-semibold hover:bg-purple-800 transition"
+              >
                 View All Coupons
-              </button>
-              <button className="text-gray-800 border border-gray-300 px-3 py-1 rounded text-sm hover:bg-gray-100 transition">
+              </a>
+
+              <a
+                href={store.storeNetworkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-grow bg-gray-200 text-gray-700 text-center py-2 rounded-md text-sm font-semibold hover:bg-gray-300 transition"
+              >
                 Visit Store
-              </button>
+              </a>
             </div>
-          </div>
+          </article>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

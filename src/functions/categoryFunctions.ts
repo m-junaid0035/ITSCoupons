@@ -1,5 +1,8 @@
 import { Category } from "@/models/Category";
 import { ICategory } from "@/models/Category";
+import { Store } from "@/models/Store";
+import { Coupon } from "@/models/Coupon";
+
 
 /**
  * Helper to sanitize and format incoming category data.
@@ -95,4 +98,63 @@ export const deleteCategory = async (
 ): Promise<ReturnType<typeof serializeCategory> | null> => {
   const category = await Category.findByIdAndDelete(id).lean<ICategory>();
   return category ? serializeCategory(category) : null;
+};
+/**
+ * Get all categories with total stores and total coupons counts.
+ */
+export const getCategoriesWithStoreAndCouponCounts = async (): Promise<
+  (ReturnType<typeof serializeCategory> & {
+    totalStores: number;
+    totalCoupons: number;
+  })[]
+> => {
+  // Mongo aggregation pipeline
+  const categoriesWithCounts = await Category.aggregate([
+    {
+      $lookup: {
+        from: "stores",
+        localField: "_id",
+        foreignField: "categories",
+        as: "stores",
+      },
+    },
+    {
+      $addFields: {
+        totalStores: { $size: "$stores" },
+      },
+    },
+    {
+      // Lookup coupons for all the stores found for this category
+      $lookup: {
+        from: "coupons",
+        let: { storeIds: "$stores._id" },
+        pipeline: [
+          { $match: { $expr: { $in: ["$store", "$$storeIds"] } } },
+        ],
+        as: "coupons",
+      },
+    },
+    {
+      $addFields: {
+        totalCoupons: { $size: "$coupons" },
+      },
+    },
+    {
+      $project: {
+        stores: 0,
+        coupons: 0,
+        __v: 0,
+      },
+    },
+  ]);
+
+  return categoriesWithCounts.map((cat) => ({
+    _id: cat._id.toString(),
+    name: cat.name,
+    slug: cat.slug,
+    createdAt: cat.createdAt?.toISOString(),
+    updatedAt: cat.updatedAt?.toISOString(),
+    totalStores: cat.totalStores,
+    totalCoupons: cat.totalCoupons,
+  }));
 };

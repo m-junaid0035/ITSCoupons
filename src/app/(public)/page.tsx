@@ -11,21 +11,25 @@ import PromoCodesSection from "@/components/PromoCodesSection";
 import StoresComponent from "@/components/StoresComponent";
 import TopDeals from "@/components/TopDeals";
 
-import { fetchAllActiveStoresAction } from "@/actions/storeActions";
-import { fetchTopCouponsAction, fetchTopDealsAction } from "@/actions/couponActions";
+import { fetchAllActiveStoresAction, fetchPopularStoresAction, fetchRecentlyUpdatedStoresAction } from "@/actions/storeActions";
+import { fetchTopCouponsWithStoresAction, fetchTopDealsWithStoresAction } from "@/actions/couponActions";
 import { fetchAllBlogsAction } from "@/actions/blogActions";
 
 import type { StoreData } from "@/types/store";
-import type { CouponData } from "@/types/coupon";
+import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import type { BlogData } from "@/types/blog";
 
 export default function Home() {
-  const [stores, setStores] = useState<StoreData[]>([]);
-  const [coupons, setCoupons] = useState<CouponData[]>([]);
-  const [deals, setDeals] = useState<CouponData[]>([]);
+  const [stores, setStores] = useState<StoreData[]>([]); // all active stores for FeaturedStores
+  const [popularStores, setPopularStores] = useState<StoreData[]>([]);
+  const [recentlyUpdatedStores, setRecentlyUpdatedStores] = useState<StoreData[]>([]);
+  const [coupons, setCoupons] = useState<CouponWithStoreData[]>([]);
+  const [deals, setDeals] = useState<CouponWithStoreData[]>([]);
   const [blogs, setBlogs] = useState<BlogData[]>([]);
 
   const [loadingStores, setLoadingStores] = useState(true);
+  const [loadingPopularStores, setLoadingPopularStores] = useState(true);
+  const [loadingRecentlyUpdatedStores, setLoadingRecentlyUpdatedStores] = useState(true);
   const [loadingCoupons, setLoadingCoupons] = useState(true);
   const [loadingDeals, setLoadingDeals] = useState(true);
   const [loadingBlogs, setLoadingBlogs] = useState(true);
@@ -45,12 +49,37 @@ export default function Home() {
       setLoadingStores(false);
     }
 
+    async function loadPopularStores() {
+      setLoadingPopularStores(true);
+      try {
+        const result = await fetchPopularStoresAction();
+        const popularArray = Array.isArray(result?.data) ? result.data : [];
+        setPopularStores(popularArray);
+      } catch (error) {
+        console.error("Error fetching popular stores:", error);
+      }
+      setLoadingPopularStores(false);
+    }
+
+    async function loadRecentlyUpdatedStores() {
+      setLoadingRecentlyUpdatedStores(true);
+      try {
+        const result = await fetchRecentlyUpdatedStoresAction();
+        const recentArray = Array.isArray(result?.data) ? result.data : [];
+        setRecentlyUpdatedStores(recentArray);
+      } catch (error) {
+        console.error("Error fetching recently updated stores:", error);
+      }
+      setLoadingRecentlyUpdatedStores(false);
+    }
+
     async function loadCoupons() {
       setLoadingCoupons(true);
       try {
-        const result = await fetchTopCouponsAction();
+        const result = await fetchTopCouponsWithStoresAction();
         const couponsArray = Array.isArray(result?.data) ? result.data : [];
         setCoupons(couponsArray);
+
       } catch (error) {
         console.error("Error fetching coupons:", error);
       }
@@ -60,7 +89,7 @@ export default function Home() {
     async function loadDeals() {
       setLoadingDeals(true);
       try {
-        const result = await fetchTopDealsAction();
+        const result = await fetchTopDealsWithStoresAction();
         const dealsArray = Array.isArray(result?.data) ? result.data : [];
         setDeals(dealsArray);
       } catch (error) {
@@ -84,15 +113,12 @@ export default function Home() {
     }
 
     loadStores();
+    loadPopularStores();
+    loadRecentlyUpdatedStores();
     loadCoupons();
     loadDeals();
     loadBlogs();
   }, []);
-
-  const popularStores = stores.filter(store => store.isPopular);
-  const recentlyUpdatedStores = [...stores]
-    .sort((a, b) => new Date(b.updatedAt || "").getTime() - new Date(a.updatedAt || "").getTime())
-    .slice(0, 12);
 
   return (
     <main>
@@ -100,11 +126,16 @@ export default function Home() {
       <FeaturedStores stores={stores} loading={loadingStores} />
       <PromoCodesSection coupons={coupons} loading={loadingCoupons} />
       <TopDeals deals={deals} loading={loadingDeals} />
-      <StoresComponent popularStores={popularStores} recentlyUpdatedStores={recentlyUpdatedStores} />
+      <StoresComponent
+        popularStores={popularStores}
+        recentlyUpdatedStores={recentlyUpdatedStores}
+        loadingPopularStores={loadingPopularStores}
+        loadingRecentlyUpdatedStores={loadingRecentlyUpdatedStores}
+      />
+
       <BravoDealInfo />
 
       <BlogSection blogs={blogs} loading={loadingBlogs} error={errorBlogs} />
-
       <Newsletter />
     </main>
   );

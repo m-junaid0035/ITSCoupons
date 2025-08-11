@@ -1,5 +1,4 @@
 import { Store } from "@/models/Store";
-import { IStore } from "@/models/Store";
 import { Types } from "mongoose";
 
 /**
@@ -17,8 +16,8 @@ const sanitizeStoreData = (data: {
   metaKeywords?: string[];
   focusKeywords?: string[];
   slug: string;
-  isPopular?: boolean;     // ✅ NEW
-  isActive?: boolean;      // ✅ NEW
+  isPopular?: boolean;
+  isActive?: boolean;
 }) => ({
   name: data.name.trim(),
   storeNetworkUrl: data.storeNetworkUrl.trim(),
@@ -31,12 +30,28 @@ const sanitizeStoreData = (data: {
   metaKeywords: data.metaKeywords ?? [],
   focusKeywords: data.focusKeywords ?? [],
   slug: data.slug.trim().toLowerCase().replace(/\s+/g, "-"),
-  isPopular: data.isPopular ?? false,   // ✅ NEW
-  isActive: data.isActive ?? true,      // ✅ NEW
+  isPopular: data.isPopular ?? false,
+  isActive: data.isActive ?? true,
 });
 
 /**
- * Convert a Mongoose document to a plain object safe for Client Components.
+ * Serialize coupon (basic fields) for embedding in store result.
+ */
+const serializeCoupon = (coupon: any) => ({
+  _id: coupon._id.toString(),
+  title: coupon.title,
+  couponCode: coupon.couponCode,
+  expirationDate: coupon.expirationDate?.toISOString?.(),
+  status: coupon.status,
+  discount: coupon.discount,
+  isTopOne: coupon.isTopOne ?? false,
+  uses: coupon.uses,
+  verified: coupon.verified,
+});
+
+/**
+ * Convert a Mongoose store document to plain object safe for Client Components.
+ * Adds embedded coupons if present.
  */
 const serializeStore = (store: any) => ({
   _id: store._id.toString(),
@@ -53,10 +68,11 @@ const serializeStore = (store: any) => ({
   metaKeywords: store.metaKeywords,
   focusKeywords: store.focusKeywords,
   slug: store.slug,
-  isPopular: store.isPopular ?? false,   // ✅ NEW
-  isActive: store.isActive ?? true,      // ✅ NEW
+  isPopular: store.isPopular ?? false,
+  isActive: store.isActive ?? true,
   createdAt: store.createdAt?.toISOString?.(),
   updatedAt: store.updatedAt?.toISOString?.(),
+  coupons: (store.coupons || []).map(serializeCoupon),
 });
 
 /**
@@ -74,8 +90,8 @@ export const createStore = async (data: {
   metaKeywords?: string[];
   focusKeywords?: string[];
   slug: string;
-  isPopular?: boolean;     // ✅ NEW
-  isActive?: boolean;      // ✅ NEW
+  isPopular?: boolean;
+  isActive?: boolean;
 }): Promise<ReturnType<typeof serializeStore>> => {
   const storeData = sanitizeStoreData(data);
   const store = await new Store(storeData).save();
@@ -91,9 +107,9 @@ export const getAllActiveStores = async (): Promise<
   const stores = await Store.find({ isActive: true })
     .sort({ createdAt: -1 })
     .lean();
-    console.log(stores)
   return stores.map(serializeStore);
 };
+
 /**
  * Get all stores, sorted by newest first.
  */
@@ -103,10 +119,8 @@ export const getAllStores = async (): Promise<
   const stores = await Store.find()
     .sort({ createdAt: -1 })
     .lean();
-    console.log(stores)
   return stores.map(serializeStore);
 };
-
 
 /**
  * Get a store by its ID.
@@ -135,8 +149,8 @@ export const updateStore = async (
     metaKeywords?: string[];
     focusKeywords?: string[];
     slug: string;
-    isPopular?: boolean;     // ✅ NEW
-    isActive?: boolean;      // ✅ NEW
+    isPopular?: boolean;
+    isActive?: boolean;
   }
 ): Promise<ReturnType<typeof serializeStore> | null> => {
   const updatedData = sanitizeStoreData(data);
@@ -157,6 +171,7 @@ export const deleteStore = async (
   const store = await Store.findByIdAndDelete(id).lean();
   return store ? serializeStore(store) : null;
 };
+
 /**
  * Get all popular stores (isPopular === true), sorted by newest first.
  */
@@ -169,9 +184,8 @@ export const getPopularStores = async (): Promise<
   return stores.map(serializeStore);
 };
 
-
 /**
- * Get all recently updated stores, sorted by updatedAt descending (newest first).
+ * Get all recently updated stores, sorted by updatedAt descending.
  */
 export const getRecentlyUpdatedStores = async (): Promise<
   ReturnType<typeof serializeStore>[]
@@ -182,3 +196,42 @@ export const getRecentlyUpdatedStores = async (): Promise<
   return stores.map(serializeStore);
 };
 
+/**
+ * Get stores by category IDs.
+ */
+export const getStoresByCategories = async (
+  categories: string[]
+): Promise<ReturnType<typeof serializeStore>[]> => {
+  const stores = await Store.find({
+    categories: { $in: categories.map((id) => new Types.ObjectId(id)) },
+    isActive: true,
+  }).lean();
+
+  return stores.map(serializeStore);
+};
+
+/**
+ * NEW: Get all stores with their coupons (joined via $lookup aggregation).
+ */
+export const getStoresWithCoupons = async (): Promise<
+  ReturnType<typeof serializeStore>[]
+> => {
+  const storesWithCoupons = await Store.aggregate([
+    {
+      $match: { isActive: true },
+    },
+    {
+      $lookup: {
+        from: "coupons",        // collection name in MongoDB for coupons
+        localField: "_id",
+        foreignField: "storeId",
+        as: "coupons",
+      },
+    },
+    {
+      $sort: { createdAt: -1 },
+    },
+  ]);
+
+  return storesWithCoupons.map(serializeStore);
+};

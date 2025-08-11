@@ -190,6 +190,49 @@ export default function EditCouponForm() {
         )}
       </div>
 
+      {/* Discount */}
+      <div className="space-y-2">
+        <Label htmlFor="discount">Discount (optional)</Label>
+        <Input
+          id="discount"
+          name="discount"
+          placeholder="e.g. 20% off"
+          defaultValue={coupon.discount || ""}
+        />
+        {errorFor("discount") && (
+          <p className="text-sm text-red-500">{errorFor("discount")}</p>
+        )}
+      </div>
+
+      {/* Uses */}
+      <div className="space-y-2">
+        <Label htmlFor="uses">Uses (optional)</Label>
+        <Input
+          id="uses"
+          name="uses"
+          type="number"
+          min={0}
+          placeholder="Number of uses"
+          defaultValue={coupon.uses !== undefined ? String(coupon.uses) : ""}
+        />
+        {errorFor("uses") && (
+          <p className="text-sm text-red-500">{errorFor("uses")}</p>
+        )}
+      </div>
+
+      {/* Verified */}
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          id="verified"
+          name="verified"
+          className="w-4 h-4"
+          value="true"
+          defaultChecked={!!coupon.verified}
+        />
+        <Label htmlFor="verified">Verified</Label>
+      </div>
+
       {/* Store Dropdown */}
       <div className="space-y-2">
         <Label htmlFor="storeId">Store</Label>
@@ -232,7 +275,6 @@ export default function EditCouponForm() {
         />
         <Label htmlFor="isTopOne">Mark as Top One</Label>
       </div>
-
 
       {/* Submit */}
       <Button type="submit" disabled={isPending}>

@@ -8,6 +8,7 @@ import {
   getAllCategories,
   getCategoryById,
   updateCategory,
+  getCategoriesWithStoreAndCouponCounts,
 } from "@/functions/categoryFunctions";
 
 // ✅ Category Validation Schema
@@ -112,5 +113,17 @@ export async function fetchCategoryByIdAction(id: string) {
     return { data: category };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch category"] } };
+  }
+}
+
+// ✅ FETCH CATEGORIES WITH TOTAL STORES AND COUPONS COUNT
+export async function fetchCategoriesWithCountsAction() {
+  await connectToDatabase();
+
+  try {
+    const categoriesWithCounts = await getCategoriesWithStoreAndCouponCounts();
+    return { data: categoriesWithCounts };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch categories with counts"] } };
   }
 }

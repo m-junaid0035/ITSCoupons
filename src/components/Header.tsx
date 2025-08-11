@@ -36,6 +36,7 @@ export default function Header() {
           <a href="/coupons" className="hover:text-purple-700">Coupons</a>
           <a href="/stores" className="hover:text-purple-700">Stores</a>
           <a href="/categories" className="hover:text-purple-700">Categories</a>
+          <a href="/blogs" className="hover:text-purple-700">Blogs</a>
           <a href="/aboutus" className="hover:text-purple-700">About us</a>
         </nav>
 

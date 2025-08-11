@@ -10,9 +10,12 @@ import {
   updateCoupon,
   getTopCoupons,
   getTopDeals,
+  getAllCouponsWithStores,
+  getTopCouponsWithStores,
+  getTopDealsWithStores,
 } from "@/functions/couponFunctions";
 
-// ✅ Coupon Validation Schema
+// ✅ Coupon Validation Schema with new fields added
 const couponSchema = z.object({
   title: z.string().trim().min(3).max(100),
   description: z.string().optional(),
@@ -26,6 +29,11 @@ const couponSchema = z.object({
   storeName: z.string().optional(),
   storeId: z.string().min(1, "Invalid Store ID"),
   isTopOne: z.coerce.boolean().optional().default(false),
+
+  // NEW fields here
+  discount: z.string().optional(),
+  uses: z.number().int().min(0).optional().default(0),
+  verified: z.coerce.boolean().optional().default(false),
 });
 
 type CouponFormData = z.infer<typeof couponSchema>;
@@ -35,7 +43,7 @@ export type CouponFormState = {
   data?: any;
 };
 
-// ✅ Helper: Parse FormData to CouponFormData
+// ✅ Helper: Parse FormData to CouponFormData including new fields
 function parseCouponFormData(formData: FormData): CouponFormData {
   return {
     title: String(formData.get("title") || ""),
@@ -48,6 +56,9 @@ function parseCouponFormData(formData: FormData): CouponFormData {
     storeName: String(formData.get("storeName") || ""),
     storeId: String(formData.get("storeId") || ""),
     isTopOne: formData.get("isTopOne") === "true" || formData.get("isTopOne") === "on",
+    discount: formData.get("discount") ? String(formData.get("discount")) : undefined,
+    uses: formData.get("uses") ? Number(formData.get("uses")) : 0,  // <--- always number, default 0
+    verified: formData.get("verified") === "true" || formData.get("verified") === "on",
   };
 }
 
@@ -132,6 +143,7 @@ export async function fetchCouponByIdAction(id: string) {
   }
 }
 
+// ✅ FETCH TOP COUPONS
 export async function fetchTopCouponsAction() {
   await connectToDatabase();
   try {
@@ -142,6 +154,7 @@ export async function fetchTopCouponsAction() {
   }
 }
 
+// ✅ FETCH TOP DEALS
 export async function fetchTopDealsAction() {
   await connectToDatabase();
   try {
@@ -152,3 +165,35 @@ export async function fetchTopDealsAction() {
   }
 }
 
+// ✅ FETCH ALL COUPONS WITH STORE DATA
+export async function fetchAllCouponsWithStoresAction() {
+  await connectToDatabase();
+  try {
+    const couponsWithStores = await getAllCouponsWithStores();
+    return { data: couponsWithStores };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch coupons with stores"] } };
+  }
+}
+
+// ✅ FETCH TOP COUPONS WITH STORE DATA
+export async function fetchTopCouponsWithStoresAction() {
+  await connectToDatabase();
+  try {
+    const coupons = await getTopCouponsWithStores();
+    return { data: coupons };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch top coupons with stores"] } };
+  }
+}
+
+// ✅ FETCH TOP DEALS WITH STORE DATA
+export async function fetchTopDealsWithStoresAction() {
+  await connectToDatabase();
+  try {
+    const deals = await getTopDealsWithStores();
+    return { data: deals };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch top deals with stores"] } };
+  }
+}

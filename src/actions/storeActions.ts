@@ -11,10 +11,11 @@ import {
   updateStore,
   getPopularStores,
   getRecentlyUpdatedStores,
+  getStoresByCategories,
+  getStoresWithCoupons, // <-- import the new function here
 } from "@/functions/storeFunctions";
 
-// ✅ Store Validation Schema
-// ✅ Store Validation Schema
+// Store validation schema
 const storeSchema = z.object({
   name: z.string().trim().min(3).max(100),
   storeNetworkUrl: z.string().url("Invalid URL"),
@@ -27,8 +28,6 @@ const storeSchema = z.object({
   metaKeywords: z.array(z.string()).optional(),
   focusKeywords: z.array(z.string()).optional(),
   slug: z.string().trim().min(3).max(100),
-
-  // ✅ Added new fields
   isPopular: z.coerce.boolean().optional(),
   isActive: z.coerce.boolean().optional(),
 });
@@ -40,7 +39,6 @@ export type StoreFormState = {
   data?: any;
 };
 
-// ✅ Helper: Parse FormData to StoreFormData
 function parseStoreFormData(formData: FormData): StoreFormData {
   const categoryIds = formData.getAll("categories") as string[];
   const metaKeywords = (formData.get("metaKeywords") || "")
@@ -67,15 +65,12 @@ function parseStoreFormData(formData: FormData): StoreFormData {
     metaKeywords,
     focusKeywords,
     slug: String(formData.get("slug") || ""),
-
-    // ✅ Added new fields
     isPopular: formData.get("isPopular") === "true",
-    isActive: formData.get("isActive") !== "false", // default to true
+    isActive: formData.get("isActive") !== "false", // default true
   };
 }
 
-
-// ✅ CREATE STORE
+// CREATE STORE
 export async function createStoreAction(
   prevState: StoreFormState,
   formData: FormData
@@ -100,7 +95,7 @@ export async function createStoreAction(
   }
 }
 
-// ✅ UPDATE STORE
+// UPDATE STORE
 export async function updateStoreAction(
   prevState: StoreFormState,
   id: string,
@@ -123,7 +118,7 @@ export async function updateStoreAction(
   }
 }
 
-// ✅ DELETE STORE
+// DELETE STORE
 export async function deleteStoreAction(id: string) {
   await connectToDatabase();
   try {
@@ -134,7 +129,7 @@ export async function deleteStoreAction(id: string) {
   }
 }
 
-// ✅ FETCH ALL STORES
+// FETCH ALL STORES
 export async function fetchAllStoresAction() {
   await connectToDatabase();
   try {
@@ -144,7 +139,8 @@ export async function fetchAllStoresAction() {
     return { error: { message: [error.message || "Failed to fetch stores"] } };
   }
 }
-// ✅ FETCH ALL STORES
+
+// FETCH ALL ACTIVE STORES
 export async function fetchAllActiveStoresAction() {
   await connectToDatabase();
   try {
@@ -155,7 +151,7 @@ export async function fetchAllActiveStoresAction() {
   }
 }
 
-// ✅ FETCH SINGLE STORE
+// FETCH SINGLE STORE
 export async function fetchStoreByIdAction(id: string) {
   await connectToDatabase();
   try {
@@ -169,6 +165,7 @@ export async function fetchStoreByIdAction(id: string) {
   }
 }
 
+// FETCH POPULAR STORES
 export async function fetchPopularStoresAction() {
   await connectToDatabase();
   try {
@@ -179,6 +176,7 @@ export async function fetchPopularStoresAction() {
   }
 }
 
+// FETCH RECENTLY UPDATED STORES
 export async function fetchRecentlyUpdatedStoresAction() {
   await connectToDatabase();
   try {
@@ -186,5 +184,33 @@ export async function fetchRecentlyUpdatedStoresAction() {
     return { data: stores };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch recently updated stores"] } };
+  }
+}
+
+// FETCH STORES BY CATEGORIES
+export async function fetchStoresByCategoriesAction(categories: string[]) {
+  await connectToDatabase();
+
+  try {
+    if (!categories.length) {
+      return { data: [] };
+    }
+
+    const stores = await getStoresByCategories(categories);
+    return { data: stores };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch stores by categories"] } };
+  }
+}
+
+// NEW: FETCH STORES WITH COUPONS
+export async function fetchAllStoresWithCouponsAction() {
+  await connectToDatabase();
+
+  try {
+    const storesWithCoupons = await getStoresWithCoupons();
+    return { data: storesWithCoupons };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch stores with coupons"] } };
   }
 }

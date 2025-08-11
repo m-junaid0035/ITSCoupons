@@ -1,52 +1,65 @@
 "use client";
 
-import React from "react";
 import type { StoreData } from "@/types/store";
 
 interface ButtonGridProps {
   stores: StoreData[];
 }
 
-const ButtonGrid: React.FC<ButtonGridProps> = ({ stores }) => (
-  <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-    {stores.map((store) => (
-      <button
-        key={store._id}
-        className="py-2 px-6 rounded-md border border-gray-300 bg-white shadow-sm hover:bg-gray-100 transition"
-      >
-        {store.name}
-      </button>
-    ))}
-  </div>
-);
+function ButtonGrid({ stores }: ButtonGridProps) {
+  return (
+    <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+      {stores.map((store) => (
+        <button
+          key={store._id}
+          className="py-2 px-6 rounded-md border border-gray-300 bg-white shadow-sm hover:bg-gray-100 transition"
+        >
+          {store.name}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 interface StoresComponentProps {
   recentlyUpdatedStores: StoreData[];
   popularStores: StoreData[];
+  loadingRecentlyUpdatedStores?: boolean;
+  loadingPopularStores?: boolean;
 }
 
-const StoresComponent: React.FC<StoresComponentProps> = ({
+export default function StoresComponent({
   recentlyUpdatedStores,
   popularStores,
-}) => (
-  <div className="w-full max-w-6xl mx-auto py-12">
-    <div className="mb-16">
-      <h2 className="text-2xl font-bold text-center mb-8 text-purple-700">
-        Store Recently Updated
-      </h2>
-      <div className="flex justify-center">
-        <ButtonGrid stores={recentlyUpdatedStores} />
+  loadingRecentlyUpdatedStores = false,
+  loadingPopularStores = false,
+}: StoresComponentProps) {
+  return (
+    <div className="w-full max-w-6xl mx-auto py-12">
+      <div className="mb-16">
+        <h2 className="text-2xl font-bold text-center mb-8 text-purple-700">
+          Stores Recently Updated
+        </h2>
+        <div className="flex justify-center">
+          {loadingRecentlyUpdatedStores ? (
+            <div className="text-purple-700 font-semibold">Loading...</div>
+          ) : (
+            <ButtonGrid stores={recentlyUpdatedStores} />
+          )}
+        </div>
+      </div>
+      <div>
+        <h2 className="text-2xl font-bold text-center mb-8 text-purple-700">
+          Popular Stores
+        </h2>
+        <div className="flex justify-center">
+          {loadingPopularStores ? (
+            <div className="text-purple-700 font-semibold">Loading...</div>
+          ) : (
+            <ButtonGrid stores={popularStores} />
+          )}
+        </div>
       </div>
     </div>
-    <div>
-      <h2 className="text-2xl font-bold text-center mb-8 text-purple-700">
-        Popular Stores
-      </h2>
-      <div className="flex justify-center">
-        <ButtonGrid stores={popularStores} />
-      </div>
-    </div>
-  </div>
-);
-
-export default StoresComponent;
+  );
+}

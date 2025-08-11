@@ -1,6 +1,6 @@
 import { Coupon } from "@/models/Coupon";
 import { Types } from "mongoose";
-
+import cron from "node-cron";
 /**
  * Helper to sanitize and format incoming coupon data.
  */
@@ -15,6 +15,9 @@ const sanitizeCouponData = (data: {
   storeName?: string;
   storeId: string;
   isTopOne?: boolean;
+  discount?: string;
+  uses?: number;
+  verified?: boolean;
 }) => ({
   title: data.title.trim(),
   description: data.description?.trim(),
@@ -26,6 +29,48 @@ const sanitizeCouponData = (data: {
   storeName: data.storeName?.trim(),
   storeId: new Types.ObjectId(data.storeId),
   isTopOne: data.isTopOne ?? false,
+  discount: data.discount?.trim(),
+  uses: data.uses ?? 0,
+  verified: data.verified ?? false,
+});
+
+const serializeCouponWithStore = (coupon: any) => ({
+  _id: coupon._id.toString(),
+  title: coupon.title,
+  description: coupon.description,
+  couponType: coupon.couponType,
+  status: coupon.status,
+  couponCode: coupon.couponCode,
+  expirationDate: coupon.expirationDate?.toISOString?.(),
+  couponUrl: coupon.couponUrl,
+  storeName: coupon.storeName,
+  storeId: coupon.storeId?.toString(),
+  isTopOne: coupon.isTopOne ?? false,
+  discount: coupon.discount,
+  uses: coupon.uses,
+  verified: coupon.verified,
+  createdAt: coupon.createdAt?.toISOString?.(),
+  updatedAt: coupon.updatedAt?.toISOString?.(),
+  store: coupon.store
+    ? {
+        _id: coupon.store._id.toString(),
+        name: coupon.store.name,
+        storeNetworkUrl: coupon.store.storeNetworkUrl,
+        categories: coupon.store.categories,
+        totalCouponUsedTimes: coupon.store.totalCouponUsedTimes,
+        image: coupon.store.image,
+        description: coupon.store.description,
+        metaTitle: coupon.store.metaTitle,
+        metaDescription: coupon.store.metaDescription,
+        metaKeywords: coupon.store.metaKeywords,
+        focusKeywords: coupon.store.focusKeywords,
+        slug: coupon.store.slug,
+        isPopular: coupon.store.isPopular,
+        isActive: coupon.store.isActive,
+        createdAt: coupon.store.createdAt?.toISOString?.(),
+        updatedAt: coupon.store.updatedAt?.toISOString?.(),
+      }
+    : null,
 });
 
 /**
@@ -43,14 +88,15 @@ const serializeCoupon = (coupon: any) => ({
   storeName: coupon.storeName,
   storeId: coupon.storeId?.toString(),
   isTopOne: coupon.isTopOne ?? false,
+  discount: coupon.discount,
+  uses: coupon.uses,
+  verified: coupon.verified,
   createdAt: coupon.createdAt?.toISOString?.(),
   updatedAt: coupon.updatedAt?.toISOString?.(),
 });
 
 /**
  * Create a new coupon.
- * @param data Coupon input
- * @returns Created coupon object
  */
 export const createCoupon = async (data: {
   title: string;
@@ -63,6 +109,9 @@ export const createCoupon = async (data: {
   storeName?: string;
   storeId: string;
   isTopOne?: boolean;
+  discount?: string;
+  uses?: number;
+  verified?: boolean;
 }): Promise<ReturnType<typeof serializeCoupon>> => {
   const couponData = sanitizeCouponData(data);
   const coupon = await new Coupon(couponData).save();
@@ -71,7 +120,6 @@ export const createCoupon = async (data: {
 
 /**
  * Get all coupons, sorted by newest first.
- * @returns Array of coupons (plain objects)
  */
 export const getAllCoupons = async (): Promise<
   ReturnType<typeof serializeCoupon>[]
@@ -82,8 +130,6 @@ export const getAllCoupons = async (): Promise<
 
 /**
  * Get a coupon by its ID.
- * @param id Coupon ID
- * @returns Coupon (plain object) or null
  */
 export const getCouponById = async (
   id: string
@@ -94,9 +140,6 @@ export const getCouponById = async (
 
 /**
  * Update a coupon by ID.
- * @param id Coupon ID
- * @param data New coupon data
- * @returns Updated coupon (plain object) or null
  */
 export const updateCoupon = async (
   id: string,
@@ -111,21 +154,18 @@ export const updateCoupon = async (
     storeName?: string;
     storeId: string;
     isTopOne?: boolean;
+    discount?: string;
+    uses?: number;
+    verified?: boolean;
   }
 ): Promise<ReturnType<typeof serializeCoupon> | null> => {
   const updatedData = sanitizeCouponData(data);
-  const coupon = await Coupon.findByIdAndUpdate(
-    id,
-    { $set: updatedData },
-    { new: true, runValidators: true }
-  ).lean();
+  const coupon = await Coupon.findByIdAndUpdate(id, { $set: updatedData }, { new: true, runValidators: true }).lean();
   return coupon ? serializeCoupon(coupon) : null;
 };
 
 /**
  * Delete a coupon by ID.
- * @param id Coupon ID
- * @returns Deleted coupon (plain object) or null
  */
 export const deleteCoupon = async (
   id: string
@@ -136,7 +176,6 @@ export const deleteCoupon = async (
 
 /**
  * Get all top coupons (couponType === "coupon" and isTopOne === true), sorted by newest first.
- * @returns Array of top coupons (plain objects)
  */
 export const getTopCoupons = async (): Promise<ReturnType<typeof serializeCoupon>[]> => {
   const coupons = await Coupon.find({ couponType: "coupon", isTopOne: true })
@@ -147,11 +186,96 @@ export const getTopCoupons = async (): Promise<ReturnType<typeof serializeCoupon
 
 /**
  * Get all top deals (couponType === "deal" and isTopOne === true), sorted by newest first.
- * @returns Array of top deals (plain objects)
  */
 export const getTopDeals = async (): Promise<ReturnType<typeof serializeCoupon>[]> => {
   const deals = await Coupon.find({ couponType: "deal", isTopOne: true })
     .sort({ createdAt: -1 })
     .lean();
   return deals.map(serializeCoupon);
+};
+
+/**
+ * Get all coupons with their associated store data.
+ * Uses MongoDB aggregation with $lookup.
+ */
+export const getAllCouponsWithStores = async () => {
+  const couponsWithStores = await Coupon.aggregate([
+    {
+      $lookup: {
+        from: "stores",
+        localField: "storeId",
+        foreignField: "_id",
+        as: "store",
+      },
+    },
+    {
+      $unwind: {
+        path: "$store",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $sort: { createdAt: -1 },
+    },
+  ]);
+
+  return couponsWithStores.map(serializeCouponWithStore);
+};
+
+/**
+ * Get all top coupons (couponType === "coupon" and isTopOne === true) with store data.
+ */
+export const getTopCouponsWithStores = async () => {
+  const couponsWithStores = await Coupon.aggregate([
+    {
+      $match: { couponType: "coupon", isTopOne: true },
+    },
+    {
+      $lookup: {
+        from: "stores",
+        localField: "storeId",
+        foreignField: "_id",
+        as: "store",
+      },
+    },
+    {
+      $unwind: {
+        path: "$store",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $sort: { createdAt: -1 },
+    },
+  ]);
+  return couponsWithStores.map(serializeCouponWithStore);
+};
+
+/**
+ * Get all top deals (couponType === "deal" and isTopOne === true) with store data.
+ */
+export const getTopDealsWithStores = async () => {
+  const dealsWithStores = await Coupon.aggregate([
+    {
+      $match: { couponType: "deal", isTopOne: true },
+    },
+    {
+      $lookup: {
+        from: "stores",
+        localField: "storeId",
+        foreignField: "_id",
+        as: "store",
+      },
+    },
+    {
+      $unwind: {
+        path: "$store",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+    {
+      $sort: { createdAt: -1 },
+    },
+  ]);
+  return dealsWithStores.map(serializeCouponWithStore);
 };

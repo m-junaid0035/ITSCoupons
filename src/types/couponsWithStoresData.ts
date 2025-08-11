@@ -1,4 +1,5 @@
 // types/coupon.ts
+import type { StoreData } from "./store";
 
 export type CouponType = "deal" | "coupon";
 export type CouponStatus = "active" | "expired";
@@ -40,8 +41,15 @@ export interface CouponData {
   updatedAt?: string | null;
 }
 
-// List response type
-export type CouponListResponse = CouponData[];
+// Extended type for coupon with populated store data
+export interface CouponWithStoreData extends CouponData {
+  store?: StoreData | null;
+}
 
-// Single response type
+// List response types
+export type CouponListResponse = CouponData[];
+export type CouponWithStoreListResponse = CouponWithStoreData[];
+
+// Single response types
 export type CouponSingleResponse = CouponData | null;
+export type CouponWithStoreSingleResponse = CouponWithStoreData | null;

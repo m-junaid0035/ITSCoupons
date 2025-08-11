@@ -11,7 +11,10 @@ export interface ICoupon extends Document {
   couponUrl?: string;
   storeName?: string;
   storeId: Types.ObjectId;
-  isTopOne?: boolean; // ✅ NEW FIELD
+  isTopOne?: boolean;
+  discount?: string;       // NEW FIELD
+  uses?: number;           // NEW FIELD
+  verified?: boolean;      // NEW FIELD
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,7 +66,19 @@ const couponSchema = new Schema<ICoupon>(
     },
     isTopOne: {
       type: Boolean,
-      default: false, // ✅ Optional default value
+      default: false,
+    },
+    discount: {
+      type: String,
+      trim: true,
+    },
+    uses: {
+      type: Number,
+      default: 0,
+    },
+    verified: {
+      type: Boolean,
+      default: false,
     },
   },
   {
