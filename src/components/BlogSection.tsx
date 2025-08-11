@@ -25,7 +25,7 @@ export default function BlogSection({
         The Latest from our blogs
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto justify-items-center">
         {blogs.map((blog) => {
           const formattedDate = blog.date
             ? new Date(blog.date).toLocaleDateString()
@@ -34,20 +34,27 @@ export default function BlogSection({
           return (
             <div
               key={blog._id}
-              className="bg-gray-100 rounded-[12px] overflow-hidden shadow-md flex flex-col
-                w-full md:w-[301px] md:h-[298px] mx-auto"
+              className="flex flex-col items-center w-full max-w-[301px]"
             >
-              {blog.image ? (
-                <img
-                  src={blog.image}
-                  alt={blog.title || "Blog image"}
-                  className="object-cover rounded-t-[12px] w-full h-[150px]"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="h-[150px] bg-gray-300 rounded-t-[12px]" />
-              )}
-              <div className="p-4 text-left md:h-[148px] flex flex-col justify-between">
+              {/* Image box */}
+              <div className="w-full h-[150px] bg-gray-300 rounded-[12px] overflow-hidden">
+                {blog.image ? (
+                  <img
+                    src={blog.image}
+                    alt={blog.title || "Blog image"}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-300" />
+                )}
+              </div>
+
+              {/* Lower content box */}
+              <div
+                className="w-full h-[148px] bg-white rounded-[12px] shadow-md -mt-6 z-10 flex flex-col justify-between p-4 text-left"
+                style={{ boxShadow: "0px 4px 4px 0px #00000040" }}
+              >
                 <p className="text-sm text-gray-500">{formattedDate}</p>
                 <h3 className="text-base font-semibold mb-2">{blog.title}</h3>
                 <a

@@ -8,7 +8,10 @@ interface PromoCodesSectionProps {
   loading?: boolean;
 }
 
-export default function PromoCodesSection({ coupons, loading = false }: PromoCodesSectionProps) {
+export default function PromoCodesSection({
+  coupons,
+  loading = false,
+}: PromoCodesSectionProps) {
   const [showCodeIndex, setShowCodeIndex] = useState<number | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
@@ -32,7 +35,7 @@ export default function PromoCodesSection({ coupons, loading = false }: PromoCod
     try {
       await navigator.clipboard.writeText(code);
       setCopiedIndex(idx);
-      setTimeout(() => setCopiedIndex(null), 2000); // Clear after 2 seconds
+      setTimeout(() => setCopiedIndex(null), 2000);
     } catch (err) {
       console.error("Failed to copy coupon code", err);
     }
@@ -51,7 +54,7 @@ export default function PromoCodesSection({ coupons, loading = false }: PromoCod
           </a>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {coupons.map((coupon, idx) => {
             const expiration = coupon.expirationDate
               ? new Date(coupon.expirationDate).toLocaleDateString(undefined, {
@@ -61,60 +64,86 @@ export default function PromoCodesSection({ coupons, loading = false }: PromoCod
                 })
               : "N/A";
 
-            // Determine the letter to show in the icon circle
             const iconLetter = (
               coupon.store?.name?.charAt(0) ||
               coupon.storeName?.charAt(0) ||
               coupon.title.charAt(0)
             )?.toUpperCase();
 
-            // Determine the display store name
-            const displayStoreName = coupon.store?.name || coupon.storeName || "Unknown Store";
+            const displayStoreName =
+              coupon.store?.name || coupon.storeName || "Unknown Store";
 
             return (
               <div
                 key={coupon._id || idx}
-                className="bg-white rounded-lg shadow-sm flex flex-col"
+                className="w-[301px] mx-auto rounded-[12px] overflow-hidden shadow-md"
               >
-                <div className="p-4 flex flex-col justify-between h-full">
-                  <div className="flex items-center mb-3">
-                    <div className="h-10 w-10 bg-purple-700 rounded-md mr-3 flex items-center justify-center text-white font-bold text-lg">
-                      {iconLetter}
-                    </div>
-                    {/* Show store name prominently */}
-                    <span className="text-purple-700 font-bold text-base">
-                      {displayStoreName}
-                    </span>
+                {/* Upper image box */}
+                <div className="relative">
+                  {coupon.store?.image ? (
+                    <img
+                      src={coupon.store.image}
+                      alt={displayStoreName}
+                      className="w-[301px] h-[150px] object-cover rounded-t-[12px]"
+                    />
+                  ) : (
+                    <div className="bg-gray-300 w-[301px] h-[150px] rounded-t-[12px]" />
+                  )}
+
+                  {/* Middle purple icon box */}
+                  <div
+                    className="absolute -bottom-[32px] left-[20px] w-[65.82px] h-[65.82px] 
+                    bg-purple-700 flex items-center justify-center text-white font-bold text-lg 
+                    rounded-md shadow-md"
+                  >
+                    {iconLetter}
                   </div>
 
-                  {/* Coupon title smaller and below store name */}
-                  <p className="text-sm font-semibold mb-2 text-gray-700">{coupon.title}</p>
+                  {/* Store name next to icon */}
+                  <div className="absolute -bottom-[20px] left-[95px] text-purple-700 font-bold text-base">
+                    {displayStoreName}
+                  </div>
+                </div>
 
-                  <span className="text-xs text-purple-600 font-medium mb-4">
-                    Expires: <span className="font-bold">{expiration}</span>
+                {/* Lower content box */}
+                <div
+                  className="bg-white rounded-b-[12px] px-4 pt-[50px] pb-4 text-left 
+                  h-[148px] flex flex-col justify-between 
+                  shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]"
+                >
+                  <p className="text-sm font-semibold text-gray-700">
+                    {coupon.title}
+                  </p>
+
+                  <span className="text-xs text-purple-600 font-medium">
+                    Expires:{" "}
+                    <span className="font-bold">{expiration}</span>
                   </span>
 
-                  <button
-                    onClick={() => {
-                      if (showCodeIndex === idx) {
-                        setShowCodeIndex(null);
-                      } else {
-                        setShowCodeIndex(idx);
-                      }
-                    }}
-                    className="w-full mb-2 bg-gray-200 text-gray-800 font-semibold text-xs rounded-lg py-2 hover:bg-purple-200 transition"
-                  >
-                    {showCodeIndex === idx ? coupon.couponCode : "Show Coupon Code"}
-                  </button>
-
-                  {showCodeIndex === idx && (
+                  {/* Show coupon code button inside lower box */}
+                  <div className="mt-2">
                     <button
-                      onClick={() => handleCopy(coupon.couponCode, idx)}
-                      className="w-full bg-purple-700 text-white font-semibold text-xs rounded-lg py-2 hover:bg-purple-800 transition"
+                      onClick={() =>
+                        setShowCodeIndex(showCodeIndex === idx ? null : idx)
+                      }
+                      className="w-[218.07px] h-[19.55px] 
+                      bg-gray-200 text-gray-800 font-semibold text-xs rounded-full 
+                      py-[3px] px-[14px] hover:bg-purple-200 transition"
                     >
-                      {copiedIndex === idx ? "Copied!" : "Copy Code"}
+                      {showCodeIndex === idx
+                        ? coupon.couponCode
+                        : "Show Coupon Code"}
                     </button>
-                  )}
+
+                    {showCodeIndex === idx && (
+                      <button
+                        onClick={() => handleCopy(coupon.couponCode, idx)}
+                        className="mt-2 w-full bg-purple-700 text-white font-semibold text-xs rounded-full py-2 hover:bg-purple-800 transition"
+                      >
+                        {copiedIndex === idx ? "Copied!" : "Copy Code"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );

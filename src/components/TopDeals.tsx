@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import type { CouponData } from "@/types/coupon"; // Adjust the path as needed
+import type { CouponWithStoreData } from "@/types/couponsWithStoresData"; // Adjust path as needed
 
 interface TopDealsProps {
-  deals: CouponData[];
+  deals: CouponWithStoreData[];
   loading?: boolean;
 }
 
@@ -40,21 +40,32 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, loading = false }) => {
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 justify-items-center">
         {deals.map((deal, index) => (
           <div
             key={deal._id || index}
-            className="bg-white rounded-lg shadow-sm flex flex-col"
+            className="flex flex-col items-center w-full max-w-[247px]"
           >
-            <div className="h-28 bg-gray-300 rounded-t-lg"></div>
-            <div className="p-4 flex flex-col flex-grow justify-between">
+            {/* Upper Box (Image) */}
+            <div className="w-full h-[150px] bg-gray-300 rounded-[12px] overflow-hidden">
+              {deal.store?.image && (
+                <img
+                  src={deal.store?.image}
+                  alt={deal.title}
+                  className="w-full h-full object-cover"
+                />
+              )}
+            </div>
+
+            {/* Lower Box (Details) */}
+            <div className="w-full h-[148px] bg-white rounded-[12px] shadow-md -mt-6 z-10 flex flex-col justify-between p-4">
               <div>
-                <h3 className="font-semibold text-sm mb-1">{deal.title}</h3>
-                <p className="text-xs text-gray-700">{deal.description}</p>
+                <h3 className="font-bold text-sm text-gray-900">{deal.title}</h3>
+                <p className="text-xs text-gray-700 mt-1">{deal.description}</p>
               </div>
-              {/* Show coupon code label if couponCode exists */}
+
               {deal.couponCode && (
-                <span className="inline-block mt-4 px-3 py-1 text-xs font-semibold rounded-full bg-gray-300 text-gray-700">
+                <span className="inline-block px-3 py-1 text-[10px] font-semibold rounded-full bg-gray-200 text-gray-800 shadow-sm">
                   Coupon Code
                 </span>
               )}
