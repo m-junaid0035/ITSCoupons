@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useActionState } from "react"; // or your actual import
+import { useActionState } from "react"; // adjust import if needed
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,15 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
+import { toast } from "@/hooks/use-toast";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 import { createSettingAction } from "@/actions/settingActions";
 
@@ -38,6 +47,8 @@ export default function SettingForm() {
     initialState
   );
 
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+
   const errorFor = (field: string) => {
     return formState.error &&
       typeof formState.error === "object" &&
@@ -46,150 +57,257 @@ export default function SettingForm() {
       : null;
   };
 
-  // Redirect or any action on success
   useEffect(() => {
     if (formState.data && !formState.error) {
-      // Example: redirect to settings list page or show a toast
-      router.push("/admin/settings");
+      setSuccessDialogOpen(true);
     }
-  }, [formState, router]);
+
+    if (formState.error && "message" in formState.error) {
+      toast({
+        title: "Error",
+        description:
+          (formState.error as any).message?.[0] || "Something went wrong",
+        variant: "destructive",
+      });
+    }
+  }, [formState]);
 
   return (
-    <Card className="max-w-3xl mx-auto shadow-lg bg-white">
-      <CardHeader className="flex items-center justify-between border-none">
-        <CardTitle>Update Settings</CardTitle>
-      </CardHeader>
+    <>
+      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
+        <CardHeader className="flex items-center justify-between border-none">
+          <CardTitle>Update Settings</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/settings")}>
+            Back to Settings
+          </Button>
+        </CardHeader>
 
-      <CardContent>
-        <form action={dispatch} className="space-y-6 max-w-2xl mx-auto">
-          {/* Site Name */}
-          <div className="space-y-2">
-            <Label htmlFor="siteName">Site Name</Label>
-            <Input id="siteName" name="siteName" required className="border-none shadow-sm" />
-            {errorFor("siteName") && (
-              <p className="text-sm text-red-500">{errorFor("siteName")}</p>
-            )}
-          </div>
-
-          {/* Logo */}
-          <div className="space-y-2">
-            <Label htmlFor="logo">Site Logo URL</Label>
-            <Input id="logo" name="logo" type="url" className="border-none shadow-sm" />
-            {errorFor("logo") && (
-              <p className="text-sm text-red-500">{errorFor("logo")}</p>
-            )}
-          </div>
-
-          {/* Favicon */}
-          <div className="space-y-2">
-            <Label htmlFor="favicon">Favicon URL</Label>
-            <Input id="favicon" name="favicon" type="url" className="border-none shadow-sm" />
-            {errorFor("favicon") && (
-              <p className="text-sm text-red-500">{errorFor("favicon")}</p>
-            )}
-          </div>
-
-          {/* Contact Email */}
-          <div className="space-y-2">
-            <Label htmlFor="contactEmail">Contact Email</Label>
-            <Input id="contactEmail" name="contactEmail" type="email" className="border-none shadow-sm" />
-            {errorFor("contactEmail") && (
-              <p className="text-sm text-red-500">{errorFor("contactEmail")}</p>
-            )}
-          </div>
-
-          {/* Contact Phone */}
-          <div className="space-y-2">
-            <Label htmlFor="contactPhone">Contact Phone</Label>
-            <Input id="contactPhone" name="contactPhone" className="border-none shadow-sm" />
-            {errorFor("contactPhone") && (
-              <p className="text-sm text-red-500">{errorFor("contactPhone")}</p>
-            )}
-          </div>
-
-          {/* Address */}
-          <div className="space-y-2">
-            <Label htmlFor="address">Address</Label>
-            <Textarea id="address" name="address" rows={2} className="border-none shadow-sm" />
-            {errorFor("address") && (
-              <p className="text-sm text-red-500">{errorFor("address")}</p>
-            )}
-          </div>
-
-          {/* Meta Title */}
-          <div className="space-y-2">
-            <Label htmlFor="metaTitle">Meta Title</Label>
-            <Input id="metaTitle" name="metaTitle" className="border-none shadow-sm" />
-            {errorFor("metaTitle") && (
-              <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
-            )}
-          </div>
-
-          {/* Meta Description */}
-          <div className="space-y-2">
-            <Label htmlFor="metaDescription">Meta Description</Label>
-            <Textarea id="metaDescription" name="metaDescription" rows={3} className="border-none shadow-sm" />
-            {errorFor("metaDescription") && (
-              <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
-            )}
-          </div>
-
-          {/* Meta Keywords */}
-          <div className="space-y-2">
-            <Label htmlFor="metaKeywords">Meta Keywords (comma-separated)</Label>
-            <Input id="metaKeywords" name="metaKeywords" className="border-none shadow-sm" />
-            {errorFor("metaKeywords") && (
-              <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
-            )}
-          </div>
-
-          {/* Social URLs */}
-          <div className="grid md:grid-cols-2 gap-4">
+        <CardContent>
+          <form action={dispatch} className="space-y-6 max-w-2xl mx-auto">
+            {/* Site Name */}
             <div className="space-y-2">
-              <Label htmlFor="facebookUrl">Facebook URL</Label>
-              <Input id="facebookUrl" name="facebookUrl" type="url" className="border-none shadow-sm" />
-              {errorFor("facebookUrl") && (
-                <p className="text-sm text-red-500">{errorFor("facebookUrl")}</p>
+              <Label htmlFor="siteName">Site Name</Label>
+              <Input
+                id="siteName"
+                name="siteName"
+                required
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="Enter site name"
+              />
+              {errorFor("siteName") && (
+                <p className="text-sm text-red-500">{errorFor("siteName")}</p>
               )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="twitterUrl">Twitter URL</Label>
-              <Input id="twitterUrl" name="twitterUrl" type="url" className="border-none shadow-sm" />
-              {errorFor("twitterUrl") && (
-                <p className="text-sm text-red-500">{errorFor("twitterUrl")}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="instagramUrl">Instagram URL</Label>
-              <Input id="instagramUrl" name="instagramUrl" type="url" className="border-none shadow-sm" />
-              {errorFor("instagramUrl") && (
-                <p className="text-sm text-red-500">{errorFor("instagramUrl")}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="linkedinUrl">LinkedIn URL</Label>
-              <Input id="linkedinUrl" name="linkedinUrl" type="url" className="border-none shadow-sm" />
-              {errorFor("linkedinUrl") && (
-                <p className="text-sm text-red-500">{errorFor("linkedinUrl")}</p>
-              )}
-            </div>
-          </div>
 
-          {/* General Error */}
-          {"message" in (formState.error ?? {}) && (
-            <p className="text-sm text-red-500">
-              {(formState.error as any).message?.[0]}
-            </p>
-          )}
+            {/* Logo */}
+            <div className="space-y-2">
+              <Label htmlFor="logo">Site Logo URL</Label>
+              <Input
+                id="logo"
+                name="logo"
+                type="url"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="https://example.com/logo.png"
+              />
+              {errorFor("logo") && (
+                <p className="text-sm text-red-500">{errorFor("logo")}</p>
+              )}
+            </div>
 
-          <CardFooter className="flex justify-end border-none">
-            <Button type="submit" disabled={isPending}>
-              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isPending ? "Saving..." : "Save Settings"}
+            {/* Favicon */}
+            <div className="space-y-2">
+              <Label htmlFor="favicon">Favicon URL</Label>
+              <Input
+                id="favicon"
+                name="favicon"
+                type="url"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="https://example.com/favicon.ico"
+              />
+              {errorFor("favicon") && (
+                <p className="text-sm text-red-500">{errorFor("favicon")}</p>
+              )}
+            </div>
+
+            {/* Contact Email */}
+            <div className="space-y-2">
+              <Label htmlFor="contactEmail">Contact Email</Label>
+              <Input
+                id="contactEmail"
+                name="contactEmail"
+                type="email"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="contact@example.com"
+              />
+              {errorFor("contactEmail") && (
+                <p className="text-sm text-red-500">{errorFor("contactEmail")}</p>
+              )}
+            </div>
+
+            {/* Contact Phone */}
+            <div className="space-y-2">
+              <Label htmlFor="contactPhone">Contact Phone</Label>
+              <Input
+                id="contactPhone"
+                name="contactPhone"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="+1234567890"
+              />
+              {errorFor("contactPhone") && (
+                <p className="text-sm text-red-500">{errorFor("contactPhone")}</p>
+              )}
+            </div>
+
+            {/* Address */}
+            <div className="space-y-2">
+              <Label htmlFor="address">Address</Label>
+              <Textarea
+                id="address"
+                name="address"
+                rows={2}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="Enter your address"
+              />
+              {errorFor("address") && (
+                <p className="text-sm text-red-500">{errorFor("address")}</p>
+              )}
+            </div>
+
+            {/* Meta Title */}
+            <div className="space-y-2">
+              <Label htmlFor="metaTitle">Meta Title</Label>
+              <Input
+                id="metaTitle"
+                name="metaTitle"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="Meta title for SEO"
+              />
+              {errorFor("metaTitle") && (
+                <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
+              )}
+            </div>
+
+            {/* Meta Description */}
+            <div className="space-y-2">
+              <Label htmlFor="metaDescription">Meta Description</Label>
+              <Textarea
+                id="metaDescription"
+                name="metaDescription"
+                rows={3}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="Meta description for SEO"
+              />
+              {errorFor("metaDescription") && (
+                <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
+              )}
+            </div>
+
+            {/* Meta Keywords */}
+            <div className="space-y-2">
+              <Label htmlFor="metaKeywords">Meta Keywords (comma-separated)</Label>
+              <Input
+                id="metaKeywords"
+                name="metaKeywords"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="keyword1, keyword2, keyword3"
+              />
+              {errorFor("metaKeywords") && (
+                <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
+              )}
+            </div>
+
+            {/* Social URLs */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="facebookUrl">Facebook URL</Label>
+                <Input
+                  id="facebookUrl"
+                  name="facebookUrl"
+                  type="url"
+                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                  placeholder="https://facebook.com/yourpage"
+                />
+                {errorFor("facebookUrl") && (
+                  <p className="text-sm text-red-500">{errorFor("facebookUrl")}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="twitterUrl">Twitter URL</Label>
+                <Input
+                  id="twitterUrl"
+                  name="twitterUrl"
+                  type="url"
+                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                  placeholder="https://twitter.com/yourprofile"
+                />
+                {errorFor("twitterUrl") && (
+                  <p className="text-sm text-red-500">{errorFor("twitterUrl")}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="instagramUrl">Instagram URL</Label>
+                <Input
+                  id="instagramUrl"
+                  name="instagramUrl"
+                  type="url"
+                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                  placeholder="https://instagram.com/yourprofile"
+                />
+                {errorFor("instagramUrl") && (
+                  <p className="text-sm text-red-500">{errorFor("instagramUrl")}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="linkedinUrl">LinkedIn URL</Label>
+                <Input
+                  id="linkedinUrl"
+                  name="linkedinUrl"
+                  type="url"
+                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                  placeholder="https://linkedin.com/in/yourprofile"
+                />
+                {errorFor("linkedinUrl") && (
+                  <p className="text-sm text-red-500">{errorFor("linkedinUrl")}</p>
+                )}
+              </div>
+            </div>
+
+            {/* General Error */}
+            {"message" in (formState.error ?? {}) && (
+              <p className="text-sm text-red-500">
+                {(formState.error as any).message?.[0]}
+              </p>
+            )}
+
+            <CardFooter className="flex justify-end border-none">
+              <Button type="submit" disabled={isPending}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isPending ? "Saving..." : "Save Settings"}
+              </Button>
+            </CardFooter>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Success Dialog */}
+      <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Success</DialogTitle>
+          </DialogHeader>
+          <p>Settings updated successfully!</p>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setSuccessDialogOpen(false);
+                router.push("/admin/settings");
+              }}
+            >
+              OK
             </Button>
-          </CardFooter>
-        </form>
-      </CardContent>
-    </Card>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

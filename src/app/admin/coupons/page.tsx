@@ -1,6 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useState, useOptimistic } from "react";
+import {
+  Suspense,
+  useEffect,
+  useState,
+  useOptimistic,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   fetchAllCouponsAction,
@@ -38,7 +43,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface ICoupon {
@@ -57,17 +62,28 @@ function CouponsTable({
   onView,
   onEdit,
   onDelete,
+  loading,
 }: {
   coupons: ICoupon[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  loading: boolean;
 }) {
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading coupons...
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="border-b border-muted">
             <TableHead>Title</TableHead>
             <TableHead>Code</TableHead>
             <TableHead>Type</TableHead>
@@ -81,12 +97,17 @@ function CouponsTable({
         <TableBody>
           {coupons.length > 0 ? (
             coupons.map((coupon) => (
-              <TableRow key={coupon._id} className="hover:bg-muted/40">
-                <TableCell>{coupon.title}</TableCell>
+              <TableRow
+                key={coupon._id}
+                className="hover:bg-muted/40 transition-colors"
+              >
+                <TableCell className="font-medium">{coupon.title}</TableCell>
                 <TableCell>{coupon.couponCode}</TableCell>
                 <TableCell className="capitalize">{coupon.couponType}</TableCell>
                 <TableCell className="capitalize">{coupon.status}</TableCell>
-                <TableCell>{new Date(coupon.expirationDate).toLocaleDateString()}</TableCell>
+                <TableCell>
+                  {new Date(coupon.expirationDate).toLocaleDateString()}
+                </TableCell>
                 <TableCell>{coupon.storeName || "-"}</TableCell>
                 <TableCell>
                   {coupon.isTopOne ? (
@@ -97,10 +118,22 @@ function CouponsTable({
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onView(coupon._id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onView(coupon._id)}
+                      title="View"
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(coupon._id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onEdit(coupon._id)}
+                      title="Edit"
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
@@ -108,6 +141,7 @@ function CouponsTable({
                       size="icon"
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
                       onClick={() => onDelete(coupon._id)}
+                      title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -117,7 +151,10 @@ function CouponsTable({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+              <TableCell
+                colSpan={8}
+                className="text-center text-muted-foreground py-6"
+              >
                 No coupons found.
               </TableCell>
             </TableRow>
@@ -145,12 +182,12 @@ export default function CouponsPage() {
   const loadCoupons = async () => {
     setLoading(true);
     const result = await fetchAllCouponsAction();
-    if (result.data && Array.isArray(result.data)) {
+    if (result?.data && Array.isArray(result.data)) {
       setCoupons(result.data);
     } else {
       toast({
         title: "Error",
-        description: result.error?.message || "Failed to load coupons",
+        description: result?.error?.message || "Failed to load coupons",
         variant: "destructive",
       });
     }
@@ -160,13 +197,13 @@ export default function CouponsPage() {
   const handleDelete = async (id: string) => {
     deleteOptimistic(id);
     const result = await deleteCouponAction(id);
-    if (result.error) {
+    if (result?.error) {
       toast({
         title: "Error",
         description: result.error.message || "Failed to delete coupon",
         variant: "destructive",
       });
-      await loadCoupons();
+      await loadCoupons(); // rollback optimistic update
     } else {
       toast({ title: "Deleted", description: "Coupon deleted successfully." });
     }
@@ -176,6 +213,7 @@ export default function CouponsPage() {
     loadCoupons();
   }, []);
 
+  // Filter and paginate
   const filteredCoupons = optimisticCoupons.filter((c) =>
     c.title.toLowerCase().includes(search.toLowerCase())
   );
@@ -206,12 +244,20 @@ export default function CouponsPage() {
       </CardHeader>
 
       <CardContent>
-        <Suspense fallback={<p className="p-4 text-muted-foreground">Loading coupons...</p>}>
+        <Suspense
+          fallback={
+            <div className="flex justify-center items-center py-8 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              Loading coupons...
+            </div>
+          }
+        >
           <CouponsTable
             coupons={paginatedCoupons}
             onView={(id) => router.push(`/admin/coupons/view/${id}`)}
             onEdit={(id) => router.push(`/admin/coupons/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
+            loading={loading}
           />
         </Suspense>
 
@@ -220,7 +266,9 @@ export default function CouponsPage() {
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} />
+                  <PaginationPrevious
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  />
                 </PaginationItem>
                 {Array.from({ length: totalPages }, (_, i) => (
                   <PaginationItem key={i}>
@@ -233,7 +281,9 @@ export default function CouponsPage() {
                   </PaginationItem>
                 ))}
                 <PaginationItem>
-                  <PaginationNext onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} />
+                  <PaginationNext
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  />
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
@@ -241,14 +291,22 @@ export default function CouponsPage() {
         )}
       </CardContent>
 
-      <Dialog open={!!confirmDeleteId} onOpenChange={() => setConfirmDeleteId(null)}>
+      <Dialog
+        open={!!confirmDeleteId}
+        onOpenChange={() => setConfirmDeleteId(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
-          <p>Are you sure you want to delete this coupon? This action cannot be undone.</p>
+          <p>
+            Are you sure you want to delete this coupon? This action cannot be
+            undone.
+          </p>
           <DialogFooter>
-            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
+              Cancel
+            </Button>
             <Button
               variant="destructive"
               onClick={() => {

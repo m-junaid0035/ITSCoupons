@@ -17,6 +17,15 @@ import {
 
 import { createUserAction } from "@/actions/userActions";
 import { fetchAllRolesAction } from "@/actions/roleActions";
+import { toast } from "@/hooks/use-toast";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface FieldErrors {
   [key: string]: string[];
@@ -54,6 +63,7 @@ export default function UserForm() {
   );
 
   const [roles, setRoles] = useState<Role[]>([]);
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
   useEffect(() => {
     async function loadRoles() {
@@ -73,136 +83,171 @@ export default function UserForm() {
       : null;
   };
 
-  // Redirect on success
+  // On success, open dialog. On error with message, show toast.
   useEffect(() => {
     if (formState.data && !formState.error) {
-      router.push("/admin/users");
+      setSuccessDialogOpen(true);
     }
-  }, [formState, router]);
+
+    if (formState.error && "message" in formState.error) {
+      toast({
+        title: "Error",
+        description:
+          (formState.error as any).message?.[0] || "Something went wrong",
+        variant: "destructive",
+      });
+    }
+  }, [formState]);
 
   return (
-    <Card className="max-w-3xl mx-auto shadow-lg bg-white">
-      <CardHeader className="flex items-center justify-between border-none">
-        <CardTitle>Create User</CardTitle>
-      </CardHeader>
+    <>
+      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
+        <CardHeader className="flex items-center justify-between border-none">
+          <CardTitle>Create User</CardTitle>
+        </CardHeader>
 
-      <CardContent>
-        <form
-          action={dispatch}
-          className="space-y-6 max-w-2xl mx-auto"
-          encType="multipart/form-data"
-        >
-          {/* Name */}
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input
-              id="name"
-              name="name"
-              required
-              className="border-none shadow-sm"
-            />
-            {errorFor("name") && (
-              <p className="text-sm text-red-500">{errorFor("name")}</p>
+        <CardContent>
+          <form
+            id="user-form"
+            action={dispatch}
+            className="space-y-6 max-w-2xl mx-auto"
+            encType="multipart/form-data"
+          >
+            {/* Name */}
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                name="name"
+                required
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="Enter user name"
+              />
+              {errorFor("name") && (
+                <p className="text-sm text-red-500">{errorFor("name")}</p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                required
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="user@example.com"
+              />
+              {errorFor("email") && (
+                <p className="text-sm text-red-500">{errorFor("email")}</p>
+              )}
+            </div>
+
+            {/* Password */}
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="Enter a secure password"
+              />
+              {errorFor("password") && (
+                <p className="text-sm text-red-500">{errorFor("password")}</p>
+              )}
+            </div>
+
+            {/* Role */}
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <select
+                id="role"
+                name="role"
+                required
+                className="w-full border rounded px-3 py-2 bg-gray-50 dark:bg-gray-700"
+              >
+                <option value="">Select a role</option>
+                {roles.map((role) => (
+                  <option key={role._id} value={role._id}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+              {errorFor("role") && (
+                <p className="text-sm text-red-500">{errorFor("role")}</p>
+              )}
+            </div>
+
+            {/* Image File Upload */}
+            <div className="space-y-2">
+              <Label htmlFor="image">Profile Image</Label>
+              <Input
+                id="image"
+                name="image"
+                type="file"
+                accept="image/*"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
+              {errorFor("image") && (
+                <p className="text-sm text-red-500">{errorFor("image")}</p>
+              )}
+            </div>
+
+            {/* Status (isActive) */}
+            <div className="space-y-2">
+              <Label htmlFor="isActive">Status</Label>
+              <select
+                id="isActive"
+                name="isActive"
+                className="w-full border rounded px-3 py-2 bg-gray-50 dark:bg-gray-700"
+              >
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+              {errorFor("isActive") && (
+                <p className="text-sm text-red-500">{errorFor("isActive")}</p>
+              )}
+            </div>
+
+            {/* General Error */}
+            {"message" in (formState.error ?? {}) && (
+              <p className="text-sm text-red-500">
+                {(formState.error as any).message?.[0]}
+              </p>
             )}
-          </div>
+          </form>
+        </CardContent>
 
-          {/* Email */}
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="border-none shadow-sm"
-            />
-            {errorFor("email") && (
-              <p className="text-sm text-red-500">{errorFor("email")}</p>
-            )}
-          </div>
+        <CardFooter className="flex justify-end border-none">
+          <Button type="submit" disabled={isPending} form="user-form">
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending ? "Saving..." : "Create User"}
+          </Button>
+        </CardFooter>
+      </Card>
 
-          {/* Password */}
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              required
-              className="border-none shadow-sm"
-            />
-            {errorFor("password") && (
-              <p className="text-sm text-red-500">{errorFor("password")}</p>
-            )}
-          </div>
-
-          {/* Role */}
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <select
-              id="role"
-              name="role"
-              required
-              className="w-full border rounded px-3 py-2"
+      {/* Success Confirmation Dialog */}
+      <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Success</DialogTitle>
+          </DialogHeader>
+          <p>User created successfully!</p>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setSuccessDialogOpen(false);
+                router.push("/admin/users");
+              }}
             >
-              <option value="">Select a role</option>
-              {roles.map((role) => (
-                <option key={role._id} value={role._id}>
-                  {role.name}
-                </option>
-              ))}
-            </select>
-            {errorFor("role") && (
-              <p className="text-sm text-red-500">{errorFor("role")}</p>
-            )}
-          </div>
-
-          {/* Image File Upload */}
-          <div className="space-y-2">
-            <Label htmlFor="image">Profile Image</Label>
-            <Input
-              id="image"
-              name="image"
-              type="file"
-              accept="image/*"
-              className="border-none shadow-sm"
-            />
-            {errorFor("image") && (
-              <p className="text-sm text-red-500">{errorFor("image")}</p>
-            )}
-          </div>
-
-          {/* Status (isActive) */}
-          <div className="space-y-2">
-            <Label htmlFor="isActive">Status</Label>
-            <select
-              id="isActive"
-              name="isActive"
-              className="w-full border rounded px-3 py-2"
-            >
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
-            {errorFor("isActive") && (
-              <p className="text-sm text-red-500">{errorFor("isActive")}</p>
-            )}
-          </div>
-
-          {/* General Error */}
-          {"message" in (formState.error ?? {}) && (
-            <p className="text-sm text-red-500">
-              {(formState.error as any).message?.[0]}
-            </p>
-          )}
-        </form>
-      </CardContent>
-
-      <CardFooter className="flex justify-end border-none">
-        <Button type="submit" disabled={isPending} form="user-form">
-          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isPending ? "Saving..." : "Create User"}
-        </Button>
-      </CardFooter>
-    </Card>
+              OK
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

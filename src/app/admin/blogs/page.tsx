@@ -1,6 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useState, useOptimistic } from "react";
+import {
+  Suspense,
+  useEffect,
+  useState,
+  useOptimistic,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   fetchAllBlogsAction,
@@ -39,7 +44,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 
 interface IBlog {
   _id: string;
@@ -59,17 +64,28 @@ function BlogsTable({
   onView,
   onEdit,
   onDelete,
+  loading,
 }: {
   blogs: IBlog[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  loading: boolean;
 }) {
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading blogs...
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="border-b border-muted">
             <TableHead>Title</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Description</TableHead>
@@ -85,7 +101,10 @@ function BlogsTable({
         <TableBody>
           {blogs.length > 0 ? (
             blogs.map((blog) => (
-              <TableRow key={blog._id} className="hover:bg-muted/40 transition-colors">
+              <TableRow
+                key={blog._id}
+                className="hover:bg-muted/40 transition-colors"
+              >
                 <TableCell className="font-medium">{blog.title}</TableCell>
                 <TableCell>{new Date(blog.date).toLocaleDateString()}</TableCell>
                 <TableCell className="line-clamp-2 max-w-xs">
@@ -144,7 +163,10 @@ function BlogsTable({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={10} className="text-center text-muted-foreground py-6">
+              <TableCell
+                colSpan={10}
+                className="text-center text-muted-foreground py-6"
+              >
                 No blogs found.
               </TableCell>
             </TableRow>
@@ -236,16 +258,13 @@ export default function BlogsPage() {
       </CardHeader>
 
       <CardContent>
-        <Suspense
-          fallback={
-            <p className="p-4 text-muted-foreground">Loading blogs...</p>
-          }
-        >
+        <Suspense fallback={<p className="p-4 text-muted-foreground">Loading blogs...</p>}>
           <BlogsTable
             blogs={paginatedBlogs}
             onView={(id) => router.push(`/admin/blogs/view/${id}`)}
             onEdit={(id) => router.push(`/admin/blogs/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
+            loading={loading}
           />
         </Suspense>
 
@@ -255,9 +274,7 @@ export default function BlogsPage() {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() =>
-                      setCurrentPage((p) => Math.max(1, p - 1))
-                    }
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   />
                 </PaginationItem>
                 {Array.from({ length: totalPages }, (_, i) => (
@@ -272,9 +289,7 @@ export default function BlogsPage() {
                 ))}
                 <PaginationItem>
                   <PaginationNext
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   />
                 </PaginationItem>
               </PaginationContent>
