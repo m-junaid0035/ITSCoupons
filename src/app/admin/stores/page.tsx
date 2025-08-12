@@ -1,13 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense, useOptimistic } from "react";
 import { useRouter } from "next/navigation";
-
-import {
-  fetchAllStoresAction,
-  deleteStoreAction,
-} from "@/actions/storeActions";
-
+import { fetchAllStoresAction, deleteStoreAction } from "@/actions/storeActions";
 import {
   Card,
   CardHeader,
@@ -15,6 +10,23 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableHeader,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Eye, Pencil, Trash2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface IStore {
   _id: string;
@@ -23,123 +35,195 @@ interface IStore {
   categories: string[];
   image: string;
   slug: string;
-  isPopular?: boolean; // ✅ NEW
-  isActive?: boolean;  // ✅ NEW
+  isPopular?: boolean;
+  isActive?: boolean;
+}
+
+function StoresTable({
+  stores,
+  onView,
+  onEdit,
+  onDelete,
+}: {
+  stores: IStore[];
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Store Network URL</TableHead>
+            <TableHead>Categories</TableHead>
+            <TableHead>Image</TableHead>
+            <TableHead>Slug</TableHead>
+            <TableHead>Popular</TableHead>
+            <TableHead>Active</TableHead>
+            <TableHead className="w-[120px] text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {stores.length > 0 ? (
+            stores.map((store) => (
+              <TableRow key={store._id} className="hover:bg-muted/40">
+                <TableCell>{store.name}</TableCell>
+                <TableCell>{store.storeNetworkUrl}</TableCell>
+                <TableCell>
+                  {store.categories.length > 0
+                    ? store.categories.join(", ")
+                    : "-"}
+                </TableCell>
+                <TableCell>
+                  <img
+                    src={store.image}
+                    alt={store.name}
+                    className="h-10 w-10 rounded object-cover border"
+                  />
+                </TableCell>
+                <TableCell>{store.slug}</TableCell>
+                <TableCell>{store.isPopular ? "✅" : "❌"}</TableCell>
+                <TableCell>{store.isActive ? "✅" : "❌"}</TableCell>
+                <TableCell>
+                  <div className="flex justify-end items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onView(store._id)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onEdit(store._id)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                      onClick={() => onDelete(store._id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell
+                colSpan={8}
+                className="text-center py-6 text-muted-foreground"
+              >
+                No stores found.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
 }
 
 export default function StoresPage() {
   const router = useRouter();
   const [stores, setStores] = useState<IStore[]>([]);
   const [loading, setLoading] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const [optimisticStores, deleteOptimistic] = useOptimistic(
+    stores,
+    (state, id: string) => state.filter((s) => s._id !== id)
+  );
 
   const loadStores = async () => {
     setLoading(true);
     const result = await fetchAllStoresAction();
-
     if (result.data && Array.isArray(result.data)) {
       setStores(result.data as IStore[]);
     } else {
-      console.error("Failed to fetch stores", result.error);
+      toast({
+        title: "Error",
+        description: result.error?.message || "Failed to load stores",
+        variant: "destructive",
+      });
     }
-
     setLoading(false);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this store?")) return;
-    setLoading(true);
-
+    deleteOptimistic(id);
     const result = await deleteStoreAction(id);
-
     if (result.error) {
-      alert(result.error.message?.[0] || "Failed to delete store");
-    } else {
+      toast({
+        title: "Error",
+        description: result.error.message || "Failed to delete store",
+        variant: "destructive",
+      });
       await loadStores();
+    } else {
+      toast({ title: "Deleted", description: "Store deleted successfully." });
     }
-
-    setLoading(false);
   };
 
   useEffect(() => {
     loadStores();
-  }, []); // Empty dependency array to run on component mount
+  }, []);
 
   return (
-    <Card>
-      <CardHeader className="flex items-center justify-between">
-        <CardTitle>Stores</CardTitle>
-        <Button onClick={() => router.push("/admin/stores/new")}>Create Store</Button>
+    <Card className="w-full border-none shadow-none">
+      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <CardTitle className="text-lg font-semibold">Stores</CardTitle>
+        <Button onClick={() => router.push("/admin/stores/new")}>
+          Create Store
+        </Button>
       </CardHeader>
 
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="p-2 text-left">Name</th>
-                <th className="p-2 text-left">Store Network URL</th>
-                <th className="p-2 text-left">Categories</th>
-                <th className="p-2 text-left">Image</th>
-                <th className="p-2 text-left">Slug</th>
-                <th className="p-2 text-left">Popular</th> {/* ✅ NEW */}
-                <th className="p-2 text-left">Active</th>  {/* ✅ NEW */}
-                <th className="p-2 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stores.length > 0 ? (
-                stores.map((store) => (
-                  <tr key={store._id} className="border-b hover:bg-muted/50">
-                    <td className="p-2">{store.name}</td>
-                    <td className="p-2">{store.storeNetworkUrl}</td>
-                    <td className="p-2">
-                      {store.categories.length > 0
-                        ? store.categories.join(", ")
-                        : "-"}
-                    </td>
-                    <td className="p-2">
-                      <img
-                        src={store.image}
-                        alt={store.name}
-                        className="h-10 w-10 object-cover rounded"
-                      />
-                    </td>
-                    <td className="p-2">{store.slug}</td>
-                    <td className="p-2">{store.isPopular ? "✅" : "❌"}</td> {/* ✅ NEW */}
-                    <td className="p-2">{store.isActive ? "✅" : "❌"}</td>   {/* ✅ NEW */}
-                    <td className="p-2 space-x-2">
-                      <Button
-                        variant="secondary"
-                        onClick={() => router.push(`/admin/stores/view/${store._id}`)}
-                      >
-                        View
-                      </Button>
-                      <Button
-                        onClick={() => router.push(`/admin/stores/edit/${store._id}`)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleDelete(store._id)}
-                        disabled={loading} // Disable delete button during loading
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} className="p-4 text-center text-muted-foreground">
-                    No stores found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Suspense fallback={<p className="p-4 text-muted-foreground">Loading stores...</p>}>
+          <StoresTable
+            stores={optimisticStores}
+            onView={(id) => router.push(`/admin/stores/view/${id}`)}
+            onEdit={(id) => router.push(`/admin/stores/edit/${id}`)}
+            onDelete={(id) => setConfirmDeleteId(id)}
+          />
+        </Suspense>
       </CardContent>
+
+      <Dialog
+        open={!!confirmDeleteId}
+        onOpenChange={() => setConfirmDeleteId(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+          </DialogHeader>
+          <p>
+            Are you sure you want to delete this store? This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (confirmDeleteId) handleDelete(confirmDeleteId);
+                setConfirmDeleteId(null);
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

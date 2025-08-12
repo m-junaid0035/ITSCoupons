@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useOptimistic } from "react";
 import { useRouter } from "next/navigation";
 import {
   fetchAllCouponsAction,
@@ -14,6 +14,32 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Eye, Pencil, Trash2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface ICoupon {
   _id: string;
@@ -26,119 +52,215 @@ interface ICoupon {
   isTopOne?: boolean;
 }
 
+function CouponsTable({
+  coupons,
+  onView,
+  onEdit,
+  onDelete,
+}: {
+  coupons: ICoupon[];
+  onView: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Title</TableHead>
+            <TableHead>Code</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Expires</TableHead>
+            <TableHead>Store</TableHead>
+            <TableHead>Top One</TableHead>
+            <TableHead className="w-[140px] text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {coupons.length > 0 ? (
+            coupons.map((coupon) => (
+              <TableRow key={coupon._id} className="hover:bg-muted/40">
+                <TableCell>{coupon.title}</TableCell>
+                <TableCell>{coupon.couponCode}</TableCell>
+                <TableCell className="capitalize">{coupon.couponType}</TableCell>
+                <TableCell className="capitalize">{coupon.status}</TableCell>
+                <TableCell>{new Date(coupon.expirationDate).toLocaleDateString()}</TableCell>
+                <TableCell>{coupon.storeName || "-"}</TableCell>
+                <TableCell>
+                  {coupon.isTopOne ? (
+                    <span className="text-green-600 font-semibold">Yes</span>
+                  ) : (
+                    <span className="text-gray-400">No</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <div className="flex justify-end items-center gap-2">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onView(coupon._id)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(coupon._id)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                      onClick={() => onDelete(coupon._id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                No coupons found.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
 export default function CouponsPage() {
   const router = useRouter();
   const [coupons, setCoupons] = useState<ICoupon[]>([]);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const pageSize = 8;
 
-  async function loadCoupons() {
+  const [optimisticCoupons, deleteOptimistic] = useOptimistic(
+    coupons,
+    (state, id: string) => state.filter((c) => c._id !== id)
+  );
+
+  const loadCoupons = async () => {
     setLoading(true);
     const result = await fetchAllCouponsAction();
-
     if (result.data && Array.isArray(result.data)) {
-      setCoupons(result.data as ICoupon[]);
+      setCoupons(result.data);
     } else {
-      console.error("Failed to fetch coupons", result.error);
+      toast({
+        title: "Error",
+        description: result.error?.message || "Failed to load coupons",
+        variant: "destructive",
+      });
     }
-
     setLoading(false);
-  }
+  };
 
-  async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this coupon?")) return;
-    setLoading(true);
-
+  const handleDelete = async (id: string) => {
+    deleteOptimistic(id);
     const result = await deleteCouponAction(id);
-
     if (result.error) {
-      alert(result.error.message?.[0] || "Failed to delete coupon");
-    } else {
+      toast({
+        title: "Error",
+        description: result.error.message || "Failed to delete coupon",
+        variant: "destructive",
+      });
       await loadCoupons();
+    } else {
+      toast({ title: "Deleted", description: "Coupon deleted successfully." });
     }
-
-    setLoading(false);
-  }
+  };
 
   useEffect(() => {
     loadCoupons();
   }, []);
 
+  const filteredCoupons = optimisticCoupons.filter((c) =>
+    c.title.toLowerCase().includes(search.toLowerCase())
+  );
+  const totalPages = Math.ceil(filteredCoupons.length / pageSize);
+  const paginatedCoupons = filteredCoupons.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   return (
-    <Card>
-      <CardHeader className="flex items-center justify-between">
-        <CardTitle>Coupons</CardTitle>
-        <Button onClick={() => router.push("/admin/coupons/new")}>
-          Create Coupon
-        </Button>
+    <Card className="w-full border-none shadow-none">
+      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <CardTitle className="text-lg font-semibold">Coupons</CardTitle>
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <Input
+            placeholder="Search coupons..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="sm:w-64"
+          />
+          <Button onClick={() => router.push("/admin/coupons/new")}>
+            Create Coupon
+          </Button>
+        </div>
       </CardHeader>
 
       <CardContent>
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="border-b">
-                <th className="p-2 text-left">Title</th>
-                <th className="p-2 text-left">Code</th>
-                <th className="p-2 text-left">Type</th>
-                <th className="p-2 text-left">Status</th>
-                <th className="p-2 text-left">Expires</th>
-                <th className="p-2 text-left">Store</th>
-                <th className="p-2 text-left">Top One</th>
-                <th className="p-2 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {coupons.length > 0 ? (
-                coupons.map((coupon) => (
-                  <tr key={coupon._id} className="border-b hover:bg-muted/50">
-                    <td className="p-2">{coupon.title}</td>
-                    <td className="p-2">{coupon.couponCode}</td>
-                    <td className="p-2 capitalize">{coupon.couponType}</td>
-                    <td className="p-2 capitalize">{coupon.status}</td>
-                    <td className="p-2">
-                      {new Date(coupon.expirationDate).toLocaleDateString()}
-                    </td>
-                    <td className="p-2">{coupon.storeName || "-"}</td>
-                    <td className="p-2">
-                      {coupon.isTopOne ? (
-                        <span className="text-green-600 font-semibold">Yes</span>
-                      ) : (
-                        <span className="text-gray-400">No</span>
-                      )}
-                    </td>
-                    <td className="p-2 space-x-2">
-                      <Button
-                        variant="secondary"
-                        onClick={() => router.push(`/admin/coupons/view/${coupon._id}`)}
-                      >
-                        View
-                      </Button>
-                      <Button
-                        onClick={() => router.push(`/admin/coupons/edit/${coupon._id}`)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleDelete(coupon._id)}
-                        disabled={loading}
-                      >
-                        Delete
-                      </Button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={8} className="p-4 text-center text-muted-foreground">
-                    No coupons found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <Suspense fallback={<p className="p-4 text-muted-foreground">Loading coupons...</p>}>
+          <CouponsTable
+            coupons={paginatedCoupons}
+            onView={(id) => router.push(`/admin/coupons/view/${id}`)}
+            onEdit={(id) => router.push(`/admin/coupons/edit/${id}`)}
+            onDelete={(id) => setConfirmDeleteId(id)}
+          />
+        </Suspense>
+
+        {totalPages > 1 && (
+          <div className="mt-4 flex justify-center">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} />
+                </PaginationItem>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      isActive={currentPage === i + 1}
+                      onClick={() => setCurrentPage(i + 1)}
+                    >
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </CardContent>
+
+      <Dialog open={!!confirmDeleteId} onOpenChange={() => setConfirmDeleteId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+          </DialogHeader>
+          <p>Are you sure you want to delete this coupon? This action cannot be undone.</p>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (confirmDeleteId) handleDelete(confirmDeleteId);
+                setConfirmDeleteId(null);
+              }}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

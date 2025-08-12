@@ -11,6 +11,7 @@ import {
   Gift,
   Calendar,
   Key,
+  Square,
 } from "lucide-react";
 
 type Submenu = {
@@ -116,7 +117,7 @@ export function getMenuList(pathname: string): Group[] {
         {
           href: "",
           label: "Blogs",
-          icon: Key,
+          icon: SquarePen,
           submenus: [
             {
               href: "/admin/blogs",

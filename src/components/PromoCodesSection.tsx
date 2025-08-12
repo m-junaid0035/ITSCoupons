@@ -17,7 +17,7 @@ export default function PromoCodesSection({
 
   if (loading) {
     return (
-      <div className="bg-gray-100 py-10 flex justify-center items-center text-purple-700 font-semibold">
+      <div className="max-w-5xl mx-auto py-10 px-4 flex justify-center items-center text-purple-700 font-semibold">
         Loading coupons...
       </div>
     );
@@ -25,7 +25,7 @@ export default function PromoCodesSection({
 
   if (!coupons.length) {
     return (
-      <div className="bg-gray-100 py-10 text-center text-purple-700 font-semibold">
+      <div className="max-w-5xl mx-auto py-10 px-4 text-center text-purple-700 font-semibold">
         No coupons available.
       </div>
     );
@@ -42,113 +42,96 @@ export default function PromoCodesSection({
   };
 
   return (
-    <div className="bg-gray-100 py-10">
-      <div className="max-w-5xl mx-auto px-4">
-        <h2 className="text-2xl font-bold text-purple-700 text-center mb-2">
-          Top Coupons & Promo Codes
-        </h2>
+    <div className="max-w-5xl mx-auto py-10 px-4">
+      <h2 className="text-2xl font-bold text-purple-700 text-center mb-6">
+        Top Coupons & Promo Codes
+      </h2>
 
-        <div className="flex justify-end mb-4">
-          <a href="#" className="text-sm text-purple-700 hover:underline">
-            VIEW ALL
-          </a>
-        </div>
+      <div className="flex justify-end mb-6">
+        <a href="#" className="text-sm text-purple-700 hover:underline">
+          VIEW ALL
+        </a>
+      </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {coupons.map((coupon, idx) => {
-            const expiration = coupon.expirationDate
-              ? new Date(coupon.expirationDate).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })
-              : "N/A";
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-items-center">
+        {coupons.map((coupon, idx) => {
+          const expiration = coupon.expirationDate
+            ? new Date(coupon.expirationDate).toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })
+            : "N/A";
 
-            const iconLetter = (
-              coupon.store?.name?.charAt(0) ||
-              coupon.storeName?.charAt(0) ||
-              coupon.title.charAt(0)
-            )?.toUpperCase();
+          const displayStoreName =
+            coupon.store?.name || coupon.storeName || "Unknown Store";
 
-            const displayStoreName =
-              coupon.store?.name || coupon.storeName || "Unknown Store";
+          const iconLetter = (displayStoreName.charAt(0) || coupon.title.charAt(0)).toUpperCase();
 
-            return (
-              <div
-                key={coupon._id || idx}
-                className="w-[301px] mx-auto rounded-[12px] overflow-hidden shadow-md"
-              >
-                {/* Upper image box */}
-                <div className="relative">
-                  {coupon.store?.image ? (
-                    <img
-                      src={coupon.store.image}
-                      alt={displayStoreName}
-                      className="w-[301px] h-[150px] object-cover rounded-t-[12px]"
-                    />
-                  ) : (
-                    <div className="bg-gray-300 w-[301px] h-[150px] rounded-t-[12px]" />
-                  )}
-
-                  {/* Middle purple icon box */}
-                  <div
-                    className="absolute -bottom-[32px] left-[20px] w-[65.82px] h-[65.82px] 
-                    bg-purple-700 flex items-center justify-center text-white font-bold text-lg 
-                    rounded-md shadow-md"
-                  >
-                    {iconLetter}
+          return (
+            <div
+              key={coupon._id || idx}
+              className="flex flex-col items-center w-full max-w-[247px] bg-white rounded-[12px] shadow-lg hover:shadow-xl transition-shadow duration-300"
+            >
+              {/* Image Box */}
+              <div className="w-full h-[150px] bg-gray-100 rounded-t-[12px] overflow-hidden">
+                {coupon.store?.image ? (
+                  <img
+                    src={coupon.store.image}
+                    alt={displayStoreName}
+                    className="w-full h-full object-cover rounded-t-[12px]"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm rounded-t-[12px]">
+                    No Image
                   </div>
+                )}
+              </div>
 
-                  {/* Store name next to icon */}
-                  <div className="absolute -bottom-[20px] left-[95px] text-purple-700 font-bold text-base">
-                    {displayStoreName}
-                  </div>
-                </div>
-
-                {/* Lower content box */}
+              {/* Icon Letter & Store Name below image */}
+              <div className="flex items-center space-x-3 mt-3 px-4 w-full">
                 <div
-                  className="bg-white rounded-b-[12px] px-4 pt-[50px] pb-4 text-left 
-                  h-[148px] flex flex-col justify-between 
-                  shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]"
+                  className="flex items-center justify-center bg-purple-700 text-white font-bold text-xl rounded-full w-12 h-12 shadow-md"
+                  aria-label={`Store initial ${iconLetter}`}
                 >
-                  <p className="text-sm font-semibold text-gray-700">
-                    {coupon.title}
-                  </p>
-
-                  <span className="text-xs text-purple-600 font-medium">
-                    Expires:{" "}
-                    <span className="font-bold">{expiration}</span>
-                  </span>
-
-                  {/* Show coupon code button inside lower box */}
-                  <div className="mt-2">
-                    <button
-                      onClick={() =>
-                        setShowCodeIndex(showCodeIndex === idx ? null : idx)
-                      }
-                      className="w-[218.07px] h-[19.55px] 
-                      bg-gray-200 text-gray-800 font-semibold text-xs rounded-full 
-                      py-[3px] px-[14px] hover:bg-purple-200 transition"
-                    >
-                      {showCodeIndex === idx
-                        ? coupon.couponCode
-                        : "Show Coupon Code"}
-                    </button>
-
-                    {showCodeIndex === idx && (
-                      <button
-                        onClick={() => handleCopy(coupon.couponCode, idx)}
-                        className="mt-2 w-full bg-purple-700 text-white font-semibold text-xs rounded-full py-2 hover:bg-purple-800 transition"
-                      >
-                        {copiedIndex === idx ? "Copied!" : "Copy Code"}
-                      </button>
-                    )}
-                  </div>
+                  {iconLetter}
+                </div>
+                <div className="text-purple-700 font-semibold text-lg truncate">
+                  {displayStoreName}
                 </div>
               </div>
-            );
-          })}
-        </div>
+
+              {/* Content Box */}
+              <div className="w-full p-4 flex flex-col justify-between h-[148px]">
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-sm mb-1 truncate" title={coupon.title}>
+                    {coupon.title}
+                  </h3>
+                  <p className="text-xs text-purple-600 font-medium">
+                    Expires: <span className="font-semibold">{expiration}</span>
+                  </p>
+                </div>
+
+                {coupon.couponCode && (
+                  <button
+                    onClick={() => {
+                      setShowCodeIndex(showCodeIndex === idx ? null : idx);
+                      if (showCodeIndex !== idx) handleCopy(coupon.couponCode, idx);
+                    }}
+                    className="mt-3 w-full bg-gray-200 text-gray-800 font-semibold text-xs rounded-full py-2 px-4 hover:bg-purple-200 transition"
+                    title={showCodeIndex === idx ? coupon.couponCode : "Click to copy coupon code"}
+                  >
+                    {showCodeIndex === idx
+                      ? copiedIndex === idx
+                        ? "Copied!"
+                        : coupon.couponCode
+                      : "Show Coupon Code"}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

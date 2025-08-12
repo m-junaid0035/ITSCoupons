@@ -1,16 +1,26 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useActionState } from "react"; // adjust if needed
+import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 
 import { createStoreAction } from "@/actions/storeActions";
 import { fetchAllCategoriesAction } from "@/actions/categoryActions";
 
 interface FormState {
-  error?: Record<string, string[]>;
+  error?: Record<string, string[]> | { message?: string[] };
   data?: any;
 }
 
@@ -24,11 +34,11 @@ interface Category {
 }
 
 export default function StoreForm() {
+  const router = useRouter();
   const [formState, dispatch, isPending] = useActionState(
     createStoreAction,
     initialState
   );
-
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
@@ -41,158 +51,221 @@ export default function StoreForm() {
     loadCategories();
   }, []);
 
+  const errorFor = (field: string) => {
+    return formState.error &&
+      typeof formState.error === "object" &&
+      field in formState.error
+      ? (formState.error as Record<string, string[]>)[field]?.[0]
+      : null;
+  };
+
+  // Redirect or other effect on success
+  useEffect(() => {
+    if (formState.data && !formState.error) {
+      router.push("/admin/stores");
+    }
+  }, [formState, router]);
+
   return (
-    <form action={dispatch} className="space-y-6 max-w-2xl">
-      {/* Store Name */}
-      <div className="space-y-2">
-        <Label htmlFor="name">Store Name</Label>
-        <Input id="name" name="name" required />
-        {formState.error?.name && (
-          <p className="text-sm text-red-500">{formState.error.name[0]}</p>
-        )}
-      </div>
+    <Card className="max-w-3xl mx-auto shadow-lg bg-white">
+      <CardHeader className="flex items-center justify-between border-none">
+        <CardTitle>Create Store</CardTitle>
+      </CardHeader>
 
-      {/* Store Network URL */}
-      <div className="space-y-2">
-        <Label htmlFor="storeNetworkUrl">Store Network URL</Label>
-        <Input id="storeNetworkUrl" name="storeNetworkUrl" type="url" required />
-        {formState.error?.storeNetworkUrl && (
-          <p className="text-sm text-red-500">{formState.error.storeNetworkUrl[0]}</p>
-        )}
-      </div>
+      <CardContent>
+        <form action={dispatch} className="space-y-6 max-w-2xl mx-auto">
+          {/* Store Name */}
+          <div className="space-y-2">
+            <Label htmlFor="name">Store Name</Label>
+            <Input id="name" name="name" required className="border-none shadow-sm" />
+            {errorFor("name") && (
+              <p className="text-sm text-red-500">{errorFor("name")}</p>
+            )}
+          </div>
 
-      {/* Categories */}
-      <div className="space-y-2">
-        <Label>Categories</Label>
-        <div className="grid grid-cols-2 gap-2">
-          {categories.map((cat) => (
-            <label key={cat._id} className="flex items-center space-x-2">
+          {/* Store Network URL */}
+          <div className="space-y-2">
+            <Label htmlFor="storeNetworkUrl">Store Network URL</Label>
+            <Input
+              id="storeNetworkUrl"
+              name="storeNetworkUrl"
+              type="url"
+              required
+              className="border-none shadow-sm"
+            />
+            {errorFor("storeNetworkUrl") && (
+              <p className="text-sm text-red-500">{errorFor("storeNetworkUrl")}</p>
+            )}
+          </div>
+
+          {/* Categories */}
+          <div className="space-y-2">
+            <Label>Categories</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {categories.map((cat) => (
+                <label key={cat._id} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="categories"
+                    value={cat._id}
+                    className="h-4 w-4"
+                  />
+                  <span>{cat.name}</span>
+                </label>
+              ))}
+            </div>
+            {errorFor("categories") && (
+              <p className="text-sm text-red-500">{errorFor("categories")}</p>
+            )}
+          </div>
+
+          {/* Total Coupon Used Times */}
+          <div className="space-y-2">
+            <Label htmlFor="totalCouponUsedTimes">Total Coupon Used Times</Label>
+            <Input
+              id="totalCouponUsedTimes"
+              name="totalCouponUsedTimes"
+              type="number"
+              defaultValue={0}
+              className="border-none shadow-sm"
+            />
+            {errorFor("totalCouponUsedTimes") && (
+              <p className="text-sm text-red-500">{errorFor("totalCouponUsedTimes")}</p>
+            )}
+          </div>
+
+          {/* Image URL */}
+          <div className="space-y-2">
+            <Label htmlFor="image">Image URL</Label>
+            <Input
+              id="image"
+              name="image"
+              type="url"
+              required
+              className="border-none shadow-sm"
+            />
+            {errorFor("image") && (
+              <p className="text-sm text-red-500">{errorFor("image")}</p>
+            )}
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              name="description"
+              rows={4}
+              required
+              className="border-none shadow-sm"
+            />
+            {errorFor("description") && (
+              <p className="text-sm text-red-500">{errorFor("description")}</p>
+            )}
+          </div>
+
+          {/* Meta Title */}
+          <div className="space-y-2">
+            <Label htmlFor="metaTitle">Meta Title</Label>
+            <Input
+              id="metaTitle"
+              name="metaTitle"
+              required
+              className="border-none shadow-sm"
+            />
+            {errorFor("metaTitle") && (
+              <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
+            )}
+          </div>
+
+          {/* Meta Description */}
+          <div className="space-y-2">
+            <Label htmlFor="metaDescription">Meta Description</Label>
+            <Textarea
+              id="metaDescription"
+              name="metaDescription"
+              rows={3}
+              required
+              className="border-none shadow-sm"
+            />
+            {errorFor("metaDescription") && (
+              <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
+            )}
+          </div>
+
+          {/* Meta Keywords */}
+          <div className="space-y-2">
+            <Label htmlFor="metaKeywords">Meta Keywords (comma separated)</Label>
+            <Input
+              id="metaKeywords"
+              name="metaKeywords"
+              className="border-none shadow-sm"
+            />
+            {errorFor("metaKeywords") && (
+              <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
+            )}
+          </div>
+
+          {/* Focus Keywords */}
+          <div className="space-y-2">
+            <Label htmlFor="focusKeywords">Focus Keywords (comma separated)</Label>
+            <Input
+              id="focusKeywords"
+              name="focusKeywords"
+              className="border-none shadow-sm"
+            />
+            {errorFor("focusKeywords") && (
+              <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>
+            )}
+          </div>
+
+          {/* isPopular */}
+          <div className="space-y-2">
+            <label className="flex items-center space-x-2">
               <input
                 type="checkbox"
-                name="categories"
-                value={cat._id}
+                name="isPopular"
                 className="h-4 w-4"
               />
-              <span>{cat.name}</span>
+              <span>Mark as Popular</span>
             </label>
-          ))}
-        </div>
-        {formState.error?.categories && (
-          <p className="text-sm text-red-500">{formState.error.categories[0]}</p>
-        )}
-      </div>
+          </div>
 
-      {/* Total Coupon Used Times */}
-      <div className="space-y-2">
-        <Label htmlFor="totalCouponUsedTimes">Total Coupon Used Times</Label>
-        <Input
-          id="totalCouponUsedTimes"
-          name="totalCouponUsedTimes"
-          type="number"
-          defaultValue={0}
-        />
-        {formState.error?.totalCouponUsedTimes && (
-          <p className="text-sm text-red-500">{formState.error.totalCouponUsedTimes[0]}</p>
-        )}
-      </div>
+          {/* isActive */}
+          <div className="space-y-2">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                name="isActive"
+                defaultChecked
+                className="h-4 w-4"
+              />
+              <span>Mark as Active</span>
+            </label>
+          </div>
 
-      {/* Image URL */}
-      <div className="space-y-2">
-        <Label htmlFor="image">Image URL</Label>
-        <Input id="image" name="image" type="url" required />
-        {formState.error?.image && (
-          <p className="text-sm text-red-500">{formState.error.image[0]}</p>
-        )}
-      </div>
+          {/* Slug */}
+          <div className="space-y-2">
+            <Label htmlFor="slug">Slug</Label>
+            <Input id="slug" name="slug" required className="border-none shadow-sm" />
+            {errorFor("slug") && (
+              <p className="text-sm text-red-500">{errorFor("slug")}</p>
+            )}
+          </div>
 
-      {/* Description */}
-      <div className="space-y-2">
-        <Label htmlFor="description">Description</Label>
-        <Textarea id="description" name="description" rows={4} required />
-        {formState.error?.description && (
-          <p className="text-sm text-red-500">{formState.error.description[0]}</p>
-        )}
-      </div>
+          {/* General Error */}
+          {"message" in (formState.error ?? {}) && (
+            <p className="text-sm text-red-500">{(formState.error as any).message?.[0]}</p>
+          )}
+        </form>
+      </CardContent>
 
-      {/* Meta Title */}
-      <div className="space-y-2">
-        <Label htmlFor="metaTitle">Meta Title</Label>
-        <Input id="metaTitle" name="metaTitle" required />
-        {formState.error?.metaTitle && (
-          <p className="text-sm text-red-500">{formState.error.metaTitle[0]}</p>
-        )}
-      </div>
-
-      {/* Meta Description */}
-      <div className="space-y-2">
-        <Label htmlFor="metaDescription">Meta Description</Label>
-        <Textarea id="metaDescription" name="metaDescription" rows={3} required />
-        {formState.error?.metaDescription && (
-          <p className="text-sm text-red-500">{formState.error.metaDescription[0]}</p>
-        )}
-      </div>
-
-      {/* Meta Keywords */}
-      <div className="space-y-2">
-        <Label htmlFor="metaKeywords">Meta Keywords (comma separated)</Label>
-        <Input id="metaKeywords" name="metaKeywords" />
-        {formState.error?.metaKeywords && (
-          <p className="text-sm text-red-500">{formState.error.metaKeywords[0]}</p>
-        )}
-      </div>
-
-      {/* Focus Keywords */}
-      <div className="space-y-2">
-        <Label htmlFor="focusKeywords">Focus Keywords (comma separated)</Label>
-        <Input id="focusKeywords" name="focusKeywords" />
-        {formState.error?.focusKeywords && (
-          <p className="text-sm text-red-500">{formState.error.focusKeywords[0]}</p>
-        )}
-      </div>
-
-      {/* ✅ isPopular */}
-      <div className="space-y-2">
-        <label className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="isPopular"
-            className="h-4 w-4"
-          />
-          <span>Mark as Popular</span>
-        </label>
-      </div>
-
-      {/* ✅ isActive */}
-      <div className="space-y-2">
-        <label className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            name="isActive"
-            defaultChecked
-            className="h-4 w-4"
-          />
-          <span>Mark as Active</span>
-        </label>
-      </div>
-
-      {/* Slug */}
-      <div className="space-y-2">
-        <Label htmlFor="slug">Slug</Label>
-        <Input id="slug" name="slug" required />
-        {formState.error?.slug && (
-          <p className="text-sm text-red-500">{formState.error.slug[0]}</p>
-        )}
-      </div>
-
-      {/* Submit */}
-      <Button type="submit" disabled={isPending}>
-        {isPending ? "Saving..." : "Save Store"}
-      </Button>
-
-      {/* General Error */}
-      {formState.error?.message && (
-        <p className="text-sm text-red-500">{formState.error.message[0]}</p>
-      )}
-    </form>
+      <CardFooter className="flex justify-end border-none">
+        <Button type="submit" disabled={isPending} form="store-form">
+          {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isPending ? "Saving..." : "Save Store"}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }

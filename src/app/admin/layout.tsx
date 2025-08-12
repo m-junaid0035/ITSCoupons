@@ -44,7 +44,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={GeistSans.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AdminPanelLayout><Navbar title="Admin"/>{children}</AdminPanelLayout>;
+          <AdminPanelLayout><Navbar title="Admin"/>
+          {children}</AdminPanelLayout>;
         </ThemeProvider>
       </body>
     </html>
