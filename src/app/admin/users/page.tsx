@@ -1,8 +1,17 @@
 "use client";
 
-import { useEffect, useState, Suspense, useOptimistic } from "react";
+import {
+  Suspense,
+  useEffect,
+  useState,
+  useOptimistic,
+} from "react";
 import { useRouter } from "next/navigation";
-import { fetchAllUsersAction, deleteUserAction } from "@/actions/userActions";
+import {
+  fetchAllUsersAction,
+  deleteUserAction,
+} from "@/actions/userActions";
+
 import {
   Card,
   CardHeader,
@@ -10,14 +19,16 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
-  TableHeader,
-  TableHead,
-  TableRow,
-  TableCell,
   TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
+import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +36,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Eye, Pencil, Trash2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 
 interface IUser {
   _id: string;
@@ -43,30 +61,44 @@ function UsersTable({
   onView,
   onEdit,
   onDelete,
+  loading,
 }: {
   users: IUser[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  loading: boolean;
 }) {
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading users...
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
-          <TableRow>
+          <TableRow className="border-b border-muted">
             <TableHead>Image</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Email</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Active</TableHead>
             <TableHead>Created</TableHead>
-            <TableHead className="w-[120px] text-right">Actions</TableHead>
+            <TableHead className="w-[140px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {users.length > 0 ? (
             users.map((user) => (
-              <TableRow key={user._id} className="hover:bg-muted/40">
+              <TableRow
+                key={user._id}
+                className="hover:bg-muted/40 transition-colors"
+              >
                 <TableCell>
                   {user.image ? (
                     <img
@@ -78,7 +110,7 @@ function UsersTable({
                     "-"
                   )}
                 </TableCell>
-                <TableCell>{user.name}</TableCell>
+                <TableCell className="font-medium">{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.role}</TableCell>
                 <TableCell>{user.isActive ? "✅" : "❌"}</TableCell>
@@ -88,12 +120,13 @@ function UsersTable({
                     : "-"}
                 </TableCell>
                 <TableCell>
-                  <div className="flex justify-end items-center gap-2">
+                  <div className="flex justify-end items-center gap-1.5">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => onView(user._id)}
+                      title="View"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -102,6 +135,7 @@ function UsersTable({
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => onEdit(user._id)}
+                      title="Edit"
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -110,6 +144,7 @@ function UsersTable({
                       size="icon"
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
                       onClick={() => onDelete(user._id)}
+                      title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -121,7 +156,7 @@ function UsersTable({
             <TableRow>
               <TableCell
                 colSpan={7}
-                className="text-center py-6 text-muted-foreground"
+                className="text-center text-muted-foreground py-6"
               >
                 No users found.
               </TableCell>
@@ -136,23 +171,26 @@ function UsersTable({
 export default function UsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<IUser[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const pageSize = 8;
 
   const [optimisticUsers, deleteOptimistic] = useOptimistic(
     users,
-    (state, id: string) => state.filter((u) => u._id !== id)
+    (state, id: string) => state.filter((user) => user._id !== id)
   );
 
   const loadUsers = async () => {
     setLoading(true);
     const result = await fetchAllUsersAction();
-    if (result.data && Array.isArray(result.data)) {
-      setUsers(result.data as IUser[]);
+    if (result?.data && Array.isArray(result.data)) {
+      setUsers(result.data);
     } else {
       toast({
         title: "Error",
-        description: result.error?.message || "Failed to load users",
+        description: result?.error?.message || "Failed to fetch users",
         variant: "destructive",
       });
     }
@@ -162,15 +200,18 @@ export default function UsersPage() {
   const handleDelete = async (id: string) => {
     deleteOptimistic(id);
     const result = await deleteUserAction(id);
-    if (result.error) {
+    if (result?.error) {
       toast({
         title: "Error",
         description: result.error.message || "Failed to delete user",
         variant: "destructive",
       });
-      await loadUsers();
+      await loadUsers(); // rollback optimistic update
     } else {
-      toast({ title: "Deleted", description: "User deleted successfully." });
+      toast({
+        title: "Deleted",
+        description: "User deleted successfully.",
+      });
     }
   };
 
@@ -178,24 +219,82 @@ export default function UsersPage() {
     loadUsers();
   }, []);
 
+  // Filter and paginate users
+  const filteredUsers = optimisticUsers.filter((user) =>
+    user.name.toLowerCase().includes(search.toLowerCase())
+  );
+  const totalPages = Math.ceil(filteredUsers.length / pageSize);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   return (
     <Card className="w-full border-none shadow-none">
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <CardTitle className="text-lg font-semibold">Users</CardTitle>
-        <Button onClick={() => router.push("/admin/users/new")}>
-          Create User
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <Input
+            placeholder="Search users..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="sm:w-64"
+          />
+          <Button onClick={() => router.push("/admin/users/new")}>
+            Create User
+          </Button>
+        </div>
       </CardHeader>
 
       <CardContent>
-        <Suspense fallback={<p className="p-4 text-muted-foreground">Loading users...</p>}>
+        <Suspense
+          fallback={
+            <div className="flex justify-center items-center py-8 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              Loading users...
+            </div>
+          }
+        >
           <UsersTable
-            users={optimisticUsers}
+            users={paginatedUsers}
             onView={(id) => router.push(`/admin/users/view/${id}`)}
             onEdit={(id) => router.push(`/admin/users/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
+            loading={loading}
           />
         </Suspense>
+
+        {totalPages > 1 && (
+          <div className="mt-4 flex justify-center">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  />
+                </PaginationItem>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      isActive={currentPage === i + 1}
+                      onClick={() => setCurrentPage(i + 1)}
+                    >
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </CardContent>
 
       <Dialog

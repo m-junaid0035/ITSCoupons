@@ -1,6 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useState, useOptimistic } from "react";
+import {
+  Suspense,
+  useEffect,
+  useState,
+  useOptimistic,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   fetchAllEventsAction,
@@ -14,6 +19,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -29,8 +35,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import Image from "next/image";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface IEvent {
@@ -51,12 +65,23 @@ function EventsTable({
   onView,
   onEdit,
   onDelete,
+  loading,
 }: {
   events: IEvent[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  loading: boolean;
 }) {
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading events...
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -106,12 +131,13 @@ function EventsTable({
                 <TableCell>{event.focusKeywords || "-"}</TableCell>
                 <TableCell>{event.slug || "-"}</TableCell>
                 <TableCell>
-                  <div className="flex justify-end items-center gap-2">
+                  <div className="flex justify-end items-center gap-1.5">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => onView(event._id)}
+                      title="View"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -120,6 +146,7 @@ function EventsTable({
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => onEdit(event._id)}
+                      title="Edit"
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -128,6 +155,7 @@ function EventsTable({
                       size="icon"
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
                       onClick={() => onDelete(event._id)}
+                      title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -154,8 +182,11 @@ function EventsTable({
 export default function EventsPage() {
   const router = useRouter();
   const [events, setEvents] = useState<IEvent[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const pageSize = 8;
 
   const [optimisticEvents, deleteOptimistic] = useOptimistic(
     events,
@@ -165,12 +196,12 @@ export default function EventsPage() {
   const loadEvents = async () => {
     setLoading(true);
     const result = await fetchAllEventsAction();
-    if (result.data && Array.isArray(result.data)) {
-      setEvents(result.data as IEvent[]);
+    if (result?.data && Array.isArray(result.data)) {
+      setEvents(result.data);
     } else {
       toast({
         title: "Error",
-        description: result.error?.message || "Failed to load events",
+        description: result?.error?.message || "Failed to fetch events",
         variant: "destructive",
       });
     }
@@ -180,15 +211,18 @@ export default function EventsPage() {
   const handleDelete = async (id: string) => {
     deleteOptimistic(id);
     const result = await deleteEventAction(id);
-    if (result.error) {
+    if (result?.error) {
       toast({
         title: "Error",
         description: result.error.message || "Failed to delete event",
         variant: "destructive",
       });
-      await loadEvents();
+      await loadEvents(); // revert optimistic update if failed
     } else {
-      toast({ title: "Deleted", description: "Event deleted successfully." });
+      toast({
+        title: "Deleted",
+        description: "Event deleted successfully.",
+      });
     }
   };
 
@@ -196,27 +230,92 @@ export default function EventsPage() {
     loadEvents();
   }, []);
 
+  // Filter and paginate events based on search
+  const filteredEvents = optimisticEvents.filter((e) =>
+    e.title.toLowerCase().includes(search.toLowerCase())
+  );
+  const totalPages = Math.ceil(filteredEvents.length / pageSize);
+  const paginatedEvents = filteredEvents.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   return (
     <Card className="w-full border-none shadow-none">
-      <CardHeader className="flex items-center justify-between">
+      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <CardTitle className="text-lg font-semibold">Events</CardTitle>
-        <Button onClick={() => router.push("/admin/events/new")}>
-          Create Event
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <Input
+            placeholder="Search events..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="sm:w-64"
+          />
+          <Button onClick={() => router.push("/admin/events/new")}>
+            Create Event
+          </Button>
+        </div>
       </CardHeader>
 
       <CardContent>
-        <Suspense fallback={<p className="p-4 text-muted-foreground">Loading events...</p>}>
+        <Suspense
+          fallback={
+            <div className="flex justify-center items-center py-8 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              Loading events...
+            </div>
+          }
+        >
           <EventsTable
-            events={optimisticEvents}
+            events={paginatedEvents}
             onView={(id) => router.push(`/admin/events/view/${id}`)}
             onEdit={(id) => router.push(`/admin/events/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
+            loading={loading}
           />
         </Suspense>
+
+        {totalPages > 1 && (
+          <div className="mt-4 flex justify-center">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() =>
+                      setCurrentPage((p) => Math.max(1, p - 1))
+                    }
+                  />
+                </PaginationItem>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      isActive={currentPage === i + 1}
+                      onClick={() => setCurrentPage(i + 1)}
+                    >
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        )}
       </CardContent>
 
-      <Dialog open={!!confirmDeleteId} onOpenChange={() => setConfirmDeleteId(null)}>
+      <Dialog
+        open={!!confirmDeleteId}
+        onOpenChange={() => setConfirmDeleteId(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>

@@ -50,64 +50,24 @@ export function getMenuList(pathname: string): Group[] {
       groupLabel: "Contents",
       menus: [
         {
-          href: "",
+          href: "/admin/categories",
           label: "Categories",
           icon: Layers,
-          submenus: [
-            {
-              href: "/admin/categories",
-              label: "All Categories"
-            },
-            {
-              href: "/admin/categories/new",
-              label: "New Categories"
-            }
-          ]
         },
         {
-          href: "",
+          href: "/admin/stores",
           label: "Stores",
           icon: Store,
-          submenus: [
-            {
-              href: "/admin/stores",
-              label: "All Stores"
-            },
-            {
-              href: "/admin/stores/new",
-              label: "New Store"
-            }
-          ]
         },
         {
-          href: "",
+          href: "/admin/coupons",
           label: "Coupons",
           icon: Gift,
-          submenus: [
-            {
-              href: "/admin/coupons",
-              label: "All Coupons"
-            },
-            {
-              href: "/admin/coupons/new",
-              label: "New Coupons"
-            }
-          ]
         },
         {
-          href: "",
+          href: "/admin/events",
           label: "Events",
           icon: Calendar,
-          submenus: [
-            {
-              href: "/admin/events",
-              label: "All Events"
-            },
-            {
-              href: "/admin/events/new",
-              label: "New Events"
-            }
-          ]
         }
       ]
     },
@@ -115,19 +75,9 @@ export function getMenuList(pathname: string): Group[] {
       groupLabel: "Information",
       menus: [
         {
-          href: "",
+          href: "/admin/blogs",
           label: "Blogs",
           icon: SquarePen,
-          submenus: [
-            {
-              href: "/admin/blogs",
-              label: "All Blogs"
-            },
-            {
-              href: "/admin/blogs/new",
-              label: "New Blog"
-            }
-          ]
         },
       ]
     },
@@ -135,34 +85,14 @@ export function getMenuList(pathname: string): Group[] {
       groupLabel: "Settings",
       menus: [
         {
-          href: "",
+          href: "/admin/roles",
           label: "Roles",
           icon: Key,
-          submenus: [
-            {
-              href: "/admin/roles",
-              label: "All Roles"
-            },
-            {
-              href: "/admin/roles/new",
-              label: "New Role"
-            }
-          ]
         },
         {
-          href: "",
+          href: "/admin/users",
           label: "Users",
           icon: Users,
-          submenus: [
-            {
-              href: "/admin/users",
-              label: "All Users"
-            },
-            {
-              href: "/admin/users/new",
-              label: "New User"
-            }
-          ]
         },
         {
           href: "/admin/settings",

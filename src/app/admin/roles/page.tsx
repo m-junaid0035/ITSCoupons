@@ -1,6 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useState, useOptimistic } from "react";
+import {
+  Suspense,
+  useEffect,
+  useState,
+  useOptimistic,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   fetchAllRolesAction,
@@ -14,6 +19,7 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -29,7 +35,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface IRole {
@@ -44,12 +58,23 @@ function RolesTable({
   onView,
   onEdit,
   onDelete,
+  loading,
 }: {
   roles: IRole[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  loading: boolean;
 }) {
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+        Loading roles...
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -73,12 +98,13 @@ function RolesTable({
                     : "-"}
                 </TableCell>
                 <TableCell>
-                  <div className="flex justify-end items-center gap-2">
+                  <div className="flex justify-end items-center gap-1.5">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => onView(role._id)}
+                      title="View"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -87,6 +113,7 @@ function RolesTable({
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => onEdit(role._id)}
+                      title="Edit"
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -95,6 +122,7 @@ function RolesTable({
                       size="icon"
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
                       onClick={() => onDelete(role._id)}
+                      title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -121,8 +149,11 @@ function RolesTable({
 export default function RolesPage() {
   const router = useRouter();
   const [roles, setRoles] = useState<IRole[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const pageSize = 8;
 
   const [optimisticRoles, deleteOptimistic] = useOptimistic(
     roles,
@@ -132,12 +163,12 @@ export default function RolesPage() {
   const loadRoles = async () => {
     setLoading(true);
     const result = await fetchAllRolesAction();
-    if (result.data && Array.isArray(result.data)) {
-      setRoles(result.data as IRole[]);
+    if (result?.data && Array.isArray(result.data)) {
+      setRoles(result.data);
     } else {
       toast({
         title: "Error",
-        description: result.error?.message || "Failed to load roles",
+        description: result?.error?.message || "Failed to fetch roles",
         variant: "destructive",
       });
     }
@@ -147,15 +178,18 @@ export default function RolesPage() {
   const handleDelete = async (id: string) => {
     deleteOptimistic(id);
     const result = await deleteRoleAction(id);
-    if (result.error) {
+    if (result?.error) {
       toast({
         title: "Error",
         description: result.error.message || "Failed to delete role",
         variant: "destructive",
       });
-      await loadRoles();
+      await loadRoles(); // revert optimistic update if failed
     } else {
-      toast({ title: "Deleted", description: "Role deleted successfully." });
+      toast({
+        title: "Deleted",
+        description: "Role deleted successfully.",
+      });
     }
   };
 
@@ -163,25 +197,87 @@ export default function RolesPage() {
     loadRoles();
   }, []);
 
+  // Filter and paginate roles based on search (search in name or displayName)
+  const filteredRoles = optimisticRoles.filter(
+    (r) =>
+      r.name.toLowerCase().includes(search.toLowerCase()) ||
+      r.displayName.toLowerCase().includes(search.toLowerCase())
+  );
+  const totalPages = Math.ceil(filteredRoles.length / pageSize);
+  const paginatedRoles = filteredRoles.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   return (
     <Card className="w-full border-none shadow-none">
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <CardTitle className="text-lg font-semibold">Roles</CardTitle>
-        <Button onClick={() => router.push("/admin/roles/new")}>
-          Create Role
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <Input
+            placeholder="Search roles..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="sm:w-64"
+          />
+          <Button onClick={() => router.push("/admin/roles/new")}>
+            Create Role
+          </Button>
+        </div>
       </CardHeader>
 
       <CardContent>
-        <Suspense fallback={<p className="p-4 text-muted-foreground">Loading roles...</p>}>
+        <Suspense
+          fallback={
+            <div className="flex justify-center items-center py-8 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />
+              Loading roles...
+            </div>
+          }
+        >
           <RolesTable
-            roles={optimisticRoles}
+            roles={paginatedRoles}
             onView={(id) => router.push(`/admin/roles/view/${id}`)}
             onEdit={(id) => router.push(`/admin/roles/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
+            loading={loading}
           />
         </Suspense>
       </CardContent>
+
+      {totalPages > 1 && (
+        <div className="mt-4 flex justify-center">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                />
+              </PaginationItem>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <PaginationItem key={i}>
+                  <PaginationLink
+                    isActive={currentPage === i + 1}
+                    onClick={() => setCurrentPage(i + 1)}
+                  >
+                    {i + 1}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
 
       <Dialog
         open={!!confirmDeleteId}
