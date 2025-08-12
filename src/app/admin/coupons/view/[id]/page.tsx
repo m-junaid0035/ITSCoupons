@@ -14,31 +14,31 @@ export default async function CouponViewPage({ params }: CouponViewPageProps) {
   const coupon = result.data;
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white shadow rounded-lg">
-      <h2 className="text-2xl font-bold mb-4">View Coupon</h2>
+    <div className="max-w-2xl mx-auto p-6 bg-white shadow rounded-lg dark:bg-gray-800">
+      <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">View Coupon</h2>
 
       <div className="space-y-4">
         {/* Title */}
         <div>
-          <p className="text-sm text-gray-500">Title</p>
-          <p className="text-lg font-medium">{coupon.title}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Title</p>
+          <p className="text-lg font-medium text-gray-900 dark:text-gray-100">{coupon.title}</p>
         </div>
 
         {/* Coupon Code */}
         <div>
-          <p className="text-sm text-gray-500">Coupon Code</p>
-          <p className="text-lg font-medium">{coupon.couponCode}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Coupon Code</p>
+          <p className="text-lg font-medium text-gray-900 dark:text-gray-100">{coupon.couponCode}</p>
         </div>
 
         {/* Coupon Type */}
         <div>
-          <p className="text-sm text-gray-500">Coupon Type</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Coupon Type</p>
           <Badge>{coupon.couponType}</Badge>
         </div>
 
         {/* Status */}
         <div>
-          <p className="text-sm text-gray-500">Status</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Status</p>
           <Badge className={coupon.status === "active" ? "bg-green-500" : "bg-red-500"}>
             {coupon.status}
           </Badge>
@@ -46,7 +46,7 @@ export default async function CouponViewPage({ params }: CouponViewPageProps) {
 
         {/* Top One */}
         <div>
-          <p className="text-sm text-gray-500">Top One</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Top One</p>
           <Badge className={coupon.isTopOne ? "bg-blue-600" : "bg-gray-400"}>
             {coupon.isTopOne ? "Yes" : "No"}
           </Badge>
@@ -54,28 +54,28 @@ export default async function CouponViewPage({ params }: CouponViewPageProps) {
 
         {/* Store Name */}
         <div>
-          <p className="text-sm text-gray-500">Store Name</p>
-          <p className="text-lg font-medium">{coupon.storeName || "N/A"}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Store Name</p>
+          <p className="text-lg font-medium text-gray-900 dark:text-gray-100">{coupon.storeName || "N/A"}</p>
         </div>
 
         {/* Store ID */}
         <div>
-          <p className="text-sm text-gray-500">Store ID</p>
-          <p className="text-lg text-gray-700">{coupon.storeId}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Store ID</p>
+          <p className="text-lg text-gray-700 dark:text-gray-300">{coupon.storeId}</p>
         </div>
 
         {/* Description */}
         {coupon.description && (
           <div>
-            <p className="text-sm text-gray-500">Description</p>
-            <p className="text-gray-700">{coupon.description}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Description</p>
+            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{coupon.description}</p>
           </div>
         )}
 
         {/* Coupon URL */}
         {coupon.couponUrl && (
           <div>
-            <p className="text-sm text-gray-500">Coupon URL</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Coupon URL</p>
             <a
               href={coupon.couponUrl}
               target="_blank"
@@ -89,9 +89,11 @@ export default async function CouponViewPage({ params }: CouponViewPageProps) {
 
         {/* Expiration Date */}
         <div>
-          <p className="text-sm text-gray-500">Expiration Date</p>
-          <p className="text-lg text-gray-700">
-            {new Date(coupon.expirationDate).toLocaleString()}
+          <p className="text-sm text-gray-500 dark:text-gray-400">Expiration Date</p>
+          <p className="text-lg text-gray-700 dark:text-gray-300">
+            {coupon.expirationDate
+              ? new Date(coupon.expirationDate).toLocaleString()
+              : "N/A"}
           </p>
         </div>
 

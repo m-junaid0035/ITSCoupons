@@ -98,8 +98,8 @@ export default function EditBlogForm() {
 
   const errorFor = (field: string) =>
     formState.error &&
-    typeof formState.error === "object" &&
-    field in formState.error
+      typeof formState.error === "object" &&
+      field in formState.error
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
 
@@ -195,20 +195,23 @@ export default function EditBlogForm() {
               )}
             </div>
 
-            {/* Image */}
+            {/* Image URL */}
             <div className="space-y-2">
-              <Label htmlFor="image">Image</Label>
+              <Label htmlFor="image">Image URL</Label>
               <Input
-                type="file"
                 id="image"
                 name="image"
-                accept="image/*"
+                type="url"
+                defaultValue={blog.image}
+                placeholder="https://example.com/image.jpg"
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("image") && (
                 <p className="text-sm text-red-500">{errorFor("image")}</p>
               )}
             </div>
+
+
 
             {/* Meta Title */}
             <div className="space-y-2">
