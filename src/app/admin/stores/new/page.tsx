@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useActionState } from "react"; // adjust import if needed
+import { useActionState } from "react"; 
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,6 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-
 import {
   Dialog,
   DialogContent,
@@ -86,9 +85,12 @@ export default function StoreForm() {
 
   return (
     <>
-      <Card className="max-w-3xl mx-auto shadow-lg bg-white">
+      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex items-center justify-between border-none">
           <CardTitle>Create Store</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/stores")}>
+            Back to Stores
+          </Button>
         </CardHeader>
 
         <CardContent>
@@ -96,7 +98,13 @@ export default function StoreForm() {
             {/* Store Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Store Name</Label>
-              <Input id="name" name="name" required className="border-none shadow-sm" />
+              <Input
+                id="name"
+                name="name"
+                required
+                placeholder="Enter store name"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
               {errorFor("name") && (
                 <p className="text-sm text-red-500">{errorFor("name")}</p>
               )}
@@ -110,7 +118,8 @@ export default function StoreForm() {
                 name="storeNetworkUrl"
                 type="url"
                 required
-                className="border-none shadow-sm"
+                placeholder="https://example.com"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("storeNetworkUrl") && (
                 <p className="text-sm text-red-500">{errorFor("storeNetworkUrl")}</p>
@@ -146,7 +155,7 @@ export default function StoreForm() {
                 name="totalCouponUsedTimes"
                 type="number"
                 defaultValue={0}
-                className="border-none shadow-sm"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("totalCouponUsedTimes") && (
                 <p className="text-sm text-red-500">{errorFor("totalCouponUsedTimes")}</p>
@@ -161,7 +170,8 @@ export default function StoreForm() {
                 name="image"
                 type="url"
                 required
-                className="border-none shadow-sm"
+                placeholder="https://example.com/image.jpg"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("image") && (
                 <p className="text-sm text-red-500">{errorFor("image")}</p>
@@ -176,7 +186,8 @@ export default function StoreForm() {
                 name="description"
                 rows={4}
                 required
-                className="border-none shadow-sm"
+                placeholder="Enter store description"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("description") && (
                 <p className="text-sm text-red-500">{errorFor("description")}</p>
@@ -190,7 +201,8 @@ export default function StoreForm() {
                 id="metaTitle"
                 name="metaTitle"
                 required
-                className="border-none shadow-sm"
+                placeholder="Enter meta title"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("metaTitle") && (
                 <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
@@ -205,7 +217,8 @@ export default function StoreForm() {
                 name="metaDescription"
                 rows={3}
                 required
-                className="border-none shadow-sm"
+                placeholder="Enter meta description"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("metaDescription") && (
                 <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
@@ -218,7 +231,8 @@ export default function StoreForm() {
               <Input
                 id="metaKeywords"
                 name="metaKeywords"
-                className="border-none shadow-sm"
+                placeholder="keyword1, keyword2"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("metaKeywords") && (
                 <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
@@ -231,7 +245,8 @@ export default function StoreForm() {
               <Input
                 id="focusKeywords"
                 name="focusKeywords"
-                className="border-none shadow-sm"
+                placeholder="keyword1, keyword2"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("focusKeywords") && (
                 <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>
@@ -239,52 +254,56 @@ export default function StoreForm() {
             </div>
 
             {/* isPopular */}
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  name="isPopular"
-                  className="h-4 w-4"
-                />
-                <span>Mark as Popular</span>
-              </label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isPopular"
+                name="isPopular"
+                value="true"
+                className="w-4 h-4"
+              />
+              <Label htmlFor="isPopular">Mark as Popular</Label>
             </div>
 
             {/* isActive */}
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  name="isActive"
-                  defaultChecked
-                  className="h-4 w-4"
-                />
-                <span>Mark as Active</span>
-              </label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isActive"
+                name="isActive"
+                value="true"
+                defaultChecked
+                className="w-4 h-4"
+              />
+              <Label htmlFor="isActive">Mark as Active</Label>
             </div>
 
             {/* Slug */}
             <div className="space-y-2">
               <Label htmlFor="slug">Slug</Label>
-              <Input id="slug" name="slug" required className="border-none shadow-sm" />
-              {errorFor("slug") && (
-                <p className="text-sm text-red-500">{errorFor("slug")}</p>
-              )}
+              <Input
+                id="slug"
+                name="slug"
+                required
+                placeholder="store-slug"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
+              {errorFor("slug") && <p className="text-sm text-red-500">{errorFor("slug")}</p>}
             </div>
 
             {/* General Error */}
             {"message" in (formState.error ?? {}) && (
               <p className="text-sm text-red-500">{(formState.error as any).message?.[0]}</p>
             )}
+
+            <CardFooter className="flex justify-end border-none px-0">
+              <Button type="submit" disabled={isPending} form="store-form">
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isPending ? "Saving..." : "Save Store"}
+              </Button>
+            </CardFooter>
           </form>
         </CardContent>
-
-        <CardFooter className="flex justify-end border-none">
-          <Button type="submit" disabled={isPending} form="store-form">
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isPending ? "Saving..." : "Save Store"}
-          </Button>
-        </CardFooter>
       </Card>
 
       {/* Success Dialog */}

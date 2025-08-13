@@ -12,7 +12,7 @@ import {
   getPopularStores,
   getRecentlyUpdatedStores,
   getStoresByCategories,
-  getStoresWithCoupons, // <-- import the new function here
+  getStoresWithCoupons,
 } from "@/functions/storeFunctions";
 
 // Store validation schema
@@ -28,8 +28,8 @@ const storeSchema = z.object({
   metaKeywords: z.array(z.string()).optional(),
   focusKeywords: z.array(z.string()).optional(),
   slug: z.string().trim().min(3).max(100),
-  isPopular: z.coerce.boolean().optional(),
-  isActive: z.coerce.boolean().optional(),
+  isPopular: z.coerce.boolean().optional().default(false),
+  isActive: z.coerce.boolean().optional().default(true),
 });
 
 type StoreFormData = z.infer<typeof storeSchema>;
@@ -39,8 +39,10 @@ export type StoreFormState = {
   data?: any;
 };
 
+// ✅ Parse FormData including checkbox coercion
 function parseStoreFormData(formData: FormData): StoreFormData {
   const categoryIds = formData.getAll("categories") as string[];
+
   const metaKeywords = (formData.get("metaKeywords") || "")
     .toString()
     .split(",")
@@ -65,8 +67,10 @@ function parseStoreFormData(formData: FormData): StoreFormData {
     metaKeywords,
     focusKeywords,
     slug: String(formData.get("slug") || ""),
-    isPopular: formData.get("isPopular") === "true",
-    isActive: formData.get("isActive") !== "false", // default true
+    isPopular:
+      formData.get("isPopular") === "true" || formData.get("isPopular") === "on",
+    isActive:
+      formData.get("isActive") === "true" || formData.get("isActive") === "on",
   };
 }
 
@@ -203,7 +207,7 @@ export async function fetchStoresByCategoriesAction(categories: string[]) {
   }
 }
 
-// NEW: FETCH STORES WITH COUPONS
+// FETCH STORES WITH COUPONS
 export async function fetchAllStoresWithCouponsAction() {
   await connectToDatabase();
 

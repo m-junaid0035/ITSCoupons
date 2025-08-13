@@ -63,7 +63,7 @@ export default function CategoryForm() {
       <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex items-center justify-between border-none">
           <CardTitle>Create Category</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/categories")}>
+          <Button variant="secondary" onClick={() => router.push("/admin/categories")}>
             Back to Categories
           </Button>
         </CardHeader>

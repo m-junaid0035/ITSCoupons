@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 
 /**
  * Helper to sanitize and format incoming store data.
+ * Ensures isPopular and isActive always have boolean defaults.
  */
 const sanitizeStoreData = (data: {
   name: string;
@@ -30,8 +31,8 @@ const sanitizeStoreData = (data: {
   metaKeywords: data.metaKeywords ?? [],
   focusKeywords: data.focusKeywords ?? [],
   slug: data.slug.trim().toLowerCase().replace(/\s+/g, "-"),
-  isPopular: data.isPopular ?? false,
-  isActive: data.isActive ?? true,
+  isPopular: data.isPopular ?? false, // default false
+  isActive: data.isActive ?? true,    // default true
 });
 
 /**
@@ -46,7 +47,7 @@ const serializeCoupon = (coupon: any) => ({
   discount: coupon.discount,
   isTopOne: coupon.isTopOne ?? false,
   uses: coupon.uses,
-  verified: coupon.verified,
+  verified: coupon.verified ?? false, // default false
 });
 
 /**
@@ -68,8 +69,8 @@ const serializeStore = (store: any) => ({
   metaKeywords: store.metaKeywords,
   focusKeywords: store.focusKeywords,
   slug: store.slug,
-  isPopular: store.isPopular ?? false,
-  isActive: store.isActive ?? true,
+  isPopular: store.isPopular ?? false, // default false
+  isActive: store.isActive ?? true,    // default true
   createdAt: store.createdAt?.toISOString?.(),
   updatedAt: store.updatedAt?.toISOString?.(),
   coupons: (store.coupons || []).map(serializeCoupon),
@@ -99,35 +100,25 @@ export const createStore = async (data: {
 };
 
 /**
- * Get all stores, sorted by newest first.
+ * Get all stores (active only), sorted by newest first.
  */
-export const getAllActiveStores = async (): Promise<
-  ReturnType<typeof serializeStore>[]
-> => {
-  const stores = await Store.find({ isActive: true })
-    .sort({ createdAt: -1 })
-    .lean();
+export const getAllActiveStores = async (): Promise<ReturnType<typeof serializeStore>[]> => {
+  const stores = await Store.find({ isActive: true }).sort({ createdAt: -1 }).lean();
   return stores.map(serializeStore);
 };
 
 /**
  * Get all stores, sorted by newest first.
  */
-export const getAllStores = async (): Promise<
-  ReturnType<typeof serializeStore>[]
-> => {
-  const stores = await Store.find()
-    .sort({ createdAt: -1 })
-    .lean();
+export const getAllStores = async (): Promise<ReturnType<typeof serializeStore>[]> => {
+  const stores = await Store.find().sort({ createdAt: -1 }).lean();
   return stores.map(serializeStore);
 };
 
 /**
  * Get a store by its ID.
  */
-export const getStoreById = async (
-  id: string
-): Promise<ReturnType<typeof serializeStore> | null> => {
+export const getStoreById = async (id: string): Promise<ReturnType<typeof serializeStore> | null> => {
   const store = await Store.findById(id).lean();
   return store ? serializeStore(store) : null;
 };
@@ -154,54 +145,38 @@ export const updateStore = async (
   }
 ): Promise<ReturnType<typeof serializeStore> | null> => {
   const updatedData = sanitizeStoreData(data);
-  const store = await Store.findByIdAndUpdate(
-    id,
-    { $set: updatedData },
-    { new: true, runValidators: true }
-  ).lean();
+  const store = await Store.findByIdAndUpdate(id, { $set: updatedData }, { new: true, runValidators: true }).lean();
   return store ? serializeStore(store) : null;
 };
 
 /**
  * Delete a store by ID.
  */
-export const deleteStore = async (
-  id: string
-): Promise<ReturnType<typeof serializeStore> | null> => {
+export const deleteStore = async (id: string): Promise<ReturnType<typeof serializeStore> | null> => {
   const store = await Store.findByIdAndDelete(id).lean();
   return store ? serializeStore(store) : null;
 };
 
 /**
- * Get all popular stores (isPopular === true), sorted by newest first.
+ * Get all popular stores (isPopular === true and active), sorted by newest first.
  */
-export const getPopularStores = async (): Promise<
-  ReturnType<typeof serializeStore>[]
-> => {
-  const stores = await Store.find({ isPopular: true, isActive: true })
-    .sort({ createdAt: -1 })
-    .lean();
+export const getPopularStores = async (): Promise<ReturnType<typeof serializeStore>[]> => {
+  const stores = await Store.find({ isPopular: true, isActive: true }).sort({ createdAt: -1 }).lean();
   return stores.map(serializeStore);
 };
 
 /**
- * Get all recently updated stores, sorted by updatedAt descending.
+ * Get all recently updated stores (active only), sorted by updatedAt descending.
  */
-export const getRecentlyUpdatedStores = async (): Promise<
-  ReturnType<typeof serializeStore>[]
-> => {
-  const stores = await Store.find({ isActive: true })
-    .sort({ updatedAt: -1 })
-    .lean();
+export const getRecentlyUpdatedStores = async (): Promise<ReturnType<typeof serializeStore>[]> => {
+  const stores = await Store.find({ isActive: true }).sort({ updatedAt: -1 }).lean();
   return stores.map(serializeStore);
 };
 
 /**
- * Get stores by category IDs.
+ * Get stores by category IDs (active only).
  */
-export const getStoresByCategories = async (
-  categories: string[]
-): Promise<ReturnType<typeof serializeStore>[]> => {
+export const getStoresByCategories = async (categories: string[]): Promise<ReturnType<typeof serializeStore>[]> => {
   const stores = await Store.find({
     categories: { $in: categories.map((id) => new Types.ObjectId(id)) },
     isActive: true,
@@ -211,26 +186,20 @@ export const getStoresByCategories = async (
 };
 
 /**
- * NEW: Get all stores with their coupons (joined via $lookup aggregation).
+ * Get all stores with their coupons (active stores only), joined via $lookup.
  */
-export const getStoresWithCoupons = async (): Promise<
-  ReturnType<typeof serializeStore>[]
-> => {
+export const getStoresWithCoupons = async (): Promise<ReturnType<typeof serializeStore>[]> => {
   const storesWithCoupons = await Store.aggregate([
-    {
-      $match: { isActive: true },
-    },
+    { $match: { isActive: true } },
     {
       $lookup: {
-        from: "coupons",        // collection name in MongoDB for coupons
+        from: "coupons",
         localField: "_id",
         foreignField: "storeId",
         as: "coupons",
       },
     },
-    {
-      $sort: { createdAt: -1 },
-    },
+    { $sort: { createdAt: -1 } },
   ]);
 
   return storesWithCoupons.map(serializeStore);

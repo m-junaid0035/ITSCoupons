@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useActionState } from "react"; // adjust if needed
+import { useState, useEffect } from "react";
+import { useActionState } from "react"; // adjust import if needed
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -14,11 +14,7 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-
-import { createUserAction } from "@/actions/userActions";
-import { fetchAllRolesAction } from "@/actions/roleActions";
 import { toast } from "@/hooks/use-toast";
-
 import {
   Dialog,
   DialogContent,
@@ -26,6 +22,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+
+import { createUserAction } from "@/actions/userActions";
+import { fetchAllRolesAction } from "@/actions/roleActions";
 
 interface FieldErrors {
   [key: string]: string[];
@@ -50,11 +49,8 @@ export default function UserForm() {
 
   const [formState, dispatch, isPending] = useActionState(
     async (prevState: FormState, formData: FormData) => {
-      // Validate and handle image file
       const file = formData.get("image") as File;
-      if (file && file.size > 0) {
-        formData.set("image", file);
-      } else {
+      if (!file || file.size === 0) {
         formData.delete("image");
       }
       return await createUserAction(prevState, formData);
@@ -83,12 +79,10 @@ export default function UserForm() {
       : null;
   };
 
-  // On success, open dialog. On error with message, show toast.
   useEffect(() => {
     if (formState.data && !formState.error) {
       setSuccessDialogOpen(true);
     }
-
     if (formState.error && "message" in formState.error) {
       toast({
         title: "Error",
@@ -104,14 +98,15 @@ export default function UserForm() {
       <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex items-center justify-between border-none">
           <CardTitle>Create User</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/users")}>
+            Back to Users
+          </Button>
         </CardHeader>
 
         <CardContent>
           <form
-            id="user-form"
             action={dispatch}
-            className="space-y-6 max-w-2xl mx-auto"
-            encType="multipart/form-data"
+            className="space-y-6 max-w-xl"
           >
             {/* Name */}
             <div className="space-y-2">
@@ -120,8 +115,8 @@ export default function UserForm() {
                 id="name"
                 name="name"
                 required
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Enter user name"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("name") && (
                 <p className="text-sm text-red-500">{errorFor("name")}</p>
@@ -136,8 +131,8 @@ export default function UserForm() {
                 name="email"
                 type="email"
                 required
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="user@example.com"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("email") && (
                 <p className="text-sm text-red-500">{errorFor("email")}</p>
@@ -152,8 +147,8 @@ export default function UserForm() {
                 name="password"
                 type="password"
                 required
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Enter a secure password"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("password") && (
                 <p className="text-sm text-red-500">{errorFor("password")}</p>
@@ -181,7 +176,7 @@ export default function UserForm() {
               )}
             </div>
 
-            {/* Image File Upload */}
+            {/* Profile Image */}
             <div className="space-y-2">
               <Label htmlFor="image">Profile Image</Label>
               <Input
@@ -196,7 +191,7 @@ export default function UserForm() {
               )}
             </div>
 
-            {/* Status (isActive) */}
+            {/* Status */}
             <div className="space-y-2">
               <Label htmlFor="isActive">Status</Label>
               <select
@@ -218,18 +213,18 @@ export default function UserForm() {
                 {(formState.error as any).message?.[0]}
               </p>
             )}
+
+            <CardFooter className="flex justify-end border-none px-0">
+              <Button type="submit" disabled={isPending}>
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isPending ? "Saving..." : "Create User"}
+              </Button>
+            </CardFooter>
           </form>
         </CardContent>
-
-        <CardFooter className="flex justify-end border-none">
-          <Button type="submit" disabled={isPending} form="user-form">
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isPending ? "Saving..." : "Create User"}
-          </Button>
-        </CardFooter>
       </Card>
 
-      {/* Success Confirmation Dialog */}
+      {/* Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent>
           <DialogHeader>

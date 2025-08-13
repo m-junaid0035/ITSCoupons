@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useActionState } from "react";
-
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 import {
   Card,
@@ -25,14 +26,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+
 import LoadingSkeleton from "./loading";
 import { toast } from "@/hooks/use-toast";
-
-import {
-  fetchStoreByIdAction,
-  updateStoreAction,
-} from "@/actions/storeActions";
-
+import { fetchStoreByIdAction, updateStoreAction } from "@/actions/storeActions";
 import { fetchAllCategoriesAction } from "@/actions/categoryActions";
 
 interface FormState {
@@ -57,6 +54,7 @@ export default function EditStoreForm() {
   const [store, setStore] = useState<any>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
   const [formState, dispatch, isPending] = useActionState(
@@ -67,17 +65,22 @@ export default function EditStoreForm() {
 
   useEffect(() => {
     async function loadData() {
-      const [storeRes, categoriesRes] = await Promise.all([
-        fetchStoreByIdAction(storeId),
-        fetchAllCategoriesAction(),
-      ]);
-
-      if (storeRes?.data) setStore(storeRes.data);
-      if (categoriesRes?.data) setCategories(categoriesRes.data);
-
-      setLoading(false);
+      try {
+        const [storeRes, categoriesRes] = await Promise.all([
+          fetchStoreByIdAction(storeId),
+          fetchAllCategoriesAction(),
+        ]);
+        if (storeRes?.data) {
+          setStore(storeRes.data);
+          setSelectedCategories(storeRes.data.categories || []);
+        }
+        if (categoriesRes?.data) setCategories(categoriesRes.data);
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to load data", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
     }
-
     loadData();
   }, [storeId]);
 
@@ -85,7 +88,6 @@ export default function EditStoreForm() {
     if (formState.data && !formState.error) {
       setSuccessDialogOpen(true);
     }
-
     if (formState.error && "message" in formState.error) {
       toast({
         title: "Error",
@@ -96,38 +98,51 @@ export default function EditStoreForm() {
     }
   }, [formState]);
 
-  const errorFor = (field: string) => {
-    return formState.error &&
-      typeof formState.error === "object" &&
-      field in formState.error
+  const errorFor = (field: string) =>
+    formState.error && typeof formState.error === "object" && field in formState.error
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
-  };
 
-  if (loading)
-    return (
-      <LoadingSkeleton/>
+  if (loading) return <LoadingSkeleton />;
+  if (!store) return <p className="text-red-500 text-center mt-4">Store not found</p>;
+
+  const toggleCategory = (id: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
     );
-
-  if (!store)
-    return <p className="max-w-3xl mx-auto text-red-500">Store not found</p>;
+  };
 
   return (
     <>
-      <Card className="max-w-3xl mx-auto shadow-lg bg-white">
+      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex items-center justify-between border-none">
           <CardTitle>Edit Store</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/stores")}>
+            Back to Stores
+          </Button>
         </CardHeader>
 
         <CardContent>
-          <form action={dispatch} id="edit-store-form" className="space-y-6 max-w-2xl mx-auto">
+          <form
+            action={(formData) => {
+              formData.delete("categories");
+              selectedCategories.forEach((c) => formData.append("categories", c));
+              return dispatch(formData);
+            }}
+            className="space-y-6 max-w-2xl mx-auto"
+            id="edit-store-form"
+          >
             {/* Store Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Store Name</Label>
-              <Input id="name" name="name" defaultValue={store.name} required className="border-none shadow-sm" />
-              {errorFor("name") && (
-                <p className="text-sm text-red-500">{errorFor("name")}</p>
-              )}
+              <Input
+                id="name"
+                name="name"
+                required
+                defaultValue={store.name}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
+              {errorFor("name") && <p className="text-sm text-red-500">{errorFor("name")}</p>}
             </div>
 
             {/* Store Network URL */}
@@ -137,9 +152,9 @@ export default function EditStoreForm() {
                 id="storeNetworkUrl"
                 name="storeNetworkUrl"
                 type="url"
-                defaultValue={store.storeNetworkUrl}
                 required
-                className="border-none shadow-sm"
+                defaultValue={store.storeNetworkUrl}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("storeNetworkUrl") && (
                 <p className="text-sm text-red-500">{errorFor("storeNetworkUrl")}</p>
@@ -149,20 +164,35 @@ export default function EditStoreForm() {
             {/* Categories */}
             <div className="space-y-2">
               <Label>Categories</Label>
-              <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                {categories.map((cat) => (
-                  <label key={cat._id} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      name="categories"
-                      value={cat._id}
-                      className="h-4 w-4"
-                      defaultChecked={store.categories?.includes(cat._id)}
-                    />
-                    <span>{cat.name}</span>
-                  </label>
-                ))}
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal border-none shadow-sm bg-gray-50 dark:bg-gray-700",
+                      selectedCategories.length === 0 && "text-muted-foreground"
+                    )}
+                  >
+                    {selectedCategories.length > 0
+                      ? `${selectedCategories.length} selected`
+                      : "Select categories"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-2 max-h-48 overflow-y-auto">
+                  {categories.map((cat) => (
+                    <label key={cat._id} className="flex items-center space-x-2 py-1">
+                      <input
+                        type="checkbox"
+                        value={cat._id}
+                        checked={selectedCategories.includes(cat._id)}
+                        onChange={() => toggleCategory(cat._id)}
+                        className="h-4 w-4"
+                      />
+                      <span>{cat.name}</span>
+                    </label>
+                  ))}
+                </PopoverContent>
+              </Popover>
               {errorFor("categories") && (
                 <p className="text-sm text-red-500">{errorFor("categories")}</p>
               )}
@@ -176,7 +206,7 @@ export default function EditStoreForm() {
                 name="totalCouponUsedTimes"
                 type="number"
                 defaultValue={store.totalCouponUsedTimes ?? 0}
-                className="border-none shadow-sm"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("totalCouponUsedTimes") && (
                 <p className="text-sm text-red-500">{errorFor("totalCouponUsedTimes")}</p>
@@ -190,13 +220,11 @@ export default function EditStoreForm() {
                 id="image"
                 name="image"
                 type="url"
-                defaultValue={store.image}
                 required
-                className="border-none shadow-sm"
+                defaultValue={store.image}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("image") && (
-                <p className="text-sm text-red-500">{errorFor("image")}</p>
-              )}
+              {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
             </div>
 
             {/* Description */}
@@ -206,9 +234,9 @@ export default function EditStoreForm() {
                 id="description"
                 name="description"
                 rows={4}
-                defaultValue={store.description}
                 required
-                className="border-none shadow-sm"
+                defaultValue={store.description}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("description") && (
                 <p className="text-sm text-red-500">{errorFor("description")}</p>
@@ -221,9 +249,9 @@ export default function EditStoreForm() {
               <Input
                 id="metaTitle"
                 name="metaTitle"
-                defaultValue={store.metaTitle}
                 required
-                className="border-none shadow-sm"
+                defaultValue={store.metaTitle}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("metaTitle") && (
                 <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
@@ -237,9 +265,9 @@ export default function EditStoreForm() {
                 id="metaDescription"
                 name="metaDescription"
                 rows={3}
-                defaultValue={store.metaDescription}
                 required
-                className="border-none shadow-sm"
+                defaultValue={store.metaDescription}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("metaDescription") && (
                 <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
@@ -253,7 +281,7 @@ export default function EditStoreForm() {
                 id="metaKeywords"
                 name="metaKeywords"
                 defaultValue={store.metaKeywords}
-                className="border-none shadow-sm"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("metaKeywords") && (
                 <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
@@ -267,7 +295,7 @@ export default function EditStoreForm() {
                 id="focusKeywords"
                 name="focusKeywords"
                 defaultValue={store.focusKeywords}
-                className="border-none shadow-sm"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("focusKeywords") && (
                 <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>
@@ -280,17 +308,15 @@ export default function EditStoreForm() {
               <Input
                 id="slug"
                 name="slug"
-                defaultValue={store.slug}
                 required
-                className="border-none shadow-sm"
+                defaultValue={store.slug}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("slug") && (
-                <p className="text-sm text-red-500">{errorFor("slug")}</p>
-              )}
+              {errorFor("slug") && <p className="text-sm text-red-500">{errorFor("slug")}</p>}
             </div>
 
             {/* Is Popular */}
-            <div className="space-y-2 flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <input
                 id="isPopular"
                 name="isPopular"
@@ -302,12 +328,9 @@ export default function EditStoreForm() {
                 Mark as Popular
               </Label>
             </div>
-            {errorFor("isPopular") && (
-              <p className="text-sm text-red-500">{errorFor("isPopular")}</p>
-            )}
 
             {/* Is Active */}
-            <div className="space-y-2 flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <input
                 id="isActive"
                 name="isActive"
@@ -319,9 +342,6 @@ export default function EditStoreForm() {
                 Mark as Active
               </Label>
             </div>
-            {errorFor("isActive") && (
-              <p className="text-sm text-red-500">{errorFor("isActive")}</p>
-            )}
 
             {/* General Error */}
             {"message" in (formState.error || {}) && (
@@ -332,13 +352,8 @@ export default function EditStoreForm() {
           </form>
         </CardContent>
 
-        <CardFooter className="flex justify-end border-none">
-          <Button
-            type="submit"
-            form="edit-store-form"
-            disabled={isPending}
-            className="flex items-center"
-          >
+        <CardFooter className="flex justify-end border-none px-0">
+          <Button type="submit" disabled={isPending} form="edit-store-form">
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isPending ? "Updating..." : "Update Store"}
           </Button>

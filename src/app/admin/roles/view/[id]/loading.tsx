@@ -1,4 +1,4 @@
-export function RoleViewPageLoadingSkeleton() {
+export default function RoleViewPageLoadingSkeleton() {
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow rounded-lg dark:bg-gray-800 animate-pulse">
       <div className="h-8 w-48 bg-gray-300 dark:bg-gray-700 rounded mb-6"></div> {/* Title */}

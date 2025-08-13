@@ -2,15 +2,16 @@ import { Types } from "mongoose"
 import { User } from "@/models/User"
 import { saveImageLocally } from "@/lib/saveImageLocally"
 import bcrypt from "bcrypt"
-import { connectToDatabase } from "@/lib/db" // You must already have this
+import { connectToDatabase } from "@/lib/db" // Make sure this exists
 
 // 🧼 Clean + format user input
 const sanitizeUserData = async (data: {
   name: string
   email: string
-  password: string
+  password?: string | null
   roleId: string
   imageFile?: File | null
+  existingPassword?: string
 }) => {
   let imagePath = ""
 
@@ -21,13 +22,15 @@ const sanitizeUserData = async (data: {
   return {
     name: data.name.trim(),
     email: data.email.toLowerCase().trim(),
-    password: await bcrypt.hash(data.password, 10),
+    password: data.password
+      ? await bcrypt.hash(data.password, 10)
+      : data.existingPassword, // Keep old password if no new password
     role: new Types.ObjectId(data.roleId),
     image: imagePath,
   }
 }
 
-// 📤 Format for frontend/client
+// 📤 Format user object for frontend/client
 const serializeUser = (user: any) => ({
   _id: user._id.toString(),
   name: user.name,
@@ -90,9 +93,12 @@ export const updateUser = async (
 ): Promise<ReturnType<typeof serializeUser> | null> => {
   await connectToDatabase()
 
+  const existingUser = await User.findById(id)
+  if (!existingUser) return null
+
   const name = formData.get("name") as string
   const email = formData.get("email") as string
-  const password = formData.get("password") as string
+  const password = (formData.get("password") as string) || null
   const roleId = formData.get("roleId") as string
   const imageFile = formData.get("image") as File | null
 
@@ -102,6 +108,7 @@ export const updateUser = async (
     password,
     roleId,
     imageFile,
+    existingPassword: existingUser.password, // Keep old password if password not provided
   })
 
   const user = await User.findByIdAndUpdate(id, { $set: updatedData }, { new: true }).lean()

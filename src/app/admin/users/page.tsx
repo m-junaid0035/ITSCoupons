@@ -114,7 +114,11 @@ function UsersTable({
                 <TableCell className="font-medium">{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.role}</TableCell>
-                <TableCell>{user.isActive ? "✅" : "❌"}</TableCell>
+                <TableCell>{user.isActive ? (
+                    <span className="text-green-600 font-semibold">Yes</span>
+                  ) : (
+                    <span className="text-gray-400">No</span>
+                  )}</TableCell>
                 <TableCell>
                   {user.createdAt
                     ? new Date(user.createdAt).toLocaleDateString()

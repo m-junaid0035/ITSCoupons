@@ -117,8 +117,16 @@ function StoresTable({
                   />
                 </TableCell>
                 <TableCell>{store.slug}</TableCell>
-                <TableCell>{store.isPopular ? "✅" : "❌"}</TableCell>
-                <TableCell>{store.isActive ? "✅" : "❌"}</TableCell>
+                <TableCell>{store.isPopular ? (
+                    <span className="text-green-600 font-semibold">Yes</span>
+                  ) : (
+                    <span className="text-gray-400">No</span>
+                  )}</TableCell>
+                <TableCell>{store.isActive ? (
+                    <span className="text-green-600 font-semibold">Yes</span>
+                  ) : (
+                    <span className="text-gray-400">No</span>
+                  )}</TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-1.5">
                     <Button
