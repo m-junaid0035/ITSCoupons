@@ -43,17 +43,18 @@ export default function PromoCodesSection({
 
   return (
     <div className="max-w-5xl mx-auto py-10 px-4">
-      <h2 className="text-2xl font-bold text-purple-700 text-center mb-6">
+      <h2 className="text-2xl font-bold text-purple-700 text-center mb-2">
         Top Coupons & Promo Codes
       </h2>
 
-      <div className="flex justify-end mb-6">
+      <div className="flex justify-end mb-4">
         <a href="#" className="text-sm text-purple-700 hover:underline">
           VIEW ALL
         </a>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center">
+      {/* Updated grid with horizontal gap increased */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-6 gap-x-12 justify-items-center">
         {coupons.map((coupon, idx) => {
           const expiration = coupon.expirationDate
             ? new Date(coupon.expirationDate).toLocaleDateString(undefined, {
@@ -65,7 +66,6 @@ export default function PromoCodesSection({
           const displayStoreName =
             coupon.store?.name || coupon.storeName || "Unknown Store";
 
-          // Take first letter for icon
           const storeInitial = displayStoreName.charAt(0).toUpperCase();
 
           return (

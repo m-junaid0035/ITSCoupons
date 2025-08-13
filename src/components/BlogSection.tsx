@@ -20,12 +20,12 @@ export default function BlogSection({
     return <p className="text-center py-10">No blogs available.</p>;
 
   return (
-    <section className="py-12 px-4 bg-white text-center">
+    <section className="py-12 px-4 sm:px-6 lg:px-8 bg-white text-center">
       <h2 className="text-2xl md:text-3xl font-bold text-purple-800 mb-8">
         The Latest from our blogs
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-6xl mx-auto justify-items-center">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-10 max-w-6xl mx-auto justify-items-center ml-12">
         {blogs.map((blog) => {
           const formattedDate = blog.date
             ? new Date(blog.date).toLocaleDateString()
