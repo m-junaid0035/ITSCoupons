@@ -204,3 +204,25 @@ export const getStoresWithCoupons = async (): Promise<ReturnType<typeof serializ
 
   return storesWithCoupons.map(serializeStore);
 };
+/**
+ * Get a single store with all its coupons (active only)
+ */
+export const getStoreWithCouponsById = async (
+  storeId: string
+): Promise<ReturnType<typeof serializeStore> | null> => {
+  if (!Types.ObjectId.isValid(storeId)) return null;
+
+  const [storeWithCoupons] = await Store.aggregate([
+    { $match: { _id: new Types.ObjectId(storeId), isActive: true } },
+    {
+      $lookup: {
+        from: "coupons",
+        localField: "_id",
+        foreignField: "storeId",
+        as: "coupons",
+      },
+    },
+  ]);
+
+  return storeWithCoupons ? serializeStore(storeWithCoupons) : null;
+};

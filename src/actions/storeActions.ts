@@ -13,6 +13,7 @@ import {
   getRecentlyUpdatedStores,
   getStoresByCategories,
   getStoresWithCoupons,
+  getStoreWithCouponsById,
 } from "@/functions/storeFunctions";
 
 // Store validation schema
@@ -216,5 +217,20 @@ export async function fetchAllStoresWithCouponsAction() {
     return { data: storesWithCoupons };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch stores with coupons"] } };
+  }
+}
+export async function fetchStoreWithCouponsByIdAction(storeId: string) {
+  await connectToDatabase();
+
+  try {
+    const store = await getStoreWithCouponsById(storeId);
+
+    if (!store) {
+      return { error: { message: ["Store not found"] } };
+    }
+
+    return { data: store };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch store"] } };
   }
 }
