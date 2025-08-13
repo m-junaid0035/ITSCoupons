@@ -8,7 +8,7 @@ interface ButtonGridProps {
 
 function ButtonGrid({ stores }: ButtonGridProps) {
   return (
-    <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+    <div className="grid grid-cols-3 md:grid-cols-6 gap-y-6 gap-x-12 justify-items-center w-full">
       {stores.map((store) => (
         <button
           key={store._id}
@@ -17,7 +17,7 @@ function ButtonGrid({ stores }: ButtonGridProps) {
             height: "38px",
             borderRadius: "12px",
             borderWidth: "1px",
-            padding: "3px 14px",
+            padding: "6px 16px",
             gap: "10px",
             boxShadow: "0px 4px 4px 0px #00000040",
           }}
@@ -44,31 +44,44 @@ export default function StoresComponent({
   loadingPopularStores = false,
 }: StoresComponentProps) {
   return (
-    <div className="w-full max-w-6xl mx-auto py-12">
-      <div className="mb-16">
-        <h2 className="text-2xl font-bold text-center mb-8 text-purple-700">
+    <div className="max-w-5xl mx-auto py-12 px-6">
+      {/* Recently Updated Section */}
+      <section className="mb-20">
+        <h2 className="text-2xl font-bold text-purple-700 text-center mb-3">
           Stores Recently Updated
         </h2>
-        <div className="flex justify-center flex-wrap gap-4">
-          {loadingRecentlyUpdatedStores ? (
-            <div className="text-purple-700 font-semibold">Loading...</div>
-          ) : (
-            <ButtonGrid stores={recentlyUpdatedStores} />
-          )}
+
+        <div className="flex justify-end mb-5">
+          <a href="#" className="text-sm text-purple-700 hover:underline">
+            VIEW ALL
+          </a>
         </div>
-      </div>
-      <div>
-        <h2 className="text-2xl font-bold text-center mb-8 text-purple-700">
+
+        {loadingRecentlyUpdatedStores ? (
+          <div className="text-purple-700 font-semibold text-center">Loading...</div>
+        ) : (
+          <ButtonGrid stores={recentlyUpdatedStores} />
+        )}
+      </section>
+
+      {/* Popular Stores Section */}
+      <section>
+        <h2 className="text-2xl font-bold text-purple-700 text-center mb-3">
           Popular Stores
         </h2>
-        <div className="flex justify-center flex-wrap gap-4">
-          {loadingPopularStores ? (
-            <div className="text-purple-700 font-semibold">Loading...</div>
-          ) : (
-            <ButtonGrid stores={popularStores} />
-          )}
+
+        <div className="flex justify-end mb-5">
+          <a href="#" className="text-sm text-purple-700 hover:underline">
+            VIEW ALL
+          </a>
         </div>
-      </div>
+
+        {loadingPopularStores ? (
+          <div className="text-purple-700 font-semibold text-center">Loading...</div>
+        ) : (
+          <ButtonGrid stores={popularStores} />
+        )}
+      </section>
     </div>
   );
 }

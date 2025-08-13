@@ -47,8 +47,8 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
               width: "178px",
               height: "178px",
               borderRadius: "100px",
-              border: "1px solid #C4C4C4",
-              boxShadow: "0px 4px 4px 0px #00000040"
+              border: "1px solid #C4C4C4"
+              // Removed boxShadow
             }}
           >
             <img
