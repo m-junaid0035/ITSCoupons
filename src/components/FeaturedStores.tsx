@@ -41,7 +41,7 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
         {stores.map((store) => (
           <Link
             key={store._id}
-            href={`/store/${store.slug || store._id}`}
+            href={`/stores/${store._id}`}
             className="flex items-center justify-center bg-white overflow-hidden transition hover:scale-105"
             style={{
               width: "178px",
