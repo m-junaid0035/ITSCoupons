@@ -39,7 +39,7 @@ export function getMenuList(pathname: string): Group[] {
       groupLabel: "",
       menus: [
         {
-          href: "/admin/dashboard",
+          href: "/admin",
           label: "Dashboard",
           icon: LayoutGrid,
           submenus: []

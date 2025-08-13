@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
   useOptimistic,
+  startTransition,
 } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -194,20 +195,26 @@ export default function CouponsPage() {
     setLoading(false);
   };
 
-  const handleDelete = async (id: string) => {
-    deleteOptimistic(id);
-    const result = await deleteCouponAction(id);
-    if (result?.error) {
-      toast({
-        title: "Error",
-        description: result.error.message || "Failed to delete coupon",
-        variant: "destructive",
-      });
-      await loadCoupons(); // rollback optimistic update
-    } else {
-      toast({ title: "Deleted", description: "Coupon deleted successfully." });
-    }
-  };
+ const handleDelete = async (id: string) => {
+  startTransition(() => {
+  deleteOptimistic(id);
+  });
+  const result = await deleteCouponAction(id);
+  if (result?.error) {
+    toast({
+      title: "Error",
+      description: result.error.message || "Failed to delete coupon",
+      variant: "destructive",
+    });
+    await loadCoupons(); // rollback optimistic update
+  } else {
+    setCoupons(prev => prev.filter(coupon => coupon._id !== id)); // sync state
+    toast({
+      title: "Deleted",
+      description: "Coupon deleted successfully.",
+    });
+  }
+};
 
   useEffect(() => {
     loadCoupons();

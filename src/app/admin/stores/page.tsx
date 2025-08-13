@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
   useOptimistic,
+  startTransition,
 } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -197,22 +198,27 @@ export default function StoresPage() {
   };
 
   const handleDelete = async (id: string) => {
-    deleteOptimistic(id);
-    const result = await deleteStoreAction(id);
-    if (result?.error) {
-      toast({
-        title: "Error",
-        description: result.error.message || "Failed to delete store",
-        variant: "destructive",
-      });
-      await loadStores(); // revert optimistic update if failed
-    } else {
-      toast({
-        title: "Deleted",
-        description: "Store deleted successfully.",
-      });
-    }
-  };
+  startTransition(() => {
+  deleteOptimistic(id);
+  });
+
+  const result = await deleteStoreAction(id);
+  if (result?.error) {
+    toast({
+      title: "Error",
+      description: result.error.message || "Failed to delete store",
+      variant: "destructive",
+    });
+    await loadStores(); // rollback optimistic update
+  } else {
+    setStores(prev => prev.filter(store => store._id !== id)); // sync state
+    toast({
+      title: "Deleted",
+      description: "Store deleted successfully.",
+    });
+  }
+};
+
 
   useEffect(() => {
     loadStores();

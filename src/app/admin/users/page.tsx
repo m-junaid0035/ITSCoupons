@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
   useOptimistic,
+  startTransition,
 } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -197,23 +198,27 @@ export default function UsersPage() {
     setLoading(false);
   };
 
-  const handleDelete = async (id: string) => {
-    deleteOptimistic(id);
-    const result = await deleteUserAction(id);
-    if (result?.error) {
-      toast({
-        title: "Error",
-        description: result.error.message || "Failed to delete user",
-        variant: "destructive",
-      });
-      await loadUsers(); // rollback optimistic update
-    } else {
-      toast({
-        title: "Deleted",
-        description: "User deleted successfully.",
-      });
-    }
-  };
+ const handleDelete = async (id: string) => {
+  startTransition(() => {
+  deleteOptimistic(id);
+  });
+  const result = await deleteUserAction(id);
+  if (result?.error) {
+    toast({
+      title: "Error",
+      description: result.error.message || "Failed to delete user",
+      variant: "destructive",
+    });
+    await loadUsers(); // rollback optimistic update
+  } else {
+    setUsers(prev => prev.filter(user => user._id !== id)); // sync state
+    toast({
+      title: "Deleted",
+      description: "User deleted successfully.",
+    });
+  }
+};
+
 
   useEffect(() => {
     loadUsers();

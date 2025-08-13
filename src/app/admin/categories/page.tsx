@@ -6,7 +6,7 @@ import {
   fetchAllCategoriesAction,
   deleteCategoryAction,
 } from "@/actions/categoryActions";
-
+import { startTransition } from "react";
 import {
   Card,
   CardHeader,
@@ -167,22 +167,27 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = async (id: string) => {
+  startTransition(() => {
     deleteOptimistic(id);
-    const result = await deleteCategoryAction(id);
-    if (result?.error) {
-      toast({
-        title: "Error",
-        description: result.error.message || "Failed to delete category",
-        variant: "destructive",
-      });
-      await loadCategories(); // revert if failed
-    } else {
-      toast({
-        title: "Deleted",
-        description: "Category deleted successfully.",
-      });
-    }
-  };
+  });
+
+  const result = await deleteCategoryAction(id);
+  if (result?.error) {
+    toast({
+      title: "Error",
+      description: result.error.message || "Failed to delete category",
+      variant: "destructive",
+    });
+    await loadCategories(); // revert if failed
+  } else {
+    setCategories(prev => prev.filter(cat => cat._id !== id)); // keep in sync
+    toast({
+      title: "Deleted",
+      description: "Category deleted successfully.",
+    });
+  }
+};
+
 
   useEffect(() => {
     loadCategories();

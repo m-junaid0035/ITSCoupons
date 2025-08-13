@@ -1,5 +1,5 @@
 "use client";
-
+import { startTransition } from "react";
 import {
   Suspense,
   useEffect,
@@ -206,8 +206,11 @@ export default function BlogsPage() {
     setLoading(false);
   }
 
-  async function handleDelete(id: string) {
-    deleteOptimistic(id);
+  const handleDelete = async (id: string) => {
+    startTransition(() => {
+      deleteOptimistic(id); // remove from UI immediately
+    });
+
     const result = await deleteBlogAction(id);
     if (result?.error) {
       toast({
@@ -217,12 +220,14 @@ export default function BlogsPage() {
       });
       await loadBlogs(); // revert if failed
     } else {
+      setBlogs(prev => prev.filter(blog => blog._id !== id)); // keep state in sync
       toast({
         title: "Deleted",
         description: "Blog deleted successfully.",
       });
     }
-  }
+  };
+
 
   useEffect(() => {
     loadBlogs();

@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
   useOptimistic,
+  startTransition,
 } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -207,24 +208,28 @@ export default function EventsPage() {
     }
     setLoading(false);
   };
+const handleDelete = async (id: string) => {
+  startTransition(() => {
+  deleteOptimistic(id);
+  });
 
-  const handleDelete = async (id: string) => {
-    deleteOptimistic(id);
-    const result = await deleteEventAction(id);
-    if (result?.error) {
-      toast({
-        title: "Error",
-        description: result.error.message || "Failed to delete event",
-        variant: "destructive",
-      });
-      await loadEvents(); // revert optimistic update if failed
-    } else {
-      toast({
-        title: "Deleted",
-        description: "Event deleted successfully.",
-      });
-    }
-  };
+  const result = await deleteEventAction(id);
+  if (result?.error) {
+    toast({
+      title: "Error",
+      description: result.error.message || "Failed to delete event",
+      variant: "destructive",
+    });
+    await loadEvents(); // rollback optimistic update
+  } else {
+    setEvents(prev => prev.filter(event => event._id !== id)); // sync state
+    toast({
+      title: "Deleted",
+      description: "Event deleted successfully.",
+    });
+  }
+};
+
 
   useEffect(() => {
     loadEvents();

@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
   useOptimistic,
+  startTransition,
 } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -194,23 +195,28 @@ export default function SettingsPage() {
     setLoading(false);
   };
 
-  const handleDelete = async (id: string) => {
-    deleteOptimistic(id);
-    const result = await deleteSettingAction(id);
-    if (result?.error) {
-      toast({
-        title: "Error",
-        description: result.error.message || "Failed to delete setting",
-        variant: "destructive",
-      });
-      await loadSettings(); // rollback optimistic update
-    } else {
-      toast({
-        title: "Deleted",
-        description: "Setting deleted successfully.",
-      });
-    }
-  };
+ const handleDelete = async (id: string) => {
+  startTransition(() => {
+  deleteOptimistic(id);
+  });
+
+  const result = await deleteSettingAction(id);
+  if (result?.error) {
+    toast({
+      title: "Error",
+      description: result.error.message || "Failed to delete setting",
+      variant: "destructive",
+    });
+    await loadSettings(); // rollback optimistic update
+  } else {
+    setSettings(prev => prev.filter(setting => setting._id !== id)); // keep state in sync
+    toast({
+      title: "Deleted",
+      description: "Setting deleted successfully.",
+    });
+  }
+};
+
 
   useEffect(() => {
     loadSettings();

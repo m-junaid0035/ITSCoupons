@@ -1,5 +1,5 @@
 "use client";
-
+import { startTransition } from "react";
 import {
   Suspense,
   useEffect,
@@ -176,22 +176,27 @@ export default function RolesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    deleteOptimistic(id);
-    const result = await deleteRoleAction(id);
-    if (result?.error) {
-      toast({
-        title: "Error",
-        description: result.error.message || "Failed to delete role",
-        variant: "destructive",
-      });
-      await loadRoles(); // revert optimistic update if failed
-    } else {
-      toast({
-        title: "Deleted",
-        description: "Role deleted successfully.",
-      });
-    }
-  };
+  // Optimistic UI update
+  startTransition(() => {
+  deleteOptimistic(id);
+  });
+  const result = await deleteRoleAction(id);
+  if (result?.error) {
+    toast({
+      title: "Error",
+      description: result.error.message || "Failed to delete role",
+      variant: "destructive",
+    });
+    await loadRoles(); // rollback if failed
+  } else {
+    // Ensure local state matches backend
+    setRoles(prev => prev.filter(role => role._id !== id));
+    toast({
+      title: "Deleted",
+      description: "Role deleted successfully.",
+    });
+  }
+};
 
   useEffect(() => {
     loadRoles();

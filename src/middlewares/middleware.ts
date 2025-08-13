@@ -4,17 +4,21 @@ import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
+  const pathname = request.nextUrl.pathname;
 
-  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+  // Allow /admin/login without token
+  if (pathname === "/admin/login") {
+    return NextResponse.next();
+  }
 
-  if (isAdminRoute && !token) {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+  // Block all other /admin/* routes without token
+  if (pathname.startsWith("/admin") && !token) {
+    return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*"], // Only apply to /admin and its subroutes
+  matcher: ["/admin/:path*"], // Apply only on /admin routes
 };
