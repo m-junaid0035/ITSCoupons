@@ -53,73 +53,84 @@ export default function PromoCodesSection({
         </a>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-items-center">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center">
         {coupons.map((coupon, idx) => {
           const expiration = coupon.expirationDate
             ? new Date(coupon.expirationDate).toLocaleDateString(undefined, {
                 year: "numeric",
                 month: "short",
-                day: "numeric",
               })
             : "N/A";
 
           const displayStoreName =
             coupon.store?.name || coupon.storeName || "Unknown Store";
 
-          const iconLetter = (displayStoreName.charAt(0) || coupon.title.charAt(0)).toUpperCase();
+          // Take first letter for icon
+          const storeInitial = displayStoreName.charAt(0).toUpperCase();
 
           return (
             <div
               key={coupon._id || idx}
-              className="flex flex-col items-center w-full max-w-[247px] bg-white rounded-[12px] shadow-lg hover:shadow-xl transition-shadow duration-300"
+              className="w-[250.384px] bg-white rounded-lg shadow-md hover:shadow-lg transition overflow-hidden flex flex-col"
             >
-              {/* Image Box */}
-              <div className="w-full h-[150px] bg-gray-100 rounded-t-[12px] overflow-hidden">
+              {/* Image */}
+              <div className="w-full h-[120px] bg-gray-100">
                 {coupon.store?.image ? (
                   <img
                     src={coupon.store.image}
                     alt={displayStoreName}
-                    className="w-full h-full object-cover rounded-t-[12px]"
+                    className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm rounded-t-[12px]">
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
                     No Image
                   </div>
                 )}
               </div>
 
-              {/* Icon Letter & Store Name below image */}
-              <div className="flex items-center space-x-3 mt-3 px-4 w-full">
+              {/* Icon + Store name */}
+              <div className="flex items-center px-3 mt-[-32px]">
                 <div
-                  className="flex items-center justify-center bg-purple-700 text-white font-bold text-xl rounded-full w-12 h-12 shadow-md"
-                  aria-label={`Store initial ${iconLetter}`}
+                  className="bg-purple-700 flex items-center justify-center text-white text-xl font-bold"
+                  style={{
+                    width: "65.821px",
+                    height: "65.821px",
+                    borderRadius: "0px",
+                  }}
                 >
-                  {iconLetter}
+                  {storeInitial}
                 </div>
-                <div className="text-purple-700 font-semibold text-lg truncate">
+                <span className="ml-2 text-sm font-medium text-purple-700">
                   {displayStoreName}
-                </div>
+                </span>
               </div>
 
-              {/* Content Box */}
-              <div className="w-full p-4 flex flex-col justify-between h-[148px]">
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-sm mb-1 truncate" title={coupon.title}>
-                    {coupon.title}
-                  </h3>
-                  <p className="text-xs text-purple-600 font-medium">
-                    Expires: <span className="font-semibold">{expiration}</span>
-                  </p>
-                </div>
+              {/* Lower Box */}
+              <div
+                className="px-3 mt-2 flex flex-col flex-grow bg-white shadow-sm"
+                style={{
+                  width: "210.384px",
+                  height: "120.244px",
+                  borderRadius: "12px",
+                  borderTopLeftRadius: "20px",
+                  borderTopRightRadius: "20px",
+                }}
+              >
+                <h3 className="text-sm font-medium text-gray-900 leading-tight line-clamp-2">
+                  {coupon.title}
+                </h3>
+                <p className="text-xs text-pink-600 mt-1">
+                  Expires: <span className="font-medium">{expiration}</span>
+                </p>
 
                 {coupon.couponCode && (
                   <button
                     onClick={() => {
                       setShowCodeIndex(showCodeIndex === idx ? null : idx);
-                      if (showCodeIndex !== idx) handleCopy(coupon.couponCode, idx);
+                      if (showCodeIndex !== idx)
+                        handleCopy(coupon.couponCode, idx);
                     }}
-                    className="mt-3 w-full bg-gray-200 text-gray-800 font-semibold text-xs rounded-full py-2 px-4 hover:bg-purple-200 transition"
-                    title={showCodeIndex === idx ? coupon.couponCode : "Click to copy coupon code"}
+                    className="mt-auto mb-2 w-full bg-gray-200 text-xs font-semibold text-black rounded-full py-1 hover:bg-purple-200 transition"
                   >
                     {showCodeIndex === idx
                       ? copiedIndex === idx

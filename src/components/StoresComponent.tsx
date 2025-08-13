@@ -8,7 +8,7 @@ interface ButtonGridProps {
 
 function ButtonGrid({ stores }: ButtonGridProps) {
   return (
-    <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+    <div className="grid grid-cols-3 md:grid-cols-6 gap-4 justify-items-center w-full">
       {stores.map((store) => (
         <button
           key={store._id}
@@ -44,7 +44,9 @@ export default function StoresComponent({
   loadingPopularStores = false,
 }: StoresComponentProps) {
   return (
-    <div className="w-full max-w-6xl mx-auto py-12">
+    // Match TopDeals container: max-w-5xl + px-4
+    <div className="max-w-5xl mx-auto py-12 px-4">
+      {/* Recently Updated */}
       <div className="mb-16">
         <h2 className="text-2xl font-bold text-center mb-8 text-purple-700">
           Stores Recently Updated
@@ -57,6 +59,8 @@ export default function StoresComponent({
           )}
         </div>
       </div>
+
+      {/* Popular Stores */}
       <div>
         <h2 className="text-2xl font-bold text-center mb-8 text-purple-700">
           Popular Stores
