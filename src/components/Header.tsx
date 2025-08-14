@@ -1,15 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FaSearch, FaBars } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchAllStoresAction } from "@/actions/storeActions";
+import type { StoreData } from "@/types/store";
 
 export default function Header() {
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [allStores, setAllStores] = useState<StoreData[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredStores, setFilteredStores] = useState<StoreData[]>([]);
   const pathname = usePathname();
+  const router = useRouter();
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -19,6 +25,41 @@ export default function Header() {
     { href: "/blogs", label: "Blogs" },
     { href: "/aboutus", label: "About us" },
   ];
+
+  // Fetch all stores on mount
+  useEffect(() => {
+    async function loadStores() {
+      try {
+        const result = await fetchAllStoresAction();
+        const storesArray = Array.isArray(result?.data) ? result.data : [];
+        setAllStores(storesArray);
+      } catch (error) {
+        console.error("Error fetching all stores:", error);
+      }
+    }
+    loadStores();
+  }, []);
+
+  // Filter stores based on search term
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredStores([]);
+      return;
+    }
+
+    const filtered = allStores.filter((store) =>
+      store.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setFilteredStores(filtered);
+  }, [searchTerm, allStores]);
+
+  // Handle store selection
+  function handleSelectStore(storeId: string) {
+    setSearchTerm("");
+    setFilteredStores([]);
+    setMobileMenuOpen(false);
+    router.push(`/stores/${storeId}`);
+  }
 
   return (
     <header className="w-full">
@@ -49,7 +90,7 @@ export default function Header() {
         </div>
 
         {/* Tablet/Desktop Nav + Search */}
-        <div className="hidden md:flex items-center w-full max-w-6xl justify-between">
+        <div className="hidden md:flex items-center w-full max-w-6xl justify-between relative">
           <nav className="flex space-x-6 lg:space-x-10 text-base md:text-lg font-medium text-gray-700 whitespace-nowrap mx-auto">
             {navLinks.map(({ href, label }) => {
               const isActive =
@@ -73,17 +114,34 @@ export default function Header() {
 
           <div className="relative w-48 md:w-56 lg:w-64">
             <label htmlFor="search-input-desktop" className="sr-only">
-              Search coupons
+              Search stores
             </label>
             <input
               id="search-input-desktop"
               type="search"
-              placeholder="Search coupons..."
+              placeholder="Search stores..."
               className="w-full border border-gray-300 rounded px-3 md:px-4 lg:px-5 py-2 md:py-2.5 lg:py-3 pr-10 md:pr-11 lg:pr-12 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-purple-500"
               autoComplete="off"
-              aria-label="Search coupons"
+              aria-label="Search stores"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             <FaSearch className="absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-base md:text-lg pointer-events-none" />
+
+            {/* Filtered dropdown */}
+            {filteredStores.length > 0 && (
+              <ul className="absolute z-50 w-full mt-1 max-h-64 overflow-y-auto bg-white border border-gray-300 rounded shadow-lg">
+                {filteredStores.map((store) => (
+                  <li
+                    key={store._id}
+                    className="px-4 py-2 hover:bg-purple-50 cursor-pointer text-gray-800"
+                    onClick={() => handleSelectStore(store._id)}
+                  >
+                    {store.name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
@@ -139,19 +197,36 @@ export default function Header() {
             })}
           </nav>
 
+          {/* Mobile search */}
           <div className="relative mt-8 sm:mt-10 w-full max-w-md">
             <label htmlFor="search-input-mobile" className="sr-only">
-              Search coupons
+              Search stores
             </label>
             <input
               id="search-input-mobile"
               type="search"
-              placeholder="Search coupons..."
+              placeholder="Search stores..."
               className="w-full border border-gray-300 rounded px-3 sm:px-5 py-2 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500"
               autoComplete="off"
-              aria-label="Search coupons"
+              aria-label="Search stores"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
             <FaSearch className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-base sm:text-lg pointer-events-none" />
+
+            {filteredStores.length > 0 && (
+              <ul className="absolute z-50 w-full mt-1 max-h-64 overflow-y-auto bg-white border border-gray-300 rounded shadow-lg">
+                {filteredStores.map((store) => (
+                  <li
+                    key={store._id}
+                    className="px-4 py-2 hover:bg-purple-50 cursor-pointer text-gray-800"
+                    onClick={() => handleSelectStore(store._id)}
+                  >
+                    {store.name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </div>

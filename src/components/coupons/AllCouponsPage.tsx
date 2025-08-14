@@ -3,16 +3,23 @@
 import React, { ReactElement, useMemo, useState } from "react";
 import { FaSortAmountDown } from "react-icons/fa";
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
+import CouponModal from "@/components/coupon_popup";
+import { CategoryData } from "@/types/category" // make sure your modal path is correct
+import { useSearchParams } from "next/navigation";
+import { CheckCircle, Clock } from 'lucide-react'; // Lucide icons
 
 interface AllCouponsPageProps {
   coupons: CouponWithStoreData[];
+  categories?: CategoryData[];
   loading: boolean;
   error: string | null;
+  loadingCategories?: boolean;
+  errorCategories?: string | null;
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
    Helpers
-   ──────────────────────────────────────────────────────────────────────────── */
+──────────────────────────────────────────────────────────────────────────── */
 function getDiscountColor(discount: string): string {
   if (!discount) return "bg-gray-400";
   const discountLower = discount.toLowerCase();
@@ -37,133 +44,61 @@ function pluralize(n: number, s: string, p = s + "s") {
   return `${n} ${n === 1 ? s : p}`;
 }
 
-/* ────────────────────────────────────────────────────────────────────────────
-   Modal (unchanged, refined visuals)
-   ──────────────────────────────────────────────────────────────────────────── */
-function CouponModal({
-  coupon,
-  isOpen,
-  onClose,
-}: {
-  coupon: CouponWithStoreData | null;
-  isOpen: boolean;
-  onClose: () => void;
-}) {
-  const [copied, setCopied] = useState(false);
-  if (!isOpen || !coupon) return null;
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(coupon.couponCode || "");
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
-    } catch {
-      setCopied(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
-          aria-label="Close"
-        >
-          ×
-        </button>
-
-        <div className="p-8">
-          <div className="mx-auto -mt-12 mb-4 flex h-14 w-14 items-center justify-center rounded-md bg-[#2b5aa6] text-white shadow-md">
-            <span className="text-2xl font-semibold">C</span>
-          </div>
-
-          <h2 className="text-center text-2xl font-semibold text-slate-900">{coupon.title}</h2>
-          <p className="mt-3 text-center text-sm text-slate-600">
-            Copy and paste this code at{" "}
-            <span className="font-medium text-[#2b5aa6]">{coupon.storeName}</span>
-          </p>
-
-          <div className="mt-6 grid grid-cols-[1fr_auto] gap-3">
-            <div className="rounded-md bg-slate-100 p-1">
-              <div className="flex items-center justify-center rounded-md bg-[#8d5ab9]/20 p-3">
-                <span className="font-semibold tracking-wider text-[#8d5ab9]">
-                  {coupon.couponCode || "No code available"}
-                </span>
-              </div>
-            </div>
-            <button
-              onClick={handleCopy}
-              className="rounded-md bg-[#7a2db6] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 active:opacity-100"
-            >
-              {copied ? "COPIED" : "COPY"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ────────────────────────────────────────────────────────────────────────────
-   Main Page with full client-side filters, sorting & pagination
-   ──────────────────────────────────────────────────────────────────────────── */
-export default function AllCouponsPage({ coupons, loading, error }: AllCouponsPageProps): ReactElement {
+export default function AllCouponsPage({
+  coupons,
+  categories = [],
+  loading,
+  error,
+  loadingCategories,
+  errorCategories,
+}: AllCouponsPageProps): ReactElement {
   const [activeTab, setActiveTab] = useState<"all" | "promo" | "deal">("all");
+  const searchParams = useSearchParams();
+  const categoryFromQuery = searchParams.get("category"); // e.g., "yearbooks"
 
-  // sidebar state
-  const [selectedStores, setSelectedStores] = useState<string[]>([]);
+  // Sidebar state
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(() => {
+    if (categoryFromQuery) return [categoryFromQuery];
+    return [];
+  });
+
   const [quickVerified, setQuickVerified] = useState(false);
   const [quickCodesOnly, setQuickCodesOnly] = useState(false);
   const [quickDealsOnly, setQuickDealsOnly] = useState(false);
   const [quickFreeShipping, setQuickFreeShipping] = useState(false);
 
-  // sort & pagination state
-  const [sortBy, setSortBy] = useState<
-    "relevance" | "newest" | "discount_desc" | "discount_asc" | "most_used"
-  >("relevance");
+  // Sorting & pagination state
+  const [sortBy, setSortBy] = useState<"relevance" | "newest" | "discount_desc" | "discount_asc" | "most_used">("relevance");
   const [perPage, setPerPage] = useState<number>(10);
   const [page, setPage] = useState(1);
 
-  // modal
+  // Modal
   const [selectedCoupon, setSelectedCoupon] = useState<CouponWithStoreData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // derived lists
-  const storeCounts = useMemo(() => {
-    const map = new Map<string, number>();
-    coupons.forEach((c) => {
-      const name = c.storeName || "Unknown";
-      map.set(name, (map.get(name) || 0) + 1);
-    });
-    return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [coupons]);
-
-  // build filtered list according to tabs + sidebar quick filters
+  // Filtered list
   const filtered = useMemo(() => {
     let arr = coupons.slice();
 
-    // tabs
+    // Tabs
     if (activeTab === "promo") arr = arr.filter((c) => c.couponType === "coupon");
     if (activeTab === "deal") arr = arr.filter((c) => c.couponType === "deal");
 
-    // sidebar store filter
-    if (selectedStores.length) {
-      const set = new Set(selectedStores);
-      arr = arr.filter((c) => set.has(c.storeName || "Unknown"));
+    // Category filter
+    if (selectedCategories.length) {
+      arr = arr.filter((c) => c.store?.categories?.some((catId: string) => selectedCategories.includes(catId)));
     }
 
-    // quick filters
+    // Quick filters
     if (quickVerified) arr = arr.filter((c) => Boolean(c.verified));
     if (quickCodesOnly) arr = arr.filter((c) => c.couponType === "coupon");
     if (quickDealsOnly) arr = arr.filter((c) => c.couponType === "deal");
-    if (quickFreeShipping)
-      arr = arr.filter((c) => (c.discount || "").toLowerCase().includes("free ship"));
+    if (quickFreeShipping) arr = arr.filter((c) => (c.discount || "").toLowerCase().includes("free ship"));
 
     return arr;
-  }, [coupons, activeTab, selectedStores, quickVerified, quickCodesOnly, quickDealsOnly, quickFreeShipping]);
+  }, [coupons, activeTab, selectedCategories, quickVerified, quickCodesOnly, quickDealsOnly, quickFreeShipping]);
 
-  // sorting
+  // Sorting
   const sorted = useMemo(() => {
     const arr = filtered.slice();
     switch (sortBy) {
@@ -184,13 +119,12 @@ export default function AllCouponsPage({ coupons, loading, error }: AllCouponsPa
         });
         break;
       default:
-        // relevance (keep as-is)
         break;
     }
     return arr;
   }, [filtered, sortBy]);
 
-  // pagination
+  // Pagination
   const total = sorted.length;
   const totalPages = perPage === Infinity ? 1 : Math.max(1, Math.ceil(total / perPage));
   const safePage = Math.min(page, totalPages);
@@ -200,25 +134,22 @@ export default function AllCouponsPage({ coupons, loading, error }: AllCouponsPa
     return sorted.slice(start, start + perPage);
   }, [sorted, perPage, safePage]);
 
-  // reset page when dependencies change
   React.useEffect(() => {
     setPage(1);
-  }, [perPage, activeTab, selectedStores, quickVerified, quickCodesOnly, quickDealsOnly, quickFreeShipping, sortBy]);
+  }, [perPage, activeTab, selectedCategories, quickVerified, quickCodesOnly, quickDealsOnly, quickFreeShipping, sortBy]);
 
-  /* ────────────────────────────────────────────────────────────────────────── */
   return (
     <div className="px-4 md:px-10 py-10 max-w-7xl mx-auto text-gray-800">
-      {/* header */}
       <h2 className="text-3xl font-bold mb-6">All Coupons</h2>
 
-      {/* top bar: status + per page + sort */}
+      {/* Top bar */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between text-sm text-gray-600 mb-6">
         <div>
           {loading
             ? "Loading coupons..."
             : error
-            ? `Error: ${error}`
-            : `Showing ${paginated.length} of ${pluralize(total, "coupon")}`}
+              ? `Error: ${error}`
+              : `Showing ${paginated.length} of ${pluralize(total, "coupon")}`}
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -228,10 +159,7 @@ export default function AllCouponsPage({ coupons, loading, error }: AllCouponsPa
               className="border rounded px-2 py-1"
               disabled={loading}
               value={perPage === Infinity ? "all" : String(perPage)}
-              onChange={(e) => {
-                const v = e.target.value;
-                setPerPage(v === "all" ? Infinity : Number(v));
-              }}
+              onChange={(e) => setPerPage(e.target.value === "all" ? Infinity : Number(e.target.value))}
             >
               <option value="5">5</option>
               <option value="10">10</option>
@@ -244,11 +172,7 @@ export default function AllCouponsPage({ coupons, loading, error }: AllCouponsPa
           <div className="flex items-center gap-2">
             <FaSortAmountDown className="opacity-60" />
             <span>Sort by:</span>
-            <select
-              className="border rounded px-2 py-1"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-            >
+            <select className="border rounded px-2 py-1" value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
               <option value="relevance">Relevance</option>
               <option value="newest">Newest</option>
               <option value="discount_desc">Discount: High → Low</option>
@@ -264,11 +188,8 @@ export default function AllCouponsPage({ coupons, loading, error }: AllCouponsPa
         {(["all", "promo", "deal"] as const).map((tab) => (
           <button
             key={tab}
-            className={`pb-2 ${
-              activeTab === tab
-                ? "border-b-2 border-purple-700 text-purple-700"
-                : "hover:text-purple-600"
-            }`}
+            className={`pb-2 ${activeTab === tab ? "border-b-2 border-purple-700 text-purple-700" : "hover:text-purple-600"
+              }`}
             onClick={() => setActiveTab(tab)}
           >
             {tab === "all" && `All Coupons (${coupons.length})`}
@@ -281,60 +202,47 @@ export default function AllCouponsPage({ coupons, loading, error }: AllCouponsPa
       <div className="flex flex-col md:flex-row gap-10">
         {/* Sidebar */}
         <aside className="w-full md:w-1/4 space-y-6 text-sm">
-          {/* Categories (Stores) */}
+          {/* Categories */}
           <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
             <h4 className="font-semibold mb-3">Categories</h4>
-            <ul className="space-y-2 max-h-72 overflow-auto pr-1">
-              <li>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="accent-purple-600"
-                    checked={selectedStores.length === 0}
-                    onChange={() => setSelectedStores([])}
-                  />
-                  <span>All Stores ({coupons.length})</span>
-                </label>
-              </li>
-              {storeCounts.map(([name, count]) => (
-                <li key={name}>
+            {loadingCategories ? (
+              <p>Loading...</p>
+            ) : errorCategories ? (
+              <p className="text-red-600">{errorCategories}</p>
+            ) : (
+              <ul className="space-y-2 max-h-72 overflow-auto pr-1">
+                <li>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       className="accent-purple-600"
-                      checked={selectedStores.includes(name)}
-                      onChange={(e) => {
-                        setSelectedStores((prev) => {
-                          if (e.target.checked) return [...new Set([...prev, name])];
-                          return prev.filter((s) => s !== name);
-                        });
-                      }}
+                      checked={selectedCategories.length === 0}
+                      onChange={() => setSelectedCategories([])}
                     />
-                    <span>
-                      {name} ({count})
-                    </span>
+                    <span>All Categories ({coupons.length})</span>
                   </label>
                 </li>
-              ))}
-            </ul>
-          </div>
+                {categories.map((cat) => (
+                  <li key={cat._id}>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="accent-purple-600"
+                        checked={selectedCategories.includes(cat._id) || selectedCategories.includes(cat.slug)} // match by id or slug
+                        onChange={(e) => {
+                          setSelectedCategories((prev) => {
+                            if (e.target.checked) return [...new Set([...prev, cat._id])];
+                            return prev.filter((c) => c !== cat._id);
+                          });
+                        }}
+                      />
 
-          {/* Sort By (duplicate small control for sidebar look) */}
-          <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
-            <h4 className="font-semibold mb-3 flex items-center gap-2">
-              <FaSortAmountDown className="opacity-60" /> Sort By
-            </h4>
-            <select
-              className="w-full border rounded px-2 py-1"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-            >
-              <option value="relevance">Relevance</option>
-              <option value="newest">Newest</option>
-              <option value="discount_desc">Discount: High → Low</option>
-              <option value="discount_asc">Discount: Low → High</option>
-              <option value="most_used">Most Used</option>
-            </select>
+                      <span>{cat.name}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {/* Quick Filters */}
@@ -343,45 +251,25 @@ export default function AllCouponsPage({ coupons, loading, error }: AllCouponsPa
             <ul className="space-y-2">
               <li>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="accent-purple-600"
-                    checked={quickVerified}
-                    onChange={(e) => setQuickVerified(e.target.checked)}
-                  />
+                  <input type="checkbox" className="accent-purple-600" checked={quickVerified} onChange={(e) => setQuickVerified(e.target.checked)} />
                   <span>Currently Verified</span>
                 </label>
               </li>
               <li>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="accent-purple-600"
-                    checked={quickCodesOnly}
-                    onChange={(e) => setQuickCodesOnly(e.target.checked)}
-                  />
+                  <input type="checkbox" className="accent-purple-600" checked={quickCodesOnly} onChange={(e) => setQuickCodesOnly(e.target.checked)} />
                   <span>Coupon Codes</span>
                 </label>
               </li>
               <li>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="accent-purple-600"
-                    checked={quickDealsOnly}
-                    onChange={(e) => setQuickDealsOnly(e.target.checked)}
-                  />
+                  <input type="checkbox" className="accent-purple-600" checked={quickDealsOnly} onChange={(e) => setQuickDealsOnly(e.target.checked)} />
                   <span>Offers / Deals</span>
                 </label>
               </li>
               <li>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="accent-purple-600"
-                    checked={quickFreeShipping}
-                    onChange={(e) => setQuickFreeShipping(e.target.checked)}
-                  />
+                  <input type="checkbox" className="accent-purple-600" checked={quickFreeShipping} onChange={(e) => setQuickFreeShipping(e.target.checked)} />
                   <span>Free Shipping</span>
                 </label>
               </li>
@@ -393,15 +281,11 @@ export default function AllCouponsPage({ coupons, loading, error }: AllCouponsPa
         <section className="w-full md:w-3/4 space-y-6">
           {loading && <p>Loading coupons...</p>}
           {error && <p className="text-red-600">{error}</p>}
-          {!loading && !error && sorted.length === 0 && <p>No coupons match your filters.</p>}
+          {!loading && !error && paginated.length === 0 && <p>No coupons match your filters.</p>}
 
-          {!loading && !error && paginated.map((coupon) => (
+          {paginated.map((coupon) => (
             <div key={coupon._id} className="flex border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
-              <div
-                className={`w-1/6 min-w-[80px] flex items-center justify-center text-white text-lg font-bold p-4 ${getDiscountColor(
-                  coupon.discount || ""
-                )}`}
-              >
+              <div className={`w-1/6 min-w-[80px] flex items-center justify-center text-white text-lg font-bold p-4 ${getDiscountColor(coupon.discount || "")}`}>
                 {coupon.discount || (coupon.couponType === "deal" ? "Deal" : "Code")}
               </div>
 
@@ -411,29 +295,26 @@ export default function AllCouponsPage({ coupons, loading, error }: AllCouponsPa
               </div>
 
               <div className="flex flex-col items-end justify-between p-4 w-[170px] border-l border-gray-100">
-                <div className="w-full flex flex-col items-end space-y-2">
-                  <button
-                    onClick={() => {
-                      setSelectedCoupon(coupon);
-                      setIsModalOpen(true);
-                    }}
-                    className={`text-white text-sm font-semibold w-full py-2 rounded ${
-                      coupon.couponType === "coupon"
-                        ? "bg-[#7a2db6] hover:bg-[#6a26a0]"
-                        : "bg-purple-700 hover:bg-purple-800"
-                    }`}
-                  >
-                    {coupon.couponType === "coupon" ? "GET CODE" : "GET DEAL"}
-                  </button>
-
-                  <div className="text-xs bg-gray-100 w-full text-center py-1 rounded text-gray-700 tracking-wider">
-                    {coupon.couponCode || "N/A"}
+                <button
+                  onClick={() => {
+                    setSelectedCoupon(coupon);
+                    setIsModalOpen(true);
+                  }}
+                  className={`text-white text-sm font-semibold w-full py-2 rounded ${coupon.couponType === "coupon" ? "bg-purple-700 hover:bg-purple-800" : "bg-orange-500 hover:bg-orange-600"}`}
+                >
+                  {coupon.couponType === "coupon" ? "GET CODE" : "GET DEAL"}
+                </button>
+                <div className="text-xs mt-2 text-right flex flex-col items-end gap-1">
+                  {coupon.verified && (
+                    <div className="flex items-center gap-1 text-purple-600 font-medium text-sm">
+                      <CheckCircle size={16} /> Coupon verified
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1 text-gray-500 text-xs">
+                    <Clock size={14} /> {coupon.uses || 0} used today
                   </div>
                 </div>
-                <div className="text-xs text-right mt-3 space-y-1">
-                  {coupon.verified && <div className="text-purple-600 font-medium">Coupon verified</div>}
-                  <div className="text-gray-600">{coupon.uses || 0} used today</div>
-                </div>
+
               </div>
             </div>
           ))}
@@ -441,41 +322,27 @@ export default function AllCouponsPage({ coupons, loading, error }: AllCouponsPa
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between pt-4">
-              <button
-                className={`px-3 py-1 rounded border ${page === 1 ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-purple-700 border-purple-200 hover:bg-purple-50"}`}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                Previous
-              </button>
-
+              <button disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className={`px-3 py-1 rounded border ${page === 1 ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-purple-700 border-purple-200 hover:bg-purple-50"}`}>Previous</button>
               <div className="flex gap-2">
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setPage(n)}
-                    className={`h-8 w-8 rounded border text-sm ${
-                      n === page ? "bg-purple-700 text-white border-purple-700" : "border-gray-200 hover:bg-gray-50"
-                    }`}
-                  >
-                    {n}
-                  </button>
+                  <button key={n} onClick={() => setPage(n)} className={`h-8 w-8 rounded border text-sm ${n === page ? "bg-purple-700 text-white border-purple-700" : "border-gray-200 hover:bg-gray-50"}`}>{n}</button>
                 ))}
               </div>
-
-              <button
-                className={`px-3 py-1 rounded border ${page === totalPages ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-purple-700 border-purple-200 hover:bg-purple-50"}`}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                Next
-              </button>
+              <button disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className={`px-3 py-1 rounded border ${page === totalPages ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-purple-700 border-purple-200 hover:bg-purple-50"}`}>Next</button>
             </div>
           )}
         </section>
       </div>
 
-      <CouponModal coupon={selectedCoupon} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <CouponModal
+        storeName={selectedCoupon?.store?.name}
+        title={selectedCoupon?.title}
+        code={selectedCoupon?.couponCode}
+        redeemUrl={selectedCoupon?.couponUrl}
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+
     </div>
   );
 }

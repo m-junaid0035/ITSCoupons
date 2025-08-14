@@ -40,14 +40,16 @@ const TeamCard: FC<TeamCardProps> = ({ name, title, color }) => (
 );
 
 const AboutPage: FC = () => {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'story' | 'mission' | 'values'>('story');
 
   const toggleFAQ = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
+    setOpenFAQ(openFAQ === index ? null : index);
   };
 
   return (
     <div className="text-gray-800">
+
       {/* Hero Section */}
       <section className="bg-purple-800 text-white py-16 text-center px-4">
         <h1 className="text-4xl md:text-5xl font-bold mb-4">About ItsCoupons</h1>
@@ -73,36 +75,82 @@ const AboutPage: FC = () => {
       {/* Tabs */}
       <section className="max-w-6xl mx-auto px-4 py-16">
         <div className="flex space-x-8 border-b text-sm font-medium mb-8">
-          <button className="pb-2 border-b-2 border-purple-700 text-purple-700">Our Story</button>
-          <button className="pb-2 hover:text-purple-600">Mission & Vision</button>
-          <button className="pb-2 hover:text-purple-600">Our Values</button>
+          <button
+            onClick={() => setActiveTab('story')}
+            className={`pb-2 ${activeTab === 'story' ? 'border-b-2 border-purple-700 text-purple-700' : 'hover:text-purple-600'}`}
+          >
+            Our Story
+          </button>
+          <button
+            onClick={() => setActiveTab('mission')}
+            className={`pb-2 ${activeTab === 'mission' ? 'border-b-2 border-purple-700 text-purple-700' : 'hover:text-purple-600'}`}
+          >
+            Mission & Vision
+          </button>
+          <button
+            onClick={() => setActiveTab('values')}
+            className={`pb-2 ${activeTab === 'values' ? 'border-b-2 border-purple-700 text-purple-700' : 'hover:text-purple-600'}`}
+          >
+            Our Values
+          </button>
         </div>
 
-        {/* About Content */}
+        {/* Tab Content */}
         <div className="grid md:grid-cols-2 gap-10">
-          <div>
-            <h2 className="text-xl font-semibold mb-4">How It All Started</h2>
-            <p className="text-sm text-gray-600 mb-4">
-              Founded in 2015, ItsCoupons began as a simple idea: make saving money effortless. Since then, we’ve grown into a trusted destination for over 10 million users seeking verified, reliable coupons across thousands of brands.
-            </p>
-            <p className="text-sm text-gray-600 mb-4">
-              Our platform is powered by smart technology and a dedicated team that works 24/7 to update, test, and verify coupon codes so users never miss a chance to save.
-            </p>
-            <p className="text-sm text-gray-600">
-              Today, ItsCoupons is a recognized leader in the deal discovery space — empowering users to stretch their spending and enjoy more for less.
-            </p>
-          </div>
+          {activeTab === 'story' && (
+            <>
+              <div>
+                <h2 className="text-xl font-semibold mb-4">How It All Started</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  Founded in 2015, ItsCoupons began as a simple idea: make saving money effortless. Since then, we’ve grown into a trusted destination for over 10 million users seeking verified, reliable coupons across thousands of brands.
+                </p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Our platform is powered by smart technology and a dedicated team that works 24/7 to update, test, and verify coupon codes so users never miss a chance to save.
+                </p>
+                <p className="text-sm text-gray-600">
+                  Today, ItsCoupons is a recognized leader in the deal discovery space — empowering users to stretch their spending and enjoy more for less.
+                </p>
+              </div>
 
-          <div className="bg-gray-50 rounded-lg p-6 shadow">
-            <h3 className="font-semibold mb-4 text-purple-700">Key Milestones</h3>
-            <ul className="text-sm text-gray-600 space-y-2">
-              <li><strong>2015</strong> – ItsCoupons founded</li>
-              <li><strong>2017</strong> – 1M+ users</li>
-              <li><strong>2020</strong> – AI-powered coupon validation</li>
-              <li><strong>2023</strong> – $250M+ user savings milestone</li>
-              <li><strong>2024</strong> – Mobile app + international expansion</li>
-            </ul>
-          </div>
+              <div className="bg-gray-50 rounded-lg p-6 shadow">
+                <h3 className="font-semibold mb-4 text-purple-700">Key Milestones</h3>
+                <ul className="text-sm text-gray-600 space-y-2">
+                  <li><strong>2015</strong> – ItsCoupons founded</li>
+                  <li><strong>2017</strong> – 1M+ users</li>
+                  <li><strong>2020</strong> – AI-powered coupon validation</li>
+                  <li><strong>2023</strong> – $250M+ user savings milestone</li>
+                  <li><strong>2024</strong> – Mobile app + international expansion</li>
+                </ul>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'mission' && (
+            <div className="md:col-span-2">
+              <h2 className="text-xl font-semibold mb-4">Our Mission & Vision</h2>
+              <p className="text-sm text-gray-600 mb-2">
+                Our mission is to make saving effortless and accessible to everyone.
+              </p>
+              <p className="text-sm text-gray-600 mb-2">
+                We envision a world where shoppers can always find the best deals without the hassle of searching multiple websites.
+              </p>
+              <p className="text-sm text-gray-600">
+                By combining technology, data insights, and a dedicated team, we ensure verified coupons and exclusive deals reach millions of users globally.
+              </p>
+            </div>
+          )}
+
+          {activeTab === 'values' && (
+            <div className="md:col-span-2">
+              <h2 className="text-xl font-semibold mb-4">Our Core Values</h2>
+              <ul className="text-sm text-gray-600 space-y-2 list-disc list-inside">
+                <li>Integrity – We always provide verified and accurate coupon information.</li>
+                <li>Innovation – Continuously improving our platform with smart technology.</li>
+                <li>Customer-Centric – Our users are at the heart of everything we do.</li>
+                <li>Transparency – Clear, honest, and accessible deal information for everyone.</li>
+              </ul>
+            </div>
+          )}
         </div>
       </section>
 
@@ -129,7 +177,7 @@ const AboutPage: FC = () => {
               >
                 {faq.question}
               </button>
-              {openIndex === i && (
+              {openFAQ === i && (
                 <div className="px-4 py-3 text-sm text-gray-700 bg-white">
                   {faq.answer}
                 </div>

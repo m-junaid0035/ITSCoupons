@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Link from "next/link";
 import type { StoreData } from "@/types/store";
 
 interface RelatedStoresProps {
@@ -12,60 +12,62 @@ interface RelatedStoresProps {
 export default function RelatedStores({ stores, loading, error }: RelatedStoresProps) {
   if (loading) {
     return (
-      <div className="w-full bg-white rounded-xl shadow-md py-10 px-6 text-center">
-        <h2 className="text-2xl font-bold text-gray-800 mb-10">Related Stores</h2>
-        <p>Loading stores...</p>
-      </div>
+      <section className="py-16 bg-white text-center">
+        <h2 className="text-3xl md:text-4xl font-bold text-purple-700 mb-10">
+          Related Stores
+        </h2>
+        <p className="text-gray-500">Loading stores...</p>
+      </section>
     );
   }
 
   if (error) {
     return (
-      <div className="w-full bg-white rounded-xl shadow-md py-10 px-6 text-center text-red-600">
-        <h2 className="text-2xl font-bold text-gray-800 mb-10">Related Stores</h2>
+      <section className="py-16 bg-white text-center text-red-600">
+        <h2 className="text-3xl md:text-4xl font-bold text-purple-700 mb-10">
+          Related Stores
+        </h2>
         <p>{error}</p>
-      </div>
+      </section>
     );
   }
 
   if (!stores || stores.length === 0) {
     return (
-      <div className="w-full bg-white rounded-xl shadow-md py-10 px-6 text-center">
-        <h2 className="text-2xl font-bold text-gray-800 mb-10">Related Stores</h2>
-        <p>No related stores found.</p>
-      </div>
+      <section className="py-16 bg-white text-center">
+        <h2 className="text-3xl md:text-4xl font-bold text-purple-700 mb-10">
+          Related Stores
+        </h2>
+        <p className="text-gray-500">No related stores found.</p>
+      </section>
     );
   }
 
   return (
-    <div className="w-full bg-white rounded-xl shadow-md py-10 px-6">
-      <h2 className="text-2xl font-bold text-gray-800 text-center mb-10">
+    <section className="py-16 bg-white text-center">
+      <h2 className="text-3xl md:text-4xl font-bold text-purple-700 mb-10">
         Related Stores
       </h2>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-8 max-w-[1280px] mx-auto">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-8 justify-items-center px-4 md:px-16">
         {stores.map((store) => (
-          <div
+          <Link
             key={store._id}
-            className="flex flex-col items-center"
-            style={{ minWidth: "150px" }}
+            href={`/stores/${store._id}`}
+            className="flex flex-col items-center justify-center bg-white overflow-hidden transition hover:scale-105 border border-gray-200 rounded-xl p-4"
+            style={{ width: "178px", height: "178px" }}
           >
-            <div className="bg-white shadow border border-gray-200 rounded-2xl h-28 w-28 flex items-center justify-center mb-3">
-              <Image
-                src={store.image}
-                alt={store.name}
-                width={80}
-                height={80}
-                className="object-contain"
-                priority={false}
-              />
-            </div>
-            <div className="text-sm text-purple-800 font-semibold text-center">
+            <img
+              src={store.image || "/placeholder-store.png"}
+              alt={store.name}
+              className="object-contain w-full h-[120px]"
+            />
+            <div className="mt-3 text-sm font-semibold text-purple-800 text-center">
               {store.name}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

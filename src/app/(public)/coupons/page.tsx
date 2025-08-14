@@ -6,10 +6,12 @@ import AllCouponsPage from "@/components/coupons/AllCouponsPage";
 import RelatedStores from "@/components/coupons/RelatedStores";
 
 import { fetchAllCouponsWithStoresAction } from "@/actions/couponActions";
-import { fetchStoresByCategoriesAction } from "@/actions/storeActions"; // import your new action here
+import { fetchStoresByCategoriesAction } from "@/actions/storeActions";
+import { fetchAllCategoriesAction } from "@/actions/categoryActions"; // <- import your action
 
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import type { StoreData } from "@/types/store";
+import type { CategoryData } from "@/types/category"; // <- type for categories
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<CouponWithStoreData[]>([]);
@@ -20,6 +22,11 @@ export default function CouponsPage() {
   const [loadingStores, setLoadingStores] = useState(false);
   const [errorStores, setErrorStores] = useState<string | null>(null);
 
+  const [categories, setCategories] = useState<CategoryData[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const [errorCategories, setErrorCategories] = useState<string | null>(null);
+
+  // Load all coupons
   useEffect(() => {
     async function loadCoupons() {
       setLoadingCoupons(true);
@@ -45,7 +52,33 @@ export default function CouponsPage() {
     loadCoupons();
   }, []);
 
-  // When coupons update, extract categories and fetch related stores
+  // Load all categories
+  useEffect(() => {
+    async function loadCategories() {
+      setLoadingCategories(true);
+      setErrorCategories(null);
+
+      try {
+        const result = await fetchAllCategoriesAction();
+        if (result.error) {
+          setErrorCategories(result.error.message?.[0] || "Failed to fetch categories");
+          setCategories([]);
+        } else if (result.data && Array.isArray(result.data)) {
+          setCategories(result.data);
+        } else {
+          setCategories([]);
+        }
+      } catch (err: any) {
+        setErrorCategories(err.message || "Failed to fetch categories");
+      }
+
+      setLoadingCategories(false);
+    }
+
+    loadCategories();
+  }, []);
+
+  // Load related stores when coupons update
   useEffect(() => {
     async function loadRelatedStores() {
       if (coupons.length === 0) {
@@ -53,7 +86,6 @@ export default function CouponsPage() {
         return;
       }
 
-      // Extract all categories from coupons' stores, flatten and deduplicate
       const allCategories = coupons
         .map(coupon => coupon.store?.categories || [])
         .flat();
@@ -90,9 +122,20 @@ export default function CouponsPage() {
 
   return (
     <div>
-      <AllCouponsPage coupons={coupons} loading={loadingCoupons} error={errorCoupons} />
+      <AllCouponsPage 
+        coupons={coupons} 
+        loading={loadingCoupons} 
+        error={errorCoupons} 
+        categories={categories} // <-- pass categories as props
+        loadingCategories={loadingCategories}
+        errorCategories={errorCategories}
+      />
 
-      <RelatedStores stores={relatedStores} loading={loadingStores} error={errorStores} />
+      <RelatedStores 
+        stores={relatedStores} 
+        loading={loadingStores} 
+        error={errorStores} 
+      />
     </div>
   );
 }

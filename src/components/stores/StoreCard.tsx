@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import type { StoreWithCouponsData } from "@/types/storesWithCouponsData";
 import type { CategoryData } from "@/types/category";
 
@@ -17,20 +18,34 @@ export default function StoreCard({
   loading,
   error,
 }: StoreCardProps) {
-  const [selectedCategoryId, setSelectedCategoryId] = useState("all");
+  const searchParams = useSearchParams();
+  const categoryFromQuery = searchParams.get("category");
 
-  // Add synthetic "All" category for filtering
+  const [selectedCategoryId, setSelectedCategoryId] = useState(() => {
+    const matchedCategory = categories.find(
+      (c) => c._id === categoryFromQuery || c.slug === categoryFromQuery
+    );
+    return matchedCategory?._id || "all";
+  });
+
+  useEffect(() => {
+    if (!categoryFromQuery) {
+      setSelectedCategoryId("all");
+      return;
+    }
+    const matchedCategory = categories.find(
+      (c) => c._id === categoryFromQuery || c.slug === categoryFromQuery
+    );
+    setSelectedCategoryId(matchedCategory?._id || "all");
+  }, [categoryFromQuery, categories]);
+
   const categoriesWithAll = [{ _id: "all", name: "All" }, ...categories];
 
-  // Filter stores by selected category id or show all
   const filteredStores =
     selectedCategoryId === "all"
       ? stores
-      : stores.filter((store) =>
-          store.categories.includes(selectedCategoryId)
-        );
+      : stores.filter((store) => store.categories.includes(selectedCategoryId));
 
-  // Copy coupon code to clipboard
   const copyCodeToClipboard = (code: string) => {
     navigator.clipboard.writeText(code);
     alert(`Copied coupon code: ${code}`);
@@ -58,10 +73,7 @@ export default function StoreCard({
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Browse All Stores</h1>
 
       {/* Filter Buttons */}
-      <nav
-        aria-label="Store categories filter"
-        className="flex flex-wrap gap-2 mb-6"
-      >
+      <nav aria-label="Store categories filter" className="flex flex-wrap gap-2 mb-6">
         {categoriesWithAll.map((cat) => (
           <button
             key={cat._id}
@@ -142,11 +154,7 @@ export default function StoreCard({
                             Expires:{" "}
                             {new Date(coupon.expirationDate).toLocaleDateString(
                               undefined,
-                              {
-                                year: "numeric",
-                                month: "2-digit",
-                                day: "2-digit",
-                              }
+                              { year: "numeric", month: "2-digit", day: "2-digit" }
                             )}
                           </span>
                         )}

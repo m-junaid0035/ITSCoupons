@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   FaTshirt,
   FaHamburger,
@@ -31,7 +32,6 @@ const filterOptions: FilterOption[] = [
   { label: "Trending", value: "trending" },
 ];
 
-// Map slug to icon, fallback to FaStore
 const iconMap: Record<string, any> = {
   fashion: FaTshirt,
   "food & drinks": FaHamburger,
@@ -49,11 +49,10 @@ export default function Categories({
   error = null,
 }: CategoriesProps) {
   const [activeFilter, setActiveFilter] = useState("all");
+  const router = useRouter();
 
-  // Filter categories by slug groups for popular/trending
   const filteredCategories = categories.filter((cat) => {
     if (activeFilter === "all") return true;
-
     if (activeFilter === "popular") {
       return ["fashion", "shopping", "food & drinks"].includes(
         cat.slug.toLowerCase()
@@ -127,10 +126,20 @@ export default function Categories({
                 </div>
               </div>
               <div className="mt-6 flex gap-2 justify-center">
-                <button className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm hover:bg-purple-700">
+                <button
+                  className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm hover:bg-purple-700"
+                  onClick={() =>
+                    router.push(`/coupons?category=${category.slug}`)
+                  }
+                >
                   Browse Deals
                 </button>
-                <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm hover:bg-gray-200">
+                <button
+                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm hover:bg-gray-200"
+                  onClick={() =>
+                    router.push(`/stores?category=${category.slug}`)
+                  }
+                >
                   View Stores
                 </button>
               </div>

@@ -88,6 +88,11 @@ export function getMenuList(pathname: string): Group[] {
           icon: Key,
         },
         {
+          href: "/admin/subscribers",
+          label: "Subscribers",
+          icon: Key,
+        },
+        {
           href: "/admin/users",
           label: "Users",
           icon: Users,

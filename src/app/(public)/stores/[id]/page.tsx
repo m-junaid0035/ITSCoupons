@@ -6,6 +6,7 @@ import { fetchStoreWithCouponsByIdAction } from "@/actions/storeActions";
 import type { StoreWithCouponsData } from "@/types/storesWithCouponsData";
 import type { CouponData } from "@/types/coupon";
 import React from "react";
+import { CheckCircle, Clock } from "lucide-react";
 
 type StatProps = { icon: React.ReactNode; value: number; label: string };
 
@@ -225,11 +226,10 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
             {(["all", "promo", "deal"] as const).map((tab) => (
               <button
                 key={tab}
-                className={`pb-2 ${
-                  activeTab === tab
+                className={`pb-2 ${activeTab === tab
                     ? "border-b-2 border-purple-700 text-purple-700"
                     : "hover:text-purple-600"
-                }`}
+                  }`}
                 onClick={() => setActiveTab(tab)}
               >
                 {tab === "all" && `All Coupons (${coupons.length})`}
@@ -264,13 +264,12 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
                 </div>
                 <div className="flex flex-col items-end justify-between p-4 w-[180px]">
                   <button
-                    className={`text-sm px-4 py-2 rounded text-white ${
-                      coupon.couponType === "coupon"
+                    className={`text-sm px-4 py-2 rounded text-white ${coupon.couponType === "coupon"
                         ? "bg-green-600 hover:bg-green-700"
                         : coupon.couponType === "deal"
-                        ? "bg-purple-700 hover:bg-purple-800"
-                        : "bg-gray-400"
-                    }`}
+                          ? "bg-purple-700 hover:bg-purple-800"
+                          : "bg-gray-400"
+                      }`}
                     onClick={() => {
                       setSelectedCoupon(coupon);
                       setIsModalOpen(true);
@@ -280,9 +279,13 @@ export default function StorePage({ params }: { params: Promise<{ id: string }> 
                   </button>
                   <div className="text-xs mt-2 text-right">
                     {coupon.verified && (
-                      <div className="text-purple-600 font-medium">🟣 Verified</div>
+                      <div className="flex items-center gap-1 text-purple-600 font-medium text-sm">
+                        <CheckCircle size={16} /> Coupon verified
+                      </div>
                     )}
-                    <div className="text-gray-500">{coupon.uses || 0} used today</div>
+                    <div className="flex items-center gap-1 text-gray-500 text-xs">
+                      <Clock size={14} /> {coupon.uses || 0} used today
+                    </div>
                     {isExpired(coupon) && (
                       <div className="text-red-500 font-medium">Expired</div>
                     )}
