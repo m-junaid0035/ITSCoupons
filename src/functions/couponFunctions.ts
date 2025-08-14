@@ -56,7 +56,9 @@ const serializeCouponWithStore = (coupon: any) => ({
         _id: coupon.store._id.toString(),
         name: coupon.store.name,
         storeNetworkUrl: coupon.store.storeNetworkUrl,
-        categories: coupon.store.categories,
+        categories: coupon.store.categories?.map((cat: any) =>
+  cat.toString ? cat.toString() : cat
+) || [],
         totalCouponUsedTimes: coupon.store.totalCouponUsedTimes,
         image: coupon.store.image,
         description: coupon.store.description,
