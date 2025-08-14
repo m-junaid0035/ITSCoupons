@@ -15,6 +15,7 @@ import {
   TooltipContent,
   TooltipProvider
 } from "@/components/ui/tooltip";
+import { logoutAction } from "@/actions/authActions";
 
 interface MenuProps {
   isOpen: boolean | undefined;
@@ -59,9 +60,7 @@ export function Menu({ isOpen }: MenuProps) {
                           <TooltipTrigger asChild>
                             <Button
                               variant={
-                                (active === undefined &&
-                                  pathname.startsWith(href)) ||
-                                active
+                                (active === undefined && (href === "/admin" ? pathname === "/admin" : pathname.startsWith(href))) || active
                                   ? "secondary"
                                   : "ghost"
                               }
@@ -118,7 +117,7 @@ export function Menu({ isOpen }: MenuProps) {
               <Tooltip delayDuration={100}>
                 <TooltipTrigger asChild>
                   <Button
-                    onClick={() => {}}
+                    onClick={logoutAction}
                     variant="outline"
                     className="w-full justify-center h-10 mt-5"
                   >

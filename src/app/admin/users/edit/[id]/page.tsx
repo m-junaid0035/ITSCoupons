@@ -56,8 +56,6 @@ export default function EditUserForm() {
         formData.delete("image");
       }
       formData.set("isActive", JSON.stringify(isActive));
-      formData.set("isVerified", JSON.stringify(isVerified));
-
       return await updateUserAction(prevState, userId, formData);
     },
     initialState
@@ -67,7 +65,6 @@ export default function EditUserForm() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [selectedRole, setSelectedRole] = useState("");
   const [loading, setLoading] = useState(true);
-  const [isVerified, setIsVerified] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
@@ -80,7 +77,6 @@ export default function EditUserForm() {
 
       if (userRes?.data) {
         setUser(userRes.data);
-        setIsVerified(userRes.data.isVerified ?? false);
         setIsActive(userRes.data.isActive ?? true);
         setSelectedRole(userRes.data.role?._id || userRes.data.role || "");
       }
@@ -171,7 +167,7 @@ export default function EditUserForm() {
               <Label htmlFor="role">Role</Label>
               <select
                 id="role"
-                name="role"
+                name="roleId"
                 required
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
@@ -205,7 +201,7 @@ export default function EditUserForm() {
               )}
             </div>
 
-            {/* Status Switches */}
+            {/* Active Switch */}
             <div className="flex items-center space-x-6">
               <div>
                 <Label htmlFor="isActive">Active</Label>
@@ -213,14 +209,6 @@ export default function EditUserForm() {
                   id="isActive"
                   checked={isActive}
                   onCheckedChange={setIsActive}
-                />
-              </div>
-              <div>
-                <Label htmlFor="isVerified">Verified</Label>
-                <Switch
-                  id="isVerified"
-                  checked={isVerified}
-                  onCheckedChange={setIsVerified}
                 />
               </div>
             </div>

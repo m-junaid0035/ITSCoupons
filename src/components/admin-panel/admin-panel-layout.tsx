@@ -4,6 +4,8 @@ import { Sidebar } from "@/components/admin-panel/sidebar";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { useStore } from "@/hooks/use-store";
 import { cn } from "@/lib/utils";
+import { Navbar } from "./navbar";
+import Bar from "./bar";
 
 export default function AdminPanelLayout({
   children
@@ -22,6 +24,8 @@ export default function AdminPanelLayout({
           !settings.disabled && (!getOpenState() ? "lg:ml-[90px]" : "lg:ml-72")
         )}
       >
+        <Navbar title="Admin" />
+        <Bar/>
         {children}
       </main>
       <footer

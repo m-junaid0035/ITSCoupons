@@ -51,7 +51,7 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={GeistSans.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <AdminPanelLayout><Navbar title="Admin" />{children}</AdminPanelLayout>;
+          <AdminPanelLayout>{children}</AdminPanelLayout>;
         </ThemeProvider>
       </body>
     </html>

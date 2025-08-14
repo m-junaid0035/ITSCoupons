@@ -160,7 +160,7 @@ export default function UserForm() {
               <Label htmlFor="role">Role</Label>
               <select
                 id="role"
-                name="role"
+                name="roleId" // <-- changed from "role" to "roleId"
                 required
                 className="w-full border rounded px-3 py-2 bg-gray-50 dark:bg-gray-700"
               >
@@ -175,6 +175,7 @@ export default function UserForm() {
                 <p className="text-sm text-red-500">{errorFor("role")}</p>
               )}
             </div>
+
 
             {/* Profile Image */}
             <div className="space-y-2">

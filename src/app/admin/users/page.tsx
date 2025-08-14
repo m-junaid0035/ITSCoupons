@@ -8,17 +8,10 @@ import {
   startTransition,
 } from "react";
 import { useRouter } from "next/navigation";
-import {
-  fetchAllUsersAction,
-  deleteUserAction,
-} from "@/actions/userActions";
+import { fetchAllUsersAction, deleteUserAction } from "@/actions/userActions";
+import { fetchAllRolesAction } from "@/actions/roleActions";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -51,25 +44,49 @@ interface IUser {
   _id: string;
   name: string;
   email: string;
-  role: string;
+  role: string; // store only role _id
   image?: string;
   isActive: boolean;
   createdAt?: string;
 }
 
+interface IRole {
+  _id: string;
+  name: string;
+  displayName: string;
+}
+
 function UsersTable({
   users,
+  roles,
   onView,
   onEdit,
   onDelete,
   loading,
 }: {
   users: IUser[];
+  roles: IRole[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   loading: boolean;
 }) {
+  // Get role displayName by matching role _id
+  const getRoleDisplayName = (roleId: string) => {
+  let displayName = "-";
+  console.log("passed value", roleId)
+  roles.map((role) => {
+    console.log(role)
+    if (String(role._id) === String(roleId)) {
+      displayName = role.displayName || role.name;
+    }
+  });
+
+  return displayName;
+};
+
+
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8 text-muted-foreground">
@@ -96,10 +113,7 @@ function UsersTable({
         <TableBody>
           {users.length > 0 ? (
             users.map((user) => (
-              <TableRow
-                key={user._id}
-                className="hover:bg-muted/40 transition-colors"
-              >
+              <TableRow key={user._id} className="hover:bg-muted/40 transition-colors">
                 <TableCell>
                   {user.image ? (
                     <img
@@ -113,12 +127,14 @@ function UsersTable({
                 </TableCell>
                 <TableCell className="font-medium">{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell>{user.role}</TableCell>
-                <TableCell>{user.isActive ? (
+                <TableCell>{getRoleDisplayName(user.role)}</TableCell>
+                <TableCell>
+                  {user.isActive ? (
                     <span className="text-green-600 font-semibold">Yes</span>
                   ) : (
                     <span className="text-gray-400">No</span>
-                  )}</TableCell>
+                  )}
+                </TableCell>
                 <TableCell>
                   {user.createdAt
                     ? new Date(user.createdAt).toLocaleDateString()
@@ -159,10 +175,7 @@ function UsersTable({
             ))
           ) : (
             <TableRow>
-              <TableCell
-                colSpan={7}
-                className="text-center text-muted-foreground py-6"
-              >
+              <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
                 No users found.
               </TableCell>
             </TableRow>
@@ -176,6 +189,7 @@ function UsersTable({
 export default function UsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<IUser[]>([]);
+  const [roles, setRoles] = useState<IRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -187,45 +201,71 @@ export default function UsersPage() {
     (state, id: string) => state.filter((user) => user._id !== id)
   );
 
-  const loadUsers = async () => {
+  const loadData = async () => {
     setLoading(true);
-    const result = await fetchAllUsersAction();
-    if (result?.data && Array.isArray(result.data)) {
-      setUsers(result.data);
-    } else {
+    try {
+      const [usersResult, rolesResult] = await Promise.all([
+        fetchAllUsersAction(),
+        fetchAllRolesAction(),
+      ]);
+
+      if (usersResult?.data && Array.isArray(usersResult.data)) {
+        // Normalize role field to _id if it comes as object
+        const normalizedUsers = usersResult.data.map((u) => ({
+          ...u,
+          role: typeof u.role === "object" ? u.role._id : u.role,
+        }));
+        setUsers(normalizedUsers);
+      } else {
+        toast({
+          title: "Error",
+          description: usersResult?.error?.message || "Failed to fetch users",
+          variant: "destructive",
+        });
+      }
+
+      if (rolesResult?.data && Array.isArray(rolesResult.data)) {
+        setRoles(rolesResult.data);
+      } else {
+        toast({
+          title: "Error",
+          description: rolesResult?.error?.message || "Failed to fetch roles",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
         title: "Error",
-        description: result?.error?.message || "Failed to fetch users",
+        description: "Something went wrong.",
         variant: "destructive",
       });
     }
     setLoading(false);
   };
 
- const handleDelete = async (id: string) => {
-  startTransition(() => {
-  deleteOptimistic(id);
-  });
-  const result = await deleteUserAction(id);
-  if (result?.error) {
-    toast({
-      title: "Error",
-      description: result.error.message || "Failed to delete user",
-      variant: "destructive",
+  const handleDelete = async (id: string) => {
+    startTransition(() => {
+      deleteOptimistic(id);
     });
-    await loadUsers(); // rollback optimistic update
-  } else {
-    setUsers(prev => prev.filter(user => user._id !== id)); // sync state
-    toast({
-      title: "Deleted",
-      description: "User deleted successfully.",
-    });
-  }
-};
-
+    const result = await deleteUserAction(id);
+    if (result?.error) {
+      toast({
+        title: "Error",
+        description: result.error.message || "Failed to delete user",
+        variant: "destructive",
+      });
+      await loadData(); // rollback optimistic update
+    } else {
+      setUsers((prev) => prev.filter((user) => user._id !== id));
+      toast({
+        title: "Deleted",
+        description: "User deleted successfully.",
+      });
+    }
+  };
 
   useEffect(() => {
-    loadUsers();
+    loadData();
   }, []);
 
   // Filter and paginate users
@@ -269,6 +309,7 @@ export default function UsersPage() {
         >
           <UsersTable
             users={paginatedUsers}
+            roles={roles}
             onView={(id) => router.push(`/admin/users/view/${id}`)}
             onEdit={(id) => router.push(`/admin/users/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
@@ -297,7 +338,9 @@ export default function UsersPage() {
                 ))}
                 <PaginationItem>
                   <PaginationNext
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
                   />
                 </PaginationItem>
               </PaginationContent>
@@ -315,7 +358,8 @@ export default function UsersPage() {
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
           <p>
-            Are you sure you want to delete this user? This action cannot be undone.
+            Are you sure you want to delete this user? This action cannot be
+            undone.
           </p>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>

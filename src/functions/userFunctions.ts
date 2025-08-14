@@ -2,9 +2,9 @@ import { Types } from "mongoose"
 import { User } from "@/models/User"
 import { saveImageLocally } from "@/lib/saveImageLocally"
 import bcrypt from "bcrypt"
-import { connectToDatabase } from "@/lib/db" // Make sure this exists
+import { connectToDatabase } from "@/lib/db"
 
-// 🧼 Clean + format user input
+// 🧼 Clean + format user input, handles isActive
 const sanitizeUserData = async (data: {
   name: string
   email: string
@@ -12,6 +12,7 @@ const sanitizeUserData = async (data: {
   roleId: string
   imageFile?: File | null
   existingPassword?: string
+  isActive?: boolean
 }) => {
   let imagePath = ""
 
@@ -24,9 +25,10 @@ const sanitizeUserData = async (data: {
     email: data.email.toLowerCase().trim(),
     password: data.password
       ? await bcrypt.hash(data.password, 10)
-      : data.existingPassword, // Keep old password if no new password
+      : data.existingPassword, // keep old password if no new one
     role: new Types.ObjectId(data.roleId),
     image: imagePath,
+    isActive: data.isActive ?? true, // default true
   }
 }
 
@@ -37,7 +39,7 @@ const serializeUser = (user: any) => ({
   email: user.email,
   role: user.role?.toString?.(),
   image: user.image || "",
-  isActive: user.isActive,
+  isActive: user.isActive ?? true,
   createdAt: user.createdAt?.toISOString?.(),
   updatedAt: user.updatedAt?.toISOString?.(),
 })
@@ -53,6 +55,7 @@ export const createUser = async (formData: FormData) => {
   const password = formData.get("password") as string
   const roleId = formData.get("roleId") as string
   const imageFile = formData.get("image") as File | null
+  const isActive = formData.get("isActive") === "true" // checkbox from frontend
 
   const userData = await sanitizeUserData({
     name,
@@ -60,6 +63,7 @@ export const createUser = async (formData: FormData) => {
     password,
     roleId,
     imageFile,
+    isActive,
   })
 
   const user = await new User(userData).save()
@@ -101,6 +105,7 @@ export const updateUser = async (
   const password = (formData.get("password") as string) || null
   const roleId = formData.get("roleId") as string
   const imageFile = formData.get("image") as File | null
+  const isActive = formData.get("isActive") === "true" // handle checkbox
 
   const updatedData = await sanitizeUserData({
     name,
@@ -108,7 +113,8 @@ export const updateUser = async (
     password,
     roleId,
     imageFile,
-    existingPassword: existingUser.password, // Keep old password if password not provided
+    existingPassword: existingUser.password,
+    isActive,
   })
 
   const user = await User.findByIdAndUpdate(id, { $set: updatedData }, { new: true }).lean()

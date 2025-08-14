@@ -2,7 +2,6 @@ import {
   Tag,
   Users,
   Settings,
-  Bookmark,
   SquarePen,
   LayoutGrid,
   LucideIcon,
@@ -11,7 +10,6 @@ import {
   Gift,
   Calendar,
   Key,
-  Square,
 } from "lucide-react";
 
 type Submenu = {

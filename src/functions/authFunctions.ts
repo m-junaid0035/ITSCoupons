@@ -9,6 +9,9 @@ import { IUser } from "@/models/User";
 const JWT_SECRET = process.env.JWT_SECRET!;
 if (!JWT_SECRET) throw new Error("JWT_SECRET not defined");
 
+/**
+ * Serialize user object for safe client usage
+ */
 const serializeUser = (user: IUser) => ({
   _id: user._id.toString(),
   name: user.name,
@@ -20,6 +23,9 @@ const serializeUser = (user: IUser) => ({
   updatedAt: user.updatedAt?.toISOString?.() || null,
 });
 
+/**
+ * Login user with email and password
+ */
 export const loginUser = async (email: string, password: string) => {
   await connectToDatabase();
 
@@ -40,4 +46,24 @@ export const loginUser = async (email: string, password: string) => {
     token,
     user: serializeUser(user),
   };
+};
+
+/**
+ * Get current logged-in user from token
+ */
+export const getCurrentUser = async (token: string) => {
+  if (!token) return null;
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as { _id: string; email: string };
+    await connectToDatabase();
+
+    const user = await User.findById(decoded._id) as IUser | null;
+    if (!user) return null;
+
+    return serializeUser(user);
+  } catch (err) {
+    console.error("Invalid or expired token:", err);
+    return null;
+  }
 };
