@@ -82,7 +82,7 @@ export function UserNav() {
   const handleLogout = async () => {
     await logoutAction();
     setUser(null);
-    window.location.href = "/login"; // redirect after logout
+    window.location.href = "/auth/login"; // redirect after logout
   };
 
   return (

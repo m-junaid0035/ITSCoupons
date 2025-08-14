@@ -27,12 +27,12 @@ export default function Header() {
         <div
           role="region"
           aria-label="Announcement"
-          className="bg-purple-800 text-white text-base text-center py-3 relative px-6 md:px-16"
+          className="bg-purple-800 text-white text-sm sm:text-base text-center py-2 sm:py-3 relative px-4 sm:px-6 lg:px-16"
         >
           🎉 Get the latest coupon updates daily – Save more, spend less!
           <button
             onClick={() => setShowAnnouncement(false)}
-            className="absolute right-6 top-1/2 transform -translate-y-1/2 text-white text-xl hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-white rounded"
+            className="absolute right-4 sm:right-6 top-1/2 transform -translate-y-1/2 text-white text-lg sm:text-xl hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-white rounded"
             aria-label="Close announcement"
           >
             <IoMdClose />
@@ -41,17 +41,16 @@ export default function Header() {
       )}
 
       {/* Main Header */}
-      <div className="bg-white shadow-sm px-6 md:px-16 py-6 flex items-center justify-between">
+      <div className="bg-white shadow-sm px-4 sm:px-6 lg:px-16 py-4 md:py-5 lg:py-6 flex items-center justify-between">
         {/* Logo */}
-        <div className="text-3xl font-bold text-purple-800 select-none">
+        <div className="text-2xl md:text-3xl font-bold text-purple-800 select-none">
           ITS
           <span className="font-light text-black">Coupons</span>
         </div>
 
-        {/* Desktop Nav + Search */}
+        {/* Tablet/Desktop Nav + Search */}
         <div className="hidden md:flex items-center w-full max-w-6xl justify-between">
-          {/* Nav Links container centered */}
-          <nav className="flex space-x-10 text-lg font-medium text-gray-700 whitespace-nowrap mx-auto">
+          <nav className="flex space-x-6 lg:space-x-10 text-base md:text-lg font-medium text-gray-700 whitespace-nowrap mx-auto">
             {navLinks.map(({ href, label }) => {
               const isActive =
                 pathname === href || (href !== "/" && pathname.startsWith(href));
@@ -72,8 +71,7 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Search Box stays aligned right */}
-          <div className="relative w-64">
+          <div className="relative w-48 md:w-56 lg:w-64">
             <label htmlFor="search-input-desktop" className="sr-only">
               Search coupons
             </label>
@@ -81,11 +79,11 @@ export default function Header() {
               id="search-input-desktop"
               type="search"
               placeholder="Search coupons..."
-              className="w-full border border-gray-300 rounded px-5 py-3 pr-12 text-base focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full border border-gray-300 rounded px-3 md:px-4 lg:px-5 py-2 md:py-2.5 lg:py-3 pr-10 md:pr-11 lg:pr-12 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-purple-500"
               autoComplete="off"
               aria-label="Search coupons"
             />
-            <FaSearch className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg pointer-events-none" />
+            <FaSearch className="absolute right-3 md:right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-base md:text-lg pointer-events-none" />
           </div>
         </div>
 
@@ -110,18 +108,16 @@ export default function Header() {
         } md:hidden`}
         aria-hidden={!mobileMenuOpen}
       >
-        <div className="flex flex-col h-full px-6 py-8">
-          {/* Close Button */}
+        <div className="flex flex-col h-full px-4 sm:px-6 py-6 sm:py-8">
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="self-end text-gray-700 hover:text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded mb-8"
+            className="self-end text-gray-700 hover:text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded mb-6 sm:mb-8"
             aria-label="Close menu"
           >
-            <IoMdClose className="w-8 h-8" />
+            <IoMdClose className="w-7 h-7 sm:w-8 sm:h-8" />
           </button>
 
-          {/* Navigation Links */}
-          <nav className="flex flex-col space-y-6 text-xl font-semibold text-gray-800">
+          <nav className="flex flex-col space-y-4 sm:space-y-6 text-lg sm:text-xl font-semibold text-gray-800">
             {navLinks.map(({ href, label }) => {
               const isActive =
                 pathname === href || (href !== "/" && pathname.startsWith(href));
@@ -143,8 +139,7 @@ export default function Header() {
             })}
           </nav>
 
-          {/* Search Box (Original style preserved) */}
-          <div className="relative mt-10 w-full max-w-md">
+          <div className="relative mt-8 sm:mt-10 w-full max-w-md">
             <label htmlFor="search-input-mobile" className="sr-only">
               Search coupons
             </label>
@@ -152,11 +147,11 @@ export default function Header() {
               id="search-input-mobile"
               type="search"
               placeholder="Search coupons..."
-              className="w-full border border-gray-300 rounded px-5 py-3 pr-12 text-base focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="w-full border border-gray-300 rounded px-3 sm:px-5 py-2 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-purple-500"
               autoComplete="off"
               aria-label="Search coupons"
             />
-            <FaSearch className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg pointer-events-none" />
+            <FaSearch className="absolute right-3 sm:right-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-base sm:text-lg pointer-events-none" />
           </div>
         </div>
       </div>

@@ -1,158 +1,14 @@
-'use client';
+"use client";
 
-import { FaTags, FaHandshake, FaClock } from 'react-icons/fa';
-import { ReactNode } from 'react';
+import { useEffect, useState } from "react";
+import { FaTags, FaHandshake, FaClock } from "react-icons/fa";
+import { fetchStoreWithCouponsByIdAction } from "@/actions/storeActions";
+import type { StoreWithCouponsData } from "@/types/storesWithCouponsData";
+import type { CouponData } from "@/types/coupon";
+import React from "react";
 
-type Coupon = {
-  id: number;
-  discount: string;
-  title: string;
-  description: string;
-  uses: number;
-  verified: boolean;
-  tag: 'purple' | 'orange' | 'pink' | 'yellow' | string;
-};
+type StatProps = { icon: React.ReactNode; value: number; label: string };
 
-type StatProps = {
-  icon: ReactNode;
-  value: number;
-  label: string;
-};
-
-const coupons: Coupon[] = [
-  {
-    id: 1,
-    discount: '20% off',
-    title: "20% Off Coupon | Denny's Rewards Program",
-    description:
-      "Denny’s is offering 20% off your next visit when you join their Rewards Program! You will get this coupon within 24–48 hours after signing up...",
-    uses: 422,
-    verified: true,
-    tag: 'purple',
-  },
-  {
-    id: 2,
-    discount: '5% off',
-    title: 'Extra $5 Off $25',
-    description:
-      'Denny’s is offering $5 off online orders of $25 or more! Enter this code during checkout to redeem your offer. Delivery is free when you spend $5 or more.',
-    uses: 312,
-    verified: false,
-    tag: 'orange',
-  },
-  {
-    id: 3,
-    discount: '25% off',
-    title: 'Official Page For Denny’s Current Promotions',
-    description:
-      'This is the official page for the currently running promotions from Denny’s. Find out how to sign up for rewards, get birthday treats and more!',
-    uses: 398,
-    verified: true,
-    tag: 'purple',
-  },
-];
-
-export default function StorePage() {
-  return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 text-gray-800">
-      <div className="flex flex-col md:flex-row gap-10">
-        {/* Sidebar */}
-        <aside className="w-full md:w-1/4 space-y-8">
-          {/* Store Info */}
-          <div className="text-center">
-            <img
-              src="/logos/starbucks.png"
-              alt="store"
-              className="mx-auto w-24 mb-4"
-            />
-            <p className="text-sm text-gray-600">
-              TurboTax is a software package for preparation of American income
-              tax returns, produced by Intuit, Inc.. Turbotax is the dominant
-              market leader in its product segment. Its competitors include H&R
-              Block Tax Software and TaxAct.
-            </p>
-          </div>
-
-          {/* Stats */}
-          <div className="space-y-4">
-            <Stat icon={<FaTags />} value={15} label="Coupons" />
-            <Stat icon={<FaHandshake />} value={3} label="Deals" />
-            <Stat icon={<FaClock />} value={10} label="Expired Coupons" />
-          </div>
-        </aside>
-
-        {/* Main Content */}
-        <div className="w-full md:w-3/4">
-          {/* Tabs */}
-          <div className="flex gap-8 border-b text-sm font-medium mb-6">
-            <button className="pb-2 border-b-2 border-purple-700 text-purple-700">
-              All Coupons (11)
-            </button>
-            <button className="pb-2 hover:text-purple-600">Promo Codes (1)</button>
-            <button className="pb-2 hover:text-purple-600">Online Sales (8)</button>
-            <button className="pb-2 hover:text-purple-600">In-Store Offers (2)</button>
-          </div>
-
-          {/* Coupons */}
-          <div className="space-y-6">
-            {coupons.map((coupon) => (
-              <div
-                key={coupon.id}
-                className="flex border border-gray-200 rounded-lg overflow-hidden bg-white"
-              >
-                {/* Discount Tag */}
-                <div
-                  className={`w-1/6 min-w-[80px] flex items-center justify-center text-white text-lg font-bold p-4 ${getTagColor(
-                    coupon.tag
-                  )}`}
-                >
-                  {coupon.discount}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 p-4 space-y-1">
-                  <h3 className="font-semibold">{coupon.title}</h3>
-                  <p className="text-sm text-gray-600">{coupon.description}</p>
-                </div>
-
-                {/* CTA */}
-                <div className="flex flex-col items-end justify-between p-4 w-[180px]">
-                  <button className="bg-purple-700 hover:bg-purple-800 text-white text-sm px-4 py-2 rounded">
-                    Get Coupon Code
-                  </button>
-                  <div className="text-xs mt-2 text-right">
-                    {coupon.verified && (
-                      <div className="text-purple-600 font-medium">🟣 Coupon verified</div>
-                    )}
-                    <div className="text-gray-500">{coupon.uses} used today</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Utility to get background color class based on tag
-function getTagColor(tag: string): string {
-  switch (tag) {
-    case 'purple':
-      return 'bg-purple-700';
-    case 'orange':
-      return 'bg-orange-500';
-    case 'pink':
-      return 'bg-pink-500';
-    case 'yellow':
-      return 'bg-yellow-400 text-black';
-    default:
-      return 'bg-gray-400';
-  }
-}
-
-// Small stat box component
 function Stat({ icon, value, label }: StatProps) {
   return (
     <div className="flex items-center gap-3">
@@ -161,6 +17,290 @@ function Stat({ icon, value, label }: StatProps) {
         <div className="text-xl font-bold text-purple-700">{value}</div>
         <div className="text-sm">{label}</div>
       </div>
+    </div>
+  );
+}
+
+function isExpired(coupon: CouponData) {
+  if (!coupon.expirationDate) return false;
+  return new Date(coupon.expirationDate) < new Date();
+}
+
+function getDiscountColor(coupon: CouponData) {
+  const discount = coupon.discount || "";
+
+  if (isExpired(coupon)) return "bg-red-500";
+  const discountLower = discount.toLowerCase();
+
+  if (discountLower.includes("free ship") || discountLower.includes("free shipping")) {
+    return "bg-yellow-400 text-black";
+  }
+
+  const match = discountLower.match(/(\d+)%/);
+  if (match) {
+    const value = parseInt(match[1], 10);
+    if (value >= 20) return "bg-purple-700";
+    return "bg-orange-500";
+  }
+
+  if (coupon.couponType === "coupon") return "bg-green-600";
+  if (coupon.couponType === "deal") return "bg-purple-700";
+
+  return "bg-gray-400";
+}
+
+// Udemy-style Coupon Modal
+function UdemyCouponModal({
+  store,
+  coupon,
+  isOpen,
+  onClose,
+}: {
+  store: StoreWithCouponsData;
+  coupon: CouponData | null;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  if (!isOpen || !coupon) return null;
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(coupon.couponCode || "");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (e) {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl">
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
+        >
+          ×
+        </button>
+
+        {/* Body */}
+        <div className="p-8">
+          {/* Top Badge */}
+          <div className="mx-auto -mt-12 mb-4 flex h-14 w-14 items-center justify-center rounded-md bg-[#2b5aa6] text-white shadow-md">
+            <span className="text-2xl font-semibold">C</span>
+          </div>
+
+          {/* Heading */}
+          <h2 className="text-center text-2xl font-semibold text-slate-900">{coupon.title}</h2>
+          <p className="mt-3 text-center text-sm text-slate-600">
+            Copy and paste this code at{' '}
+            <a href={store.storeNetworkUrl || "#"} className="font-medium text-[#2b5aa6] hover:underline">
+              {coupon.storeName || "Store"}
+            </a>
+          </p>
+
+          {/* Code Row */}
+          <div className="mt-6 grid grid-cols-[1fr_auto] gap-3">
+            <div className="rounded-md bg-slate-100 p-1">
+              <div className="flex items-center justify-center rounded-md bg-[#8d5ab9]/20 p-3">
+                <span className="font-semibold tracking-wider text-[#8d5ab9]">
+                  {coupon.couponCode || "No code available"}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={handleCopy}
+              className="rounded-md bg-[#7a2db6] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 active:opacity-100"
+            >
+              {copied ? 'COPIED' : 'COPY'}
+            </button>
+          </div>
+
+          {/* Redeem Button */}
+          {store.storeNetworkUrl && (
+            <div className="mt-3 flex justify-center">
+              <a
+                href={store.storeNetworkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-md bg-slate-100 px-5 py-2 text-sm font-medium text-[#7a2db6] transition hover:bg-slate-200"
+              >
+                Redeem at {coupon.storeName || "Store"} ›
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function StorePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: storeId } = React.use(params);
+
+  const [store, setStore] = useState<StoreWithCouponsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "promo" | "deal">("all");
+
+  // Modal state
+  const [selectedCoupon, setSelectedCoupon] = useState<CouponData | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    async function loadStore() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetchStoreWithCouponsByIdAction(storeId);
+        if (!res?.data) {
+          setError("Store not found");
+          setStore(null);
+        } else {
+          setStore(res.data);
+        }
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || "Failed to load store data");
+      }
+      setLoading(false);
+    }
+    loadStore();
+  }, [storeId]);
+
+  if (loading) return <p className="text-center mt-10">Loading...</p>;
+  if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
+  if (!store) return null;
+
+  const coupons: CouponData[] = store.coupons || [];
+  const filteredCoupons = coupons.filter((coupon) => {
+    switch (activeTab) {
+      case "all":
+        return true;
+      case "promo":
+        return coupon.couponType === "coupon";
+      case "deal":
+        return coupon.couponType === "deal";
+      default:
+        return true;
+    }
+  });
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 text-gray-800">
+      <div className="flex flex-col md:flex-row gap-10">
+        {/* Sidebar */}
+        <aside className="w-full md:w-1/4 space-y-8">
+          <div className="text-center">
+            <img src={store.image} alt={store.name} className="mx-auto w-24 mb-4 rounded-full" />
+            <p className="text-sm text-gray-600">{store.description}</p>
+          </div>
+          <div className="space-y-4">
+            <Stat icon={<FaTags />} value={coupons.length} label="Total Coupons" />
+            <Stat
+              icon={<FaHandshake />}
+              value={coupons.filter((c) => c.couponType === "coupon").length}
+              label="Promo Codes"
+            />
+            <Stat
+              icon={<FaHandshake />}
+              value={coupons.filter((c) => c.couponType === "deal").length}
+              label="Deals"
+            />
+            <Stat
+              icon={<FaClock />}
+              value={coupons.filter(isExpired).length}
+              label="Expired Coupons"
+            />
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <div className="w-full md:w-3/4">
+          {/* Tabs */}
+          <div className="flex gap-8 border-b text-sm font-medium mb-6">
+            {(["all", "promo", "deal"] as const).map((tab) => (
+              <button
+                key={tab}
+                className={`pb-2 ${
+                  activeTab === tab
+                    ? "border-b-2 border-purple-700 text-purple-700"
+                    : "hover:text-purple-600"
+                }`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab === "all" && `All Coupons (${coupons.length})`}
+                {tab === "promo" &&
+                  `Promo Codes (${coupons.filter((c) => c.couponType === "coupon").length})`}
+                {tab === "deal" &&
+                  `Deals (${coupons.filter((c) => c.couponType === "deal").length})`}
+              </button>
+            ))}
+          </div>
+
+          {/* Coupons List */}
+          <div className="space-y-6">
+            {filteredCoupons.length === 0 && (
+              <p className="text-center text-gray-500">No coupons found.</p>
+            )}
+            {filteredCoupons.map((coupon) => (
+              <div
+                key={coupon._id}
+                className="flex border border-gray-200 rounded-lg overflow-hidden bg-white"
+              >
+                <div
+                  className={`w-1/6 min-w-[80px] flex items-center justify-center text-white text-lg font-bold p-4 ${getDiscountColor(
+                    coupon
+                  )}`}
+                >
+                  {coupon.discount || "Deal"}
+                </div>
+                <div className="flex-1 p-4 space-y-1">
+                  <h3 className="font-semibold">{coupon.title}</h3>
+                  <p className="text-sm text-gray-600">{coupon.description}</p>
+                </div>
+                <div className="flex flex-col items-end justify-between p-4 w-[180px]">
+                  <button
+                    className={`text-sm px-4 py-2 rounded text-white ${
+                      coupon.couponType === "coupon"
+                        ? "bg-green-600 hover:bg-green-700"
+                        : coupon.couponType === "deal"
+                        ? "bg-purple-700 hover:bg-purple-800"
+                        : "bg-gray-400"
+                    }`}
+                    onClick={() => {
+                      setSelectedCoupon(coupon);
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    {coupon.couponType === "coupon" ? "Get Promo Code" : "Get Deal"}
+                  </button>
+                  <div className="text-xs mt-2 text-right">
+                    {coupon.verified && (
+                      <div className="text-purple-600 font-medium">🟣 Verified</div>
+                    )}
+                    <div className="text-gray-500">{coupon.uses || 0} used today</div>
+                    {isExpired(coupon) && (
+                      <div className="text-red-500 font-medium">Expired</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Udemy-style Modal */}
+      <UdemyCouponModal
+        store={store}
+        coupon={selectedCoupon}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

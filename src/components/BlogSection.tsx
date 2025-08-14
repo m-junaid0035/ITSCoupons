@@ -58,7 +58,7 @@ export default function BlogSection({
                 <p className="text-sm text-gray-500">{formattedDate}</p>
                 <h3 className="text-base font-semibold mb-2">{blog.title}</h3>
                 <a
-                  href={`/blogs/${blog.slug || blog._id}`}
+                  href={`/blogs/${blog._id}`}
                   className="text-purple-700 font-semibold hover:underline flex items-center"
                 >
                   Read More... <span className="ml-1 text-purple-700">→</span>

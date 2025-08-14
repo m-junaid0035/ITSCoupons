@@ -41,14 +41,22 @@ const sanitizeStoreData = (data: {
 const serializeCoupon = (coupon: any) => ({
   _id: coupon._id.toString(),
   title: coupon.title,
+  description: coupon.description ?? "",       // ensure description exists
+  couponType: coupon.couponType ?? "coupon",   // ensure couponType exists
   couponCode: coupon.couponCode,
   expirationDate: coupon.expirationDate?.toISOString?.(),
   status: coupon.status,
   discount: coupon.discount,
   isTopOne: coupon.isTopOne ?? false,
-  uses: coupon.uses,
-  verified: coupon.verified ?? false, // default false
+  uses: coupon.uses ?? 0,                      // default 0
+  verified: coupon.verified ?? false,          // default false
+  couponUrl: coupon.couponUrl ?? "",           // include couponUrl if available
+  storeName: coupon.storeName ?? "",           // include storeName if available
+  storeId: coupon.storeId?.toString() ?? "",   // convert ObjectId to string
+  createdAt: coupon.createdAt?.toISOString?.(),
+  updatedAt: coupon.updatedAt?.toISOString?.(),
 });
+
 
 /**
  * Convert a Mongoose store document to plain object safe for Client Components.
@@ -103,9 +111,14 @@ export const createStore = async (data: {
  * Get all stores (active only), sorted by newest first.
  */
 export const getAllActiveStores = async (): Promise<ReturnType<typeof serializeStore>[]> => {
-  const stores = await Store.find({ isActive: true }).sort({ createdAt: -1 }).lean();
+  const stores = await Store.find({ isActive: true })
+    .sort({ createdAt: -1 })
+    .limit(12)
+    .lean();
+
   return stores.map(serializeStore);
 };
+
 
 /**
  * Get all stores, sorted by newest first.

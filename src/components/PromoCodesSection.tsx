@@ -53,28 +53,26 @@ export default function PromoCodesSection({
         </a>
       </div>
 
-      {/* Updated grid with horizontal gap increased */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-6 gap-x-12 justify-items-center">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 justify-items-center">
         {coupons.map((coupon, idx) => {
           const expiration = coupon.expirationDate
             ? new Date(coupon.expirationDate).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "short",
-              })
+              year: "numeric",
+              month: "short",
+            })
             : "N/A";
 
           const displayStoreName =
             coupon.store?.name || coupon.storeName || "Unknown Store";
-
           const storeInitial = displayStoreName.charAt(0).toUpperCase();
 
           return (
             <div
               key={coupon._id || idx}
-              className="w-[250.384px] bg-white rounded-lg shadow-md hover:shadow-lg transition overflow-hidden flex flex-col"
+              className="flex flex-col items-center w-full max-w-[247px]"
             >
-              {/* Image */}
-              <div className="w-full h-[120px] bg-gray-100">
+              {/* Image Box */}
+              <div className="w-full h-[150px] bg-gray-100 rounded-[12px] overflow-hidden flex items-center justify-center">
                 {coupon.store?.image ? (
                   <img
                     src={coupon.store.image}
@@ -82,46 +80,33 @@ export default function PromoCodesSection({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                    No Image
-                  </div>
+                  <span className="text-gray-400 text-sm">No Image</span>
                 )}
               </div>
 
-              {/* Icon + Store name */}
-              <div className="flex items-center px-3 mt-[-32px]">
-                <div
-                  className="bg-purple-700 flex items-center justify-center text-white text-xl font-bold"
-                  style={{
-                    width: "65.821px",
-                    height: "65.821px",
-                    borderRadius: "0px",
-                  }}
-                >
-                  {storeInitial}
-                </div>
-                <span className="ml-2 text-sm font-medium text-purple-700">
-                  {displayStoreName}
-                </span>
-              </div>
+              {/* White Card */}
+              <div className="w-full h-[148px] bg-white rounded-[12px] shadow-md -mt-6 z-10 flex flex-col justify-between p-4">
+                <div>
+                  {/* Store Icon + Name */}
+                  <div className="flex items-center mb-1 -mt-10">
+                    <div
+                      className="bg-purple-700 flex items-center justify-center text-white text-xl font-bold"
+                      style={{ width: 50, height: 50 }}
+                    >
+                      {storeInitial}
+                    </div>
+                    <span className="ml-2 text-sm font-medium text-purple-700 mt-5">
+                      {displayStoreName}
+                    </span>
+                  </div>
 
-              {/* Lower Box */}
-              <div
-                className="px-3 mt-2 flex flex-col flex-grow bg-white shadow-sm"
-                style={{
-                  width: "210.384px",
-                  height: "120.244px",
-                  borderRadius: "12px",
-                  borderTopLeftRadius: "20px",
-                  borderTopRightRadius: "20px",
-                }}
-              >
-                <h3 className="text-sm font-medium text-gray-900 leading-tight line-clamp-2">
-                  {coupon.title}
-                </h3>
-                <p className="text-xs text-pink-600 mt-1">
-                  Expires: <span className="font-medium">{expiration}</span>
-                </p>
+                  <h3 className="text-sm font-medium text-gray-900 leading-tight line-clamp-2">
+                    {coupon.title}
+                  </h3>
+                  <p className="text-xs text-pink-600 mt-1">
+                    Expires: <span className="font-medium">{expiration}</span>
+                  </p>
+                </div>
 
                 {coupon.couponCode && (
                   <button
@@ -130,7 +115,7 @@ export default function PromoCodesSection({
                       if (showCodeIndex !== idx)
                         handleCopy(coupon.couponCode, idx);
                     }}
-                    className="mt-auto mb-2 w-full bg-gray-200 text-xs font-semibold text-black rounded-full py-1 hover:bg-purple-200 transition"
+                    className="w-full bg-gray-200 text-xs font-semibold text-black rounded-full py-1 hover:bg-purple-200 transition"
                   >
                     {showCodeIndex === idx
                       ? copiedIndex === idx
