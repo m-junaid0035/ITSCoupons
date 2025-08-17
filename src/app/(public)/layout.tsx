@@ -6,24 +6,22 @@ import Footer from "@/components/Footer";
 import { fetchAllStoresAction } from "@/actions/storeActions";
 import { fetchLatestSettingAction } from "@/actions/settingActions";
 import type { StoreData } from "@/types/store";
-import type { SettingData } from "@/types/setting"; // ✅ import SettingData
+import type { SettingData } from "@/types/setting";
 
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // ✅ Fetch all stores
+
   const storesResult = await fetchAllStoresAction();
   const stores: StoreData[] = Array.isArray(storesResult?.data)
     ? storesResult.data
     : [];
 
-  // ✅ Fetch latest setting
   const settingResult = await fetchLatestSettingAction();
   const latestSetting: SettingData | null = settingResult?.data || null;
 
-  // ✅ Metadata using latest setting
   const metadata: Metadata = {
     title: latestSetting?.metaTitle || "ITSCoupons",
     description:

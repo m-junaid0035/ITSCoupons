@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { createSubscriberAction, SubscriberFormState } from "@/actions/subscriberActions";
+import { createSubscriberAction } from "@/actions/subscriberActions";
 
 interface FieldErrors {
   [key: string]: string[];
