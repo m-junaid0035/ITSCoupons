@@ -6,6 +6,7 @@ import {
   createSetting,
   deleteSetting,
   getAllSettings,
+  getLatestSetting,
   getSettingById,
   updateSetting,
 } from "@/functions/settingFunctions";
@@ -25,9 +26,9 @@ const settingSchema = z.object({
     .optional()
     .transform((val) => (val ? val.split(",").map((k) => k.trim()) : [])),
   facebookUrl: z.string().url("Invalid Facebook URL").optional(),
-  twitterUrl: z.string().url("Invalid Twitter URL").optional(),
+  XUrl: z.string().url("Invalid X URL").optional(),
   instagramUrl: z.string().url("Invalid Instagram URL").optional(),
-  linkedinUrl: z.string().url("Invalid LinkedIn URL").optional(),
+  whatsappUrl: z.string().url("Invalid WhatsApp URL").optional(),
 });
 
 type SettingFormData = z.infer<typeof settingSchema>;
@@ -50,9 +51,9 @@ function parseSettingFormData(formData: FormData): Record<string, any> {
     metaDescription: formData.get("metaDescription") || "",
     metaKeywords: formData.get("metaKeywords") || "", // Zod will transform this
     facebookUrl: formData.get("facebookUrl") || "",
-    twitterUrl: formData.get("twitterUrl") || "",
+    XUrl: formData.get("XUrl") || "",
     instagramUrl: formData.get("instagramUrl") || "",
-    linkedinUrl: formData.get("linkedinUrl") || "",
+    whatsappUrl: formData.get("whatsappUrl") || "",
   };
 }
 
@@ -137,5 +138,20 @@ export async function fetchSettingByIdAction(id: string) {
     return { data: setting };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch setting"] } };
+  }
+}
+
+// ✅ FETCH LATEST SETTING
+export async function fetchLatestSettingAction() {
+  await connectToDatabase();
+
+  try {
+    const setting = await getLatestSetting();
+    if (!setting) {
+      return { error: { message: ["No settings found"] } };
+    }
+    return { data: setting };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch latest setting"] } };
   }
 }

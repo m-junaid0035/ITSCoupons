@@ -5,18 +5,10 @@ import type { BlogData } from "@/types/blog";
 
 interface BlogSectionProps {
   blogs: BlogData[];
-  loading: boolean;
-  error?: string | null;
 }
 
-export default function BlogSection({
-  blogs,
-  loading,
-  error = null,
-}: BlogSectionProps): JSX.Element {
-  if (loading) return <p className="text-center py-10">Loading blogs...</p>;
-  if (error) return <p className="text-center py-10 text-red-600">{error}</p>;
-  if (blogs.length === 0)
+export default function BlogSection({ blogs }: BlogSectionProps): JSX.Element {
+  if (!blogs.length)
     return <p className="text-center py-10">No blogs available.</p>;
 
   return (
@@ -25,10 +17,14 @@ export default function BlogSection({
         The Latest from our blogs
       </h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-10 max-w-6xl mx-auto justify-items-center ml-12">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10 max-w-6xl mx-auto justify-items-center">
         {blogs.map((blog) => {
           const formattedDate = blog.date
-            ? new Date(blog.date).toLocaleDateString()
+            ? new Date(blog.date).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+              })
             : "";
 
           return (

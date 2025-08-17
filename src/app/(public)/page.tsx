@@ -1,141 +1,59 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
-import BlogSection from "@/components/BlogSection";
-import BravoDealInfo from "@/components/BravoDealInfo";
-import FeaturedStores from "@/components/FeaturedStores";
+// app/page.tsx (Server Component by default)
 import HeroSlider from "@/components/HeroSlider";
-import Newsletter from "@/components/Newsletter";
+import FeaturedStores from "@/components/FeaturedStores";
 import PromoCodesSection from "@/components/PromoCodesSection";
-import StoresComponent from "@/components/StoresComponent";
 import TopDeals from "@/components/TopDeals";
+import StoresComponent from "@/components/StoresComponent";
+import BravoDealInfo from "@/components/BravoDealInfo";
+import BlogSection from "@/components/BlogSection";
+import Newsletter from "@/components/Newsletter";
 
-import { fetchAllActiveStoresAction, fetchPopularStoresAction, fetchRecentlyUpdatedStoresAction } from "@/actions/storeActions";
-import { fetchTopCouponsWithStoresAction, fetchTopDealsWithStoresAction } from "@/actions/couponActions";
+import {
+  fetchAllActiveStoresAction,
+  fetchPopularStoresAction,
+  fetchRecentlyUpdatedStoresAction,
+} from "@/actions/storeActions";
+import {
+  fetchTopCouponsWithStoresAction,
+  fetchTopDealsWithStoresAction,
+} from "@/actions/couponActions";
 import { fetchAllBlogsAction } from "@/actions/blogActions";
 
-import type { StoreData } from "@/types/store";
-import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
-import type { BlogData } from "@/types/blog";
+export default async function Home() {
+  // Fetch all APIs in parallel
+  const [
+    storesResult,
+    popularStoresResult,
+    recentStoresResult,
+    couponsResult,
+    dealsResult,
+    blogsResult,
+  ] = await Promise.allSettled([
+    fetchAllActiveStoresAction(),
+    fetchPopularStoresAction(),
+    fetchRecentlyUpdatedStoresAction(),
+    fetchTopCouponsWithStoresAction(),
+    fetchTopDealsWithStoresAction(),
+    fetchAllBlogsAction(),
+  ]);
 
-export default function Home() {
-  const [stores, setStores] = useState<StoreData[]>([]); // all active stores for FeaturedStores
-  const [popularStores, setPopularStores] = useState<StoreData[]>([]);
-  const [recentlyUpdatedStores, setRecentlyUpdatedStores] = useState<StoreData[]>([]);
-  const [coupons, setCoupons] = useState<CouponWithStoreData[]>([]);
-  const [deals, setDeals] = useState<CouponWithStoreData[]>([]);
-  const [blogs, setBlogs] = useState<BlogData[]>([]);
-
-  const [loadingStores, setLoadingStores] = useState(true);
-  const [loadingPopularStores, setLoadingPopularStores] = useState(true);
-  const [loadingRecentlyUpdatedStores, setLoadingRecentlyUpdatedStores] = useState(true);
-  const [loadingCoupons, setLoadingCoupons] = useState(true);
-  const [loadingDeals, setLoadingDeals] = useState(true);
-  const [loadingBlogs, setLoadingBlogs] = useState(true);
-
-  const [errorBlogs, setErrorBlogs] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function loadStores() {
-      setLoadingStores(true);
-      try {
-        const result = await fetchAllActiveStoresAction();
-        const storeArray = Array.isArray(result?.data) ? result.data : [];
-        setStores(storeArray);
-      } catch (error) {
-        console.error("Error fetching stores:", error);
-      }
-      setLoadingStores(false);
-    }
-
-    async function loadPopularStores() {
-      setLoadingPopularStores(true);
-      try {
-        const result = await fetchPopularStoresAction();
-        const popularArray = Array.isArray(result?.data) ? result.data : [];
-        setPopularStores(popularArray);
-      } catch (error) {
-        console.error("Error fetching popular stores:", error);
-      }
-      setLoadingPopularStores(false);
-    }
-
-    async function loadRecentlyUpdatedStores() {
-      setLoadingRecentlyUpdatedStores(true);
-      try {
-        const result = await fetchRecentlyUpdatedStoresAction();
-        const recentArray = Array.isArray(result?.data) ? result.data : [];
-        setRecentlyUpdatedStores(recentArray);
-      } catch (error) {
-        console.error("Error fetching recently updated stores:", error);
-      }
-      setLoadingRecentlyUpdatedStores(false);
-    }
-
-    async function loadCoupons() {
-      setLoadingCoupons(true);
-      try {
-        const result = await fetchTopCouponsWithStoresAction();
-        const couponsArray = Array.isArray(result?.data) ? result.data : [];
-        setCoupons(couponsArray);
-
-      } catch (error) {
-        console.error("Error fetching coupons:", error);
-      }
-      setLoadingCoupons(false);
-    }
-
-    async function loadDeals() {
-      setLoadingDeals(true);
-      try {
-        const result = await fetchTopDealsWithStoresAction();
-        const dealsArray = Array.isArray(result?.data) ? result.data : [];
-        setDeals(dealsArray);
-      } catch (error) {
-        console.error("Error fetching deals:", error);
-      }
-      setLoadingDeals(false);
-    }
-
-    async function loadBlogs() {
-      setLoadingBlogs(true);
-      setErrorBlogs(null);
-      try {
-        const result = await fetchAllBlogsAction();
-        const blogsArray = Array.isArray(result?.data) ? result.data : [];
-        setBlogs(blogsArray);
-      } catch (error: any) {
-        console.error("Error fetching blogs:", error);
-        setErrorBlogs(error.message || "Error fetching blogs");
-      }
-      setLoadingBlogs(false);
-    }
-
-    loadStores();
-    loadPopularStores();
-    loadRecentlyUpdatedStores();
-    loadCoupons();
-    loadDeals();
-    loadBlogs();
-  }, []);
+  // Extract data or fallback to empty array
+  const stores = storesResult.status === "fulfilled" ? storesResult.value?.data ?? [] : [];
+  const popularStores = popularStoresResult.status === "fulfilled" ? popularStoresResult.value?.data ?? [] : [];
+  const recentlyUpdatedStores = recentStoresResult.status === "fulfilled" ? recentStoresResult.value?.data ?? [] : [];
+  const coupons = couponsResult.status === "fulfilled" ? couponsResult.value?.data ?? [] : [];
+  const deals = dealsResult.status === "fulfilled" ? dealsResult.value?.data ?? [] : [];
+  const blogs = blogsResult.status === "fulfilled" ? blogsResult.value?.data ?? [] : [];
 
   return (
     <main>
       <HeroSlider />
-      <FeaturedStores stores={stores} loading={loadingStores} />
-      <PromoCodesSection coupons={coupons} loading={loadingCoupons} />
-      <TopDeals deals={deals} loading={loadingDeals} />
-      <StoresComponent
-        popularStores={popularStores}
-        recentlyUpdatedStores={recentlyUpdatedStores}
-        loadingPopularStores={loadingPopularStores}
-        loadingRecentlyUpdatedStores={loadingRecentlyUpdatedStores}
-      />
-
+      <FeaturedStores stores={stores} />
+      <PromoCodesSection coupons={coupons} />
+      <TopDeals deals={deals} />
+      <StoresComponent popularStores={popularStores} recentlyUpdatedStores={recentlyUpdatedStores} />
       <BravoDealInfo />
-
-      <BlogSection blogs={blogs} loading={loadingBlogs} error={errorBlogs} />
+      <BlogSection blogs={blogs} />
       <Newsletter />
     </main>
   );

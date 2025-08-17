@@ -14,9 +14,9 @@ const sanitizeSettingData = (data: {
   metaDescription?: string;
   metaKeywords?: string[];
   facebookUrl?: string;
-  twitterUrl?: string;
+  XUrl?: string;
   instagramUrl?: string;
-  linkedinUrl?: string;
+  whatsappUrl?: string;
 }) => ({
   siteName: data.siteName.trim(),
   logo: data.logo?.trim(),
@@ -28,9 +28,9 @@ const sanitizeSettingData = (data: {
   metaDescription: data.metaDescription?.trim(),
   metaKeywords: data.metaKeywords || [],
   facebookUrl: data.facebookUrl?.trim(),
-  twitterUrl: data.twitterUrl?.trim(),
+  XUrl: data.XUrl?.trim(),
   instagramUrl: data.instagramUrl?.trim(),
-  linkedinUrl: data.linkedinUrl?.trim(),
+  whatsappUrl: data.whatsappUrl?.trim(),
 });
 
 /**
@@ -48,9 +48,9 @@ const serializeSetting = (setting: any) => ({
   metaDescription: setting.metaDescription,
   metaKeywords: setting.metaKeywords,
   facebookUrl: setting.facebookUrl,
-  twitterUrl: setting.twitterUrl,
+  XUrl: setting.XUrl,
   instagramUrl: setting.instagramUrl,
-  linkedinUrl: setting.linkedinUrl,
+  whatsappUrl: setting.whatsappUrl,
   createdAt: setting.createdAt?.toISOString?.(),
   updatedAt: setting.updatedAt?.toISOString?.(),
 });
@@ -69,9 +69,9 @@ export const createSetting = async (data: {
   metaDescription?: string;
   metaKeywords?: string[];
   facebookUrl?: string;
-  twitterUrl?: string;
+  XUrl?: string;
   instagramUrl?: string;
-  linkedinUrl?: string;
+  whatsappUrl?: string;
 }) => {
   const settingData = sanitizeSettingData(data);
   const setting = await new Setting(settingData).save();
@@ -110,9 +110,9 @@ export const updateSetting = async (
     metaDescription?: string;
     metaKeywords?: string[];
     facebookUrl?: string;
-    twitterUrl?: string;
+    XUrl?: string;
     instagramUrl?: string;
-    linkedinUrl?: string;
+    whatsappUrl?: string;
   }
 ) => {
   const updatedData = sanitizeSettingData(data);
@@ -129,5 +129,13 @@ export const updateSetting = async (
  */
 export const deleteSetting = async (id: string) => {
   const setting = await Setting.findByIdAndDelete(id).lean();
+  return setting ? serializeSetting(setting) : null;
+};
+
+/**
+ * Get the latest setting
+ */
+export const getLatestSetting = async () => {
+  const setting = await Setting.findOne().sort({ createdAt: -1 }).lean();
   return setting ? serializeSetting(setting) : null;
 };

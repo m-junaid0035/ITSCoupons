@@ -60,7 +60,6 @@ export default function EditSettingForm() {
 
   const [setting, setSetting] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
   const errorFor = (field: string) =>
@@ -81,7 +80,6 @@ export default function EditSettingForm() {
     loadSetting();
   }, [settingId]);
 
-  // Show dialog on successful update
   useEffect(() => {
     if (formState.data && !formState.error) {
       setSuccessDialogOpen(true);
@@ -97,7 +95,7 @@ export default function EditSettingForm() {
     }
   }, [formState]);
 
-  if (loading) return <LoadingSkeleton/>;
+  if (loading) return <LoadingSkeleton />;
   if (!setting) return <p className="text-red-500">Setting not found.</p>;
 
   return (
@@ -112,22 +110,20 @@ export default function EditSettingForm() {
 
         <CardContent>
           <form action={dispatch} className="space-y-6 max-w-2xl mx-auto">
-            {/* Site Name */}
+            {/** Site Name */}
             <div className="space-y-2">
               <Label htmlFor="siteName">Site Name</Label>
               <Input
                 id="siteName"
                 name="siteName"
-                defaultValue={setting.siteName}
                 required
+                defaultValue={setting.siteName}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("siteName") && (
-                <p className="text-sm text-red-500">{errorFor("siteName")}</p>
-              )}
+              {errorFor("siteName") && <p className="text-sm text-red-500">{errorFor("siteName")}</p>}
             </div>
 
-            {/* Logo */}
+            {/** Logo */}
             <div className="space-y-2">
               <Label htmlFor="logo">Site Logo URL</Label>
               <Input
@@ -137,12 +133,10 @@ export default function EditSettingForm() {
                 defaultValue={setting.logo}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("logo") && (
-                <p className="text-sm text-red-500">{errorFor("logo")}</p>
-              )}
+              {errorFor("logo") && <p className="text-sm text-red-500">{errorFor("logo")}</p>}
             </div>
 
-            {/* Favicon */}
+            {/** Favicon */}
             <div className="space-y-2">
               <Label htmlFor="favicon">Favicon URL</Label>
               <Input
@@ -152,12 +146,10 @@ export default function EditSettingForm() {
                 defaultValue={setting.favicon}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("favicon") && (
-                <p className="text-sm text-red-500">{errorFor("favicon")}</p>
-              )}
+              {errorFor("favicon") && <p className="text-sm text-red-500">{errorFor("favicon")}</p>}
             </div>
 
-            {/* Contact Email */}
+            {/** Contact Email */}
             <div className="space-y-2">
               <Label htmlFor="contactEmail">Contact Email</Label>
               <Input
@@ -167,12 +159,10 @@ export default function EditSettingForm() {
                 defaultValue={setting.contactEmail}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("contactEmail") && (
-                <p className="text-sm text-red-500">{errorFor("contactEmail")}</p>
-              )}
+              {errorFor("contactEmail") && <p className="text-sm text-red-500">{errorFor("contactEmail")}</p>}
             </div>
 
-            {/* Contact Phone */}
+            {/** Contact Phone */}
             <div className="space-y-2">
               <Label htmlFor="contactPhone">Contact Phone</Label>
               <Input
@@ -181,12 +171,10 @@ export default function EditSettingForm() {
                 defaultValue={setting.contactPhone}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("contactPhone") && (
-                <p className="text-sm text-red-500">{errorFor("contactPhone")}</p>
-              )}
+              {errorFor("contactPhone") && <p className="text-sm text-red-500">{errorFor("contactPhone")}</p>}
             </div>
 
-            {/* Address */}
+            {/** Address */}
             <div className="space-y-2">
               <Label htmlFor="address">Address</Label>
               <Textarea
@@ -196,12 +184,10 @@ export default function EditSettingForm() {
                 defaultValue={setting.address}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("address") && (
-                <p className="text-sm text-red-500">{errorFor("address")}</p>
-              )}
+              {errorFor("address") && <p className="text-sm text-red-500">{errorFor("address")}</p>}
             </div>
 
-            {/* Meta Title */}
+            {/** Meta Title */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
               <Input
@@ -210,12 +196,10 @@ export default function EditSettingForm() {
                 defaultValue={setting.metaTitle}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("metaTitle") && (
-                <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
-              )}
+              {errorFor("metaTitle") && <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>}
             </div>
 
-            {/* Meta Description */}
+            {/** Meta Description */}
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
               <Textarea
@@ -225,90 +209,48 @@ export default function EditSettingForm() {
                 defaultValue={setting.metaDescription}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("metaDescription") && (
-                <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
-              )}
+              {errorFor("metaDescription") && <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>}
             </div>
 
-            {/* Meta Keywords */}
+            {/** Meta Keywords */}
             <div className="space-y-2">
               <Label htmlFor="metaKeywords">Meta Keywords (comma-separated)</Label>
               <Input
                 id="metaKeywords"
                 name="metaKeywords"
-                defaultValue={
-                  Array.isArray(setting.metaKeywords)
-                    ? setting.metaKeywords.join(", ")
-                    : setting.metaKeywords || ""
-                }
+                defaultValue={Array.isArray(setting.metaKeywords) ? setting.metaKeywords.join(", ") : setting.metaKeywords || ""}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("metaKeywords") && (
-                <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
-              )}
+              {errorFor("metaKeywords") && <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>}
             </div>
 
-            {/* Social URLs */}
+            {/** Social URLs */}
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="facebookUrl">Facebook URL</Label>
-                <Input
-                  id="facebookUrl"
-                  name="facebookUrl"
-                  type="url"
-                  defaultValue={setting.facebookUrl}
-                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                />
-                {errorFor("facebookUrl") && (
-                  <p className="text-sm text-red-500">{errorFor("facebookUrl")}</p>
-                )}
+                <Input id="facebookUrl" name="facebookUrl" type="url" defaultValue={setting.facebookUrl} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+                {errorFor("facebookUrl") && <p className="text-sm text-red-500">{errorFor("facebookUrl")}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="twitterUrl">Twitter URL</Label>
-                <Input
-                  id="twitterUrl"
-                  name="twitterUrl"
-                  type="url"
-                  defaultValue={setting.twitterUrl}
-                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                />
-                {errorFor("twitterUrl") && (
-                  <p className="text-sm text-red-500">{errorFor("twitterUrl")}</p>
-                )}
+                <Input id="twitterUrl" name="twitterUrl" type="url" defaultValue={setting.twitterUrl} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+                {errorFor("twitterUrl") && <p className="text-sm text-red-500">{errorFor("twitterUrl")}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="instagramUrl">Instagram URL</Label>
-                <Input
-                  id="instagramUrl"
-                  name="instagramUrl"
-                  type="url"
-                  defaultValue={setting.instagramUrl}
-                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                />
-                {errorFor("instagramUrl") && (
-                  <p className="text-sm text-red-500">{errorFor("instagramUrl")}</p>
-                )}
+                <Input id="instagramUrl" name="instagramUrl" type="url" defaultValue={setting.instagramUrl} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+                {errorFor("instagramUrl") && <p className="text-sm text-red-500">{errorFor("instagramUrl")}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="linkedinUrl">LinkedIn URL</Label>
-                <Input
-                  id="linkedinUrl"
-                  name="linkedinUrl"
-                  type="url"
-                  defaultValue={setting.linkedinUrl}
-                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                />
-                {errorFor("linkedinUrl") && (
-                  <p className="text-sm text-red-500">{errorFor("linkedinUrl")}</p>
-                )}
+                <Input id="linkedinUrl" name="linkedinUrl" type="url" defaultValue={setting.linkedinUrl} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+                {errorFor("linkedinUrl") && <p className="text-sm text-red-500">{errorFor("linkedinUrl")}</p>}
               </div>
             </div>
 
-            {/* General Error */}
+            {/** General Error */}
             {"message" in (formState.error ?? {}) && (
-              <p className="text-sm text-red-500">
-                {(formState.error as any).message?.[0]}
-              </p>
+              <p className="text-sm text-red-500">{(formState.error as any).message?.[0]}</p>
             )}
 
             <CardFooter className="flex justify-end border-none">
@@ -321,7 +263,7 @@ export default function EditSettingForm() {
         </CardContent>
       </Card>
 
-      {/* Success Dialog */}
+      {/** Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent>
           <DialogHeader>

@@ -7,8 +7,12 @@ interface ButtonGridProps {
 }
 
 function ButtonGrid({ stores }: ButtonGridProps) {
+  if (!stores.length) {
+    return <p className="text-center text-gray-500">No stores available.</p>;
+  }
+
   return (
-    <div className="grid grid-cols-3 md:grid-cols-6 gap-y-6 gap-x-12 justify-items-center w-full">
+    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-y-6 gap-x-4 sm:gap-x-6 justify-items-center w-full">
       {stores.map((store) => (
         <button
           key={store._id}
@@ -33,54 +37,42 @@ function ButtonGrid({ stores }: ButtonGridProps) {
 interface StoresComponentProps {
   recentlyUpdatedStores: StoreData[];
   popularStores: StoreData[];
-  loadingRecentlyUpdatedStores?: boolean;
-  loadingPopularStores?: boolean;
 }
 
 export default function StoresComponent({
   recentlyUpdatedStores,
   popularStores,
-  loadingRecentlyUpdatedStores = false,
-  loadingPopularStores = false,
 }: StoresComponentProps) {
   return (
-    <div className="max-w-5xl mx-auto py-12 px-6">
+    <div className="max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       {/* Recently Updated Section */}
       <section className="mb-20">
-        <h2 className="text-2xl font-bold text-purple-700 text-center mb-3">
+        <h2 className="text-2xl sm:text-3xl font-bold text-purple-700 text-center mb-3">
           Stores Recently Updated
         </h2>
 
         <div className="flex justify-end mb-5">
-          <a href="/stores" className="text-sm text-purple-700 hover:underline">
+          <a href="/stores" className="text-sm sm:text-base text-purple-700 hover:underline">
             VIEW ALL
           </a>
         </div>
 
-        {loadingRecentlyUpdatedStores ? (
-          <div className="text-purple-700 font-semibold text-center">Loading...</div>
-        ) : (
-          <ButtonGrid stores={recentlyUpdatedStores} />
-        )}
+        <ButtonGrid stores={recentlyUpdatedStores} />
       </section>
 
       {/* Popular Stores Section */}
       <section>
-        <h2 className="text-2xl font-bold text-purple-700 text-center mb-3">
+        <h2 className="text-2xl sm:text-3xl font-bold text-purple-700 text-center mb-3">
           Popular Stores
         </h2>
 
         <div className="flex justify-end mb-5">
-          <a href="/stores" className="text-sm text-purple-700 hover:underline">
+          <a href="/stores" className="text-sm sm:text-base text-purple-700 hover:underline">
             VIEW ALL
           </a>
         </div>
 
-        {loadingPopularStores ? (
-          <div className="text-purple-700 font-semibold text-center">Loading...</div>
-        ) : (
-          <ButtonGrid stores={popularStores} />
-        )}
+        <ButtonGrid stores={popularStores} />
       </section>
     </div>
   );

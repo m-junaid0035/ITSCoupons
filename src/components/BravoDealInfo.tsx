@@ -14,21 +14,24 @@ const BravoDealInfo: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 px-4 md:px-6 py-8 bg-white rounded-lg shadow-md text-gray-800">
-      <section className="mb-8">
-        <h2 className="text-xl md:text-2xl font-bold mb-4 text-blue-800">
+    <div className="max-w-4xl mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
+      
+      {/* Introduction Section */}
+      <section className="mb-10">
+        <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-4 text-blue-800">
           More Than Just Coupons at ItsCoupons: Real Savings, Verified Deals
         </h2>
-        <p className="text-base leading-relaxed">
+        <p className="text-sm sm:text-base md:text-base lg:text-lg leading-relaxed">
           ItsCoupons.com is an online platform for deal seekers and shoppers who are looking to save as much as they can on their online purchases. ItsCoupons provides customers in the United States with thousands of free coupons, promo codes, discounts, deals, and tips that are checked and verified manually by our team.
         </p>
       </section>
 
-      <section className="mb-8">
-        <h3 className="text-lg font-semibold border-l-4 border-blue-400 pl-2 mb-2">
+      {/* Redeem Section */}
+      <section className="mb-10">
+        <h3 className="text-base sm:text-lg md:text-xl font-semibold border-l-4 border-blue-400 pl-2 mb-3">
           How Can You Redeem Our Coupons & Offers
         </h3>
-        <p className="text-base leading-relaxed">
+        <p className="text-sm sm:text-base md:text-base lg:text-base leading-relaxed">
           ItsCoupons gives you the greatest online discounts and top deals available on electronic devices, clothing, shoes, bags, beauty products, books, and so much more.
           You can find fabulous deals on gifts all year round, or if you are unsure of what to get, you can buy gift cards.
 
@@ -46,11 +49,12 @@ const BravoDealInfo: React.FC = () => {
         </p>
       </section>
 
-      <section className="mb-8">
-        <h3 className="text-lg font-semibold border-l-4 border-blue-400 pl-2 mb-2">
+      {/* How We Work Section */}
+      <section className="mb-10">
+        <h3 className="text-base sm:text-lg md:text-xl font-semibold border-l-4 border-blue-400 pl-2 mb-3">
           How Do We Work
         </h3>
-        <p className="text-base leading-relaxed">
+        <p className="text-sm sm:text-base md:text-base lg:text-base leading-relaxed">
           The coupons on our site are hand-picked and tested by our savings team. Every day, our dedicated team updates the site to ensure everything works smoothly.
 
           <br /><br />
@@ -66,12 +70,13 @@ const BravoDealInfo: React.FC = () => {
         </p>
       </section>
 
+      {/* Top Brands Section */}
       <section>
-        <h4 className="font-semibold text-base mb-3 underline">Top Brands to Check Out:</h4>
-        <ul className="list-disc list-inside space-y-1 text-base">
+        <h4 className="text-base sm:text-lg md:text-xl font-semibold mb-4 underline">Top Brands to Check Out:</h4>
+        <ul className="list-disc list-inside space-y-1 text-sm sm:text-base md:text-base lg:text-base">
           {brands.map((brand) => (
             <li key={brand}>
-              <a href="#" className="text-blue-600 underline hover:text-blue-800" target="_blank" rel="noopener noreferrer">
+              <a href="#" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">
                 {brand}
               </a>
             </li>

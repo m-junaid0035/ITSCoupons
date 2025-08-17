@@ -3,53 +3,21 @@
 import React, { useState, useEffect } from "react";
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import CouponModal from "@/components/coupon_popup";
-import { useSearchParams } from "next/navigation";
 
 interface PromoCodesSectionProps {
   coupons: CouponWithStoreData[];
-  loading?: boolean;
 }
 
-export default function PromoCodesSection({
-  coupons,
-  loading = false,
-}: PromoCodesSectionProps) {
+export default function PromoCodesSection({ coupons }: PromoCodesSectionProps) {
   const [selectedCoupon, setSelectedCoupon] = useState<CouponWithStoreData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const searchParams = useSearchParams();
-  const couponIdFromUrl = searchParams.get("couponId");
-
-  // Auto-open modal if couponId is in query params
   useEffect(() => {
-    if (couponIdFromUrl && coupons.length) {
-      const foundCoupon = coupons.find((c) => c._id === couponIdFromUrl);
-      if (foundCoupon) {
-        setSelectedCoupon(foundCoupon);
-        setIsModalOpen(true);
-      }
-    }
-  }, [couponIdFromUrl, coupons]);
-
-  // Lock background scroll when modal is open
-  useEffect(() => {
-    if (isModalOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
+    document.body.style.overflow = isModalOpen ? "hidden" : "auto";
     return () => {
       document.body.style.overflow = "auto";
     };
   }, [isModalOpen]);
-
-  if (loading) {
-    return (
-      <div className="max-w-5xl mx-auto py-10 px-4 flex justify-center items-center text-purple-700 font-semibold">
-        Loading coupons...
-      </div>
-    );
-  }
 
   if (!coupons.length) {
     return (
@@ -60,48 +28,41 @@ export default function PromoCodesSection({
   }
 
   const handleGetCouponClick = (coupon: CouponWithStoreData) => {
-    // Open your site in a new tab with modal
     const modalUrl = `/?couponId=${coupon._id}`;
     window.open(modalUrl, "_blank", "noopener,noreferrer");
-
-    // Redirect current tab to store URL
     if (coupon.couponUrl) {
       window.location.href = coupon.couponUrl;
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto py-10 px-4">
-      <h2 className="text-2xl font-bold text-purple-700 text-center mb-2">
+    <div className="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-purple-700 text-center mb-6 sm:mb-8">
         Top Coupons & Promo Codes
       </h2>
 
       <div className="flex justify-end mb-4">
-        <a href="/coupons" className="text-sm text-purple-700 hover:underline">
+        <a href="/coupons" className="text-sm sm:text-base text-purple-700 hover:underline">
           VIEW ALL
         </a>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 justify-items-center">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 justify-items-center">
         {coupons.map((coupon, idx) => {
           const expiration = coupon.expirationDate
-            ? new Date(coupon.expirationDate).toLocaleDateString(undefined, {
-                year: "numeric",
+            ? new Date(coupon.expirationDate).toLocaleDateString("en-GB", {
+                day: "2-digit",
                 month: "short",
+                year: "numeric",
               })
             : "N/A";
 
-          const displayStoreName =
-            coupon.store?.name || coupon.storeName || "Unknown Store";
+          const displayStoreName = coupon.store?.name || coupon.storeName || "Unknown Store";
           const storeInitial = displayStoreName.charAt(0).toUpperCase();
 
           return (
-            <div
-              key={coupon._id || idx}
-              className="flex flex-col items-center w-full max-w-[247px]"
-            >
-              {/* Image Box */}
-              <div className="w-full h-[150px] bg-gray-100 rounded-[12px] overflow-hidden flex items-center justify-center">
+            <div key={coupon._id || idx} className="flex flex-col items-center w-full max-w-[247px]">
+              <div className="w-full h-[150px] bg-gray-100 rounded-[16px] overflow-hidden flex items-center justify-center">
                 {coupon.store?.image ? (
                   <img
                     src={coupon.store.image}
@@ -113,13 +74,11 @@ export default function PromoCodesSection({
                 )}
               </div>
 
-              {/* White Card */}
-              <div className="w-full h-[148px] bg-white rounded-[12px] shadow-md -mt-6 z-10 flex flex-col justify-between p-4">
+              <div className="w-full h-[148px] bg-white rounded-[16px] shadow-md -mt-6 z-10 flex flex-col justify-between p-4">
                 <div>
-                  {/* Store Icon + Name */}
                   <div className="flex items-center mb-1 -mt-10">
                     <div
-                      className="bg-purple-700 flex items-center justify-center text-white text-xl font-bold"
+                      className="bg-purple-700 flex items-center justify-center text-white text-xl font-bold rounded-md"
                       style={{ width: 50, height: 50 }}
                     >
                       {storeInitial}
@@ -151,7 +110,6 @@ export default function PromoCodesSection({
         })}
       </div>
 
-      {/* Coupon Modal */}
       <CouponModal
         storeName={selectedCoupon?.store?.name}
         title={selectedCoupon?.title}

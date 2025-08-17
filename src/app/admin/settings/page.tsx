@@ -59,9 +59,9 @@ interface ISetting {
   metaDescription?: string;
   metaKeywords: string[];
   facebookUrl?: string;
-  twitterUrl?: string;
+  XUrl?: string;
   instagramUrl?: string;
-  linkedinUrl?: string;
+  whatsappUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -195,28 +195,27 @@ export default function SettingsPage() {
     setLoading(false);
   };
 
- const handleDelete = async (id: string) => {
-  startTransition(() => {
-  deleteOptimistic(id);
-  });
-
-  const result = await deleteSettingAction(id);
-  if (result?.error) {
-    toast({
-      title: "Error",
-      description: result.error.message || "Failed to delete setting",
-      variant: "destructive",
+  const handleDelete = async (id: string) => {
+    startTransition(() => {
+      deleteOptimistic(id);
     });
-    await loadSettings(); // rollback optimistic update
-  } else {
-    setSettings(prev => prev.filter(setting => setting._id !== id)); // keep state in sync
-    toast({
-      title: "Deleted",
-      description: "Setting deleted successfully.",
-    });
-  }
-};
 
+    const result = await deleteSettingAction(id);
+    if (result?.error) {
+      toast({
+        title: "Error",
+        description: result.error.message || "Failed to delete setting",
+        variant: "destructive",
+      });
+      await loadSettings(); // rollback optimistic update
+    } else {
+      setSettings((prev) => prev.filter((setting) => setting._id !== id)); // keep state in sync
+      toast({
+        title: "Deleted",
+        description: "Setting deleted successfully.",
+      });
+    }
+  };
 
   useEffect(() => {
     loadSettings();

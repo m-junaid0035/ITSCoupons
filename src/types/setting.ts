@@ -11,9 +11,9 @@ export interface SettingInput {
   metaDescription?: string;
   metaKeywords?: string[];
   facebookUrl?: string;
-  twitterUrl?: string;
+  XUrl?: string;          // changed from twitterUrl to XUrl
   instagramUrl?: string;
-  linkedinUrl?: string;
+  whatsappUrl?: string;   // changed from linkedinUrl to whatsappUrl
 }
 
 export interface SettingData {
@@ -28,9 +28,9 @@ export interface SettingData {
   metaDescription?: string;
   metaKeywords: string[];
   facebookUrl?: string;
-  twitterUrl?: string;
+  XUrl?: string;           // changed from twitterUrl to XUrl
   instagramUrl?: string;
-  linkedinUrl?: string;
+  whatsappUrl?: string;    // changed from linkedinUrl to whatsappUrl
   createdAt?: string | null;
   updatedAt?: string | null;
 }

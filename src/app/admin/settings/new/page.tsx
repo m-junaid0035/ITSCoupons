@@ -76,7 +76,7 @@ export default function SettingForm() {
     <>
       <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex items-center justify-between border-none">
-          <CardTitle>Update Settings</CardTitle>
+          <CardTitle>Create / Update Setting</CardTitle>
           <Button variant="secondary" onClick={() => router.push("/admin/settings")}>
             Back to Settings
           </Button>
@@ -232,16 +232,16 @@ export default function SettingForm() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="twitterUrl">Twitter URL</Label>
+                <Label htmlFor="XUrl">Twitter URL</Label>
                 <Input
-                  id="twitterUrl"
-                  name="twitterUrl"
+                  id="XUrl"
+                  name="XUrl"
                   type="url"
                   className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                   placeholder="https://twitter.com/yourprofile"
                 />
-                {errorFor("twitterUrl") && (
-                  <p className="text-sm text-red-500">{errorFor("twitterUrl")}</p>
+                {errorFor("XUrl") && (
+                  <p className="text-sm text-red-500">{errorFor("XUrl")}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -258,16 +258,16 @@ export default function SettingForm() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="linkedinUrl">LinkedIn URL</Label>
+                <Label htmlFor="whatsappUrl">WhatsApp URL</Label>
                 <Input
-                  id="linkedinUrl"
-                  name="linkedinUrl"
+                  id="whatsappUrl"
+                  name="whatsappUrl"
                   type="url"
                   className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                  placeholder="https://linkedin.com/in/yourprofile"
+                  placeholder="https://wa.me/yourNumber"
                 />
-                {errorFor("linkedinUrl") && (
-                  <p className="text-sm text-red-500">{errorFor("linkedinUrl")}</p>
+                {errorFor("whatsappUrl") && (
+                  <p className="text-sm text-red-500">{errorFor("whatsappUrl")}</p>
                 )}
               </div>
             </div>
@@ -295,7 +295,7 @@ export default function SettingForm() {
           <DialogHeader>
             <DialogTitle>Success</DialogTitle>
           </DialogHeader>
-          <p>Settings updated successfully!</p>
+          <p>Settings saved successfully!</p>
           <DialogFooter>
             <Button
               onClick={() => {

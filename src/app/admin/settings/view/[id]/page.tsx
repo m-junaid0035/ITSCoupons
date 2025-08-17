@@ -1,24 +1,38 @@
 import { fetchSettingByIdAction } from "@/actions/settingActions";
 import { notFound } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
 
 type SocialKey = "facebookUrl" | "twitterUrl" | "instagramUrl" | "linkedinUrl";
+
+interface SettingType {
+  _id: any;
+  siteName: string;
+  logo?: string;
+  favicon?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  address?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  metaKeywords?: string[];
+  facebookUrl?: string;
+  twitterUrl?: string;
+  instagramUrl?: string;
+  linkedinUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 interface SettingsViewPageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function SettingsViewPage({ params }: SettingsViewPageProps) {
-  // Await params to get the actual id
   const resolvedParams = await params;
-
-  // Fetch setting by id
   const result = await fetchSettingByIdAction(resolvedParams.id);
 
   if (!result || result.error || !result.data) return notFound();
 
-  const setting = result.data;
-
+  const setting: SettingType = result.data; // explicitly typed
   const socialKeys: SocialKey[] = ["facebookUrl", "twitterUrl", "instagramUrl", "linkedinUrl"];
 
   return (
@@ -48,7 +62,9 @@ export default async function SettingsViewPage({ params }: SettingsViewPageProps
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400">Meta Keywords</p>
           <p className="text-gray-700 dark:text-gray-300">
-            {(setting.metaKeywords && setting.metaKeywords.length > 0) ? setting.metaKeywords.join(", ") : "N/A"}
+            {Array.isArray(setting.metaKeywords) && setting.metaKeywords.length > 0
+              ? setting.metaKeywords.join(", ")
+              : "N/A"}
           </p>
         </div>
 
@@ -91,11 +107,7 @@ export default async function SettingsViewPage({ params }: SettingsViewPageProps
         {setting.logo && (
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Logo</p>
-            <img
-              src={setting.logo}
-              alt="Site Logo"
-              className="h-16 w-auto mt-2 rounded"
-            />
+            <img src={setting.logo} alt="Site Logo" className="h-16 w-auto mt-2 rounded" />
           </div>
         )}
 
@@ -103,11 +115,7 @@ export default async function SettingsViewPage({ params }: SettingsViewPageProps
         {setting.favicon && (
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Favicon</p>
-            <img
-              src={setting.favicon}
-              alt="Favicon"
-              className="h-10 w-10 mt-2 rounded"
-            />
+            <img src={setting.favicon} alt="Favicon" className="h-10 w-10 mt-2 rounded" />
           </div>
         )}
 

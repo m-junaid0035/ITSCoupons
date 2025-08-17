@@ -47,7 +47,7 @@ export default function Newsletter() {
   }, [formState]);
 
   return (
-    <section className="bg-white text-center py-12 px-4">
+    <section className="bg-white text-center py-12 px-4 sm:px-6 lg:px-8">
       <h2 className="text-2xl md:text-3xl font-bold mb-4">
         Join the Savings Revolution
       </h2>
@@ -59,9 +59,8 @@ export default function Newsletter() {
         onSubmit={(e) => {
           e.preventDefault();
           const formData = new FormData();
-          formData.set("email", email); // ✅ set email
+          formData.set("email", email);
 
-          // Wrap the dispatch inside startTransition
           startTransition(() => {
             dispatch(formData);
           });
@@ -78,25 +77,28 @@ export default function Newsletter() {
         />
         <Button
           type="submit"
-          className="bg-purple-700 text-white px-6 py-2 rounded-md hover:bg-purple-800 transition"
+          className="bg-purple-700 text-white px-6 py-2 rounded-md hover:bg-purple-800 transition shadow-sm"
           disabled={isPending}
         >
           {isPending ? "Subscribing..." : "Subscribe"}
         </Button>
       </form>
 
-      {/* Field-level error */}
       {errorFor("email") && <p className="text-red-500 mt-2">{errorFor("email")}</p>}
 
-      {/* Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle>Subscription Status</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">Subscription Status</DialogTitle>
           </DialogHeader>
-          <p className="py-2">{dialogMessage}</p>
+          <p className="py-2 text-sm sm:text-base">{dialogMessage}</p>
           <DialogFooter>
-            <Button onClick={() => setDialogOpen(false)}>Close</Button>
+            <Button
+              className="bg-purple-700 text-white px-6 py-2 rounded-md hover:bg-purple-800 transition shadow-sm"
+              onClick={() => setDialogOpen(false)}
+            >
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
