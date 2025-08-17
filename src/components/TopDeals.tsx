@@ -34,7 +34,7 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, loading = false }) => {
 
       {/* View All */}
       <div className="flex justify-end mb-4">
-        <a href="#" className="text-sm text-purple-700 hover:underline">
+        <a href="/coupons" className="text-sm text-purple-700 hover:underline">
           VIEW ALL
         </a>
       </div>

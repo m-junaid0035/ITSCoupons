@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
+import CouponModal from "@/components/coupon_popup";
+import { useSearchParams } from "next/navigation";
 
 interface PromoCodesSectionProps {
   coupons: CouponWithStoreData[];
@@ -12,8 +14,34 @@ export default function PromoCodesSection({
   coupons,
   loading = false,
 }: PromoCodesSectionProps) {
-  const [showCodeIndex, setShowCodeIndex] = useState<number | null>(null);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [selectedCoupon, setSelectedCoupon] = useState<CouponWithStoreData | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const searchParams = useSearchParams();
+  const couponIdFromUrl = searchParams.get("couponId");
+
+  // Auto-open modal if couponId is in query params
+  useEffect(() => {
+    if (couponIdFromUrl && coupons.length) {
+      const foundCoupon = coupons.find((c) => c._id === couponIdFromUrl);
+      if (foundCoupon) {
+        setSelectedCoupon(foundCoupon);
+        setIsModalOpen(true);
+      }
+    }
+  }, [couponIdFromUrl, coupons]);
+
+  // Lock background scroll when modal is open
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isModalOpen]);
 
   if (loading) {
     return (
@@ -31,13 +59,14 @@ export default function PromoCodesSection({
     );
   }
 
-  const handleCopy = async (code: string, idx: number) => {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopiedIndex(idx);
-      setTimeout(() => setCopiedIndex(null), 2000);
-    } catch (err) {
-      console.error("Failed to copy coupon code", err);
+  const handleGetCouponClick = (coupon: CouponWithStoreData) => {
+    // Open your site in a new tab with modal
+    const modalUrl = `/?couponId=${coupon._id}`;
+    window.open(modalUrl, "_blank", "noopener,noreferrer");
+
+    // Redirect current tab to store URL
+    if (coupon.couponUrl) {
+      window.location.href = coupon.couponUrl;
     }
   };
 
@@ -48,7 +77,7 @@ export default function PromoCodesSection({
       </h2>
 
       <div className="flex justify-end mb-4">
-        <a href="#" className="text-sm text-purple-700 hover:underline">
+        <a href="/coupons" className="text-sm text-purple-700 hover:underline">
           VIEW ALL
         </a>
       </div>
@@ -57,9 +86,9 @@ export default function PromoCodesSection({
         {coupons.map((coupon, idx) => {
           const expiration = coupon.expirationDate
             ? new Date(coupon.expirationDate).toLocaleDateString(undefined, {
-              year: "numeric",
-              month: "short",
-            })
+                year: "numeric",
+                month: "short",
+              })
             : "N/A";
 
           const displayStoreName =
@@ -110,18 +139,10 @@ export default function PromoCodesSection({
 
                 {coupon.couponCode && (
                   <button
-                    onClick={() => {
-                      setShowCodeIndex(showCodeIndex === idx ? null : idx);
-                      if (showCodeIndex !== idx)
-                        handleCopy(coupon.couponCode, idx);
-                    }}
+                    onClick={() => handleGetCouponClick(coupon)}
                     className="w-full bg-gray-200 text-xs font-semibold text-black rounded-full py-1 hover:bg-purple-200 transition"
                   >
-                    {showCodeIndex === idx
-                      ? copiedIndex === idx
-                        ? "Copied!"
-                        : coupon.couponCode
-                      : "Show Coupon Code"}
+                    GET COUPON CODE
                   </button>
                 )}
               </div>
@@ -129,6 +150,16 @@ export default function PromoCodesSection({
           );
         })}
       </div>
+
+      {/* Coupon Modal */}
+      <CouponModal
+        storeName={selectedCoupon?.store?.name}
+        title={selectedCoupon?.title}
+        code={selectedCoupon?.couponCode}
+        redeemUrl={selectedCoupon?.couponUrl}
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

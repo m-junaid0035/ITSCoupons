@@ -52,7 +52,7 @@ export default function StoresComponent({
         </h2>
 
         <div className="flex justify-end mb-5">
-          <a href="#" className="text-sm text-purple-700 hover:underline">
+          <a href="/stores" className="text-sm text-purple-700 hover:underline">
             VIEW ALL
           </a>
         </div>
@@ -71,7 +71,7 @@ export default function StoresComponent({
         </h2>
 
         <div className="flex justify-end mb-5">
-          <a href="#" className="text-sm text-purple-700 hover:underline">
+          <a href="/stores" className="text-sm text-purple-700 hover:underline">
             VIEW ALL
           </a>
         </div>
