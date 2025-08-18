@@ -4,11 +4,11 @@ import Image from "next/image";
 import { fetchBlogByIdAction } from "@/actions/blogActions";
 import type { BlogData } from "@/types/blog";
 
-interface BlogPageProps {
-  params: { id: string }; // route param
-}
-
-export default async function BlogPage({ params }: BlogPageProps) {
+export default async function BlogPage({
+  params,
+}: {
+  params: { id: string };
+}) {
   const result = await fetchBlogByIdAction(params.id);
 
   if (result.error) {
