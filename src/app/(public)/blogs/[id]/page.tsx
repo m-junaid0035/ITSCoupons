@@ -1,12 +1,11 @@
 // app/blogs/[id]/page.tsx
-"use server";
-
 import React from "react";
+import Image from "next/image";
 import { fetchBlogByIdAction } from "@/actions/blogActions";
 import type { BlogData } from "@/types/blog";
 
 interface BlogPageProps {
-  params: { id: string }; // URL param
+  params: { id: string }; // route param
 }
 
 export default async function BlogPage({ params }: BlogPageProps) {
@@ -43,12 +42,13 @@ export default async function BlogPage({ params }: BlogPageProps) {
 
       {/* Blog Image */}
       {blog.image && (
-        <div className="w-full h-64 sm:h-80 md:h-96 mb-8 overflow-hidden rounded-2xl shadow-lg">
-          <img
+        <div className="w-full h-64 sm:h-80 md:h-96 mb-8 overflow-hidden rounded-2xl shadow-lg relative">
+          <Image
             src={blog.image}
             alt={blog.title}
-            className="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105"
-            loading="lazy"
+            fill
+            className="object-cover object-center transition-transform duration-500 hover:scale-105"
+            priority
           />
         </div>
       )}
