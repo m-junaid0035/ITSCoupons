@@ -112,6 +112,7 @@ export default function PromoCodesSection({ coupons }: PromoCodesSectionProps) {
 
       <CouponModal
         storeName={selectedCoupon?.store?.name}
+        storeImageUrl={selectedCoupon?.store?.image}
         title={selectedCoupon?.title}
         code={selectedCoupon?.couponCode}
         redeemUrl={selectedCoupon?.couponUrl}

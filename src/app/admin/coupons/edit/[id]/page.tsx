@@ -30,7 +30,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-import LoadingSkeleton from "./loading"; // Your loading skeleton component
+import LoadingSkeleton from "./loading";
 import { toast } from "@/hooks/use-toast";
 
 import { updateCouponAction, fetchCouponByIdAction } from "@/actions/couponActions";
@@ -66,6 +66,7 @@ export default function EditCouponForm() {
   const [loading, setLoading] = useState(true);
   const [expirationDate, setExpirationDate] = useState<Date | undefined>(undefined);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [couponType, setCouponType] = useState("coupon"); // Added couponType state
 
   useEffect(() => {
     async function loadData() {
@@ -76,6 +77,7 @@ export default function EditCouponForm() {
         ]);
         if (couponRes?.data) {
           setCoupon(couponRes.data);
+          setCouponType(couponRes.data.couponType || "coupon");
           if (couponRes.data.expirationDate)
             setExpirationDate(new Date(couponRes.data.expirationDate));
         }
@@ -177,7 +179,8 @@ export default function EditCouponForm() {
               <select
                 id="couponType"
                 name="couponType"
-                defaultValue={coupon.couponType}
+                value={couponType} // bind state
+                onChange={(e) => setCouponType(e.target.value)}
                 className="w-full rounded px-3 py-2 shadow-sm border-none bg-gray-50 dark:bg-gray-700"
               >
                 <option value="coupon">Coupon</option>
@@ -211,8 +214,11 @@ export default function EditCouponForm() {
               <Input
                 id="couponCode"
                 name="couponCode"
-                defaultValue={coupon.couponCode}
+                defaultValue={
+                  couponType === "deal" ? "DEAL_CODE" : coupon.couponCode
+                }
                 required
+                disabled={couponType === "deal"} // disable if deal
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("couponCode") && (

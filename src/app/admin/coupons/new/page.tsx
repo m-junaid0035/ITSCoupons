@@ -54,8 +54,16 @@ const initialState: FormState = { error: {} };
 export default function CouponForm() {
   const router = useRouter();
   const [stores, setStores] = useState<Store[]>([]);
-  const [expirationDate, setExpirationDate] = useState<Date | undefined>(undefined);
+  const [expirationDate, setExpirationDate] = useState<Date | undefined>(
+    undefined
+  );
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+
+  // ---------- Added: Coupon Type State ----------
+  const [couponType, setCouponType] = useState("coupon");
+
+  // ---------- Added: Controlled Coupon Code ----------
+  const [couponCode, setCouponCode] = useState("");
 
   const [formState, dispatch, isPending] = useActionState(
     async (prevState: any, formData: FormData) => {
@@ -103,16 +111,16 @@ export default function CouponForm() {
       <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex items-center justify-between border-none">
           <CardTitle>Create Coupon</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/coupons")}>
+          <Button
+            variant="secondary"
+            onClick={() => router.push("/admin/coupons")}
+          >
             Back to Coupons
           </Button>
         </CardHeader>
 
         <CardContent>
-          <form
-            action={(formData) => dispatch(formData)}
-            className="space-y-6"
-          >
+          <form action={(formData) => dispatch(formData)} className="space-y-6">
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
@@ -149,7 +157,8 @@ export default function CouponForm() {
               <select
                 id="couponType"
                 name="couponType"
-                defaultValue="coupon"
+                value={couponType} // bind state
+                onChange={(e) => setCouponType(e.target.value)}
                 className="w-full rounded px-3 py-2 shadow-sm border-none bg-gray-50 dark:bg-gray-700"
               >
                 <option value="coupon">Coupon</option>
@@ -186,6 +195,9 @@ export default function CouponForm() {
                 required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Enter coupon code"
+                value={couponType === "deal" ? "DEAL_CODE" : couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                disabled={couponType === "deal"}
               />
               {errorFor("couponCode") && (
                 <p className="text-sm text-red-500">{errorFor("couponCode")}</p>
@@ -269,7 +281,7 @@ export default function CouponForm() {
 
             {/* Verified */}
             <div className="flex items-center space-x-2">
-              <input
+              <Input
                 type="checkbox"
                 id="verified"
                 name="verified"
@@ -316,7 +328,7 @@ export default function CouponForm() {
 
             {/* Top One */}
             <div className="flex items-center space-x-2">
-              <input
+              <Input
                 type="checkbox"
                 id="isTopOne"
                 name="isTopOne"

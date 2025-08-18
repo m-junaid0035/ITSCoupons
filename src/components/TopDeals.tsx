@@ -91,6 +91,7 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals }) => {
       {/* Coupon Modal */}
       <CouponModal
         storeName={selectedDeal?.store?.name}
+        storeImageUrl={selectedDeal?.store?.image}
         title={selectedDeal?.title}
         code={selectedDeal?.couponCode}
         redeemUrl={selectedDeal?.couponUrl}

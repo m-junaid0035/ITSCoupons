@@ -1,140 +1,48 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
+// app/coupons/page.tsx
 import AllCouponsPage from "@/components/coupons/AllCouponsPage";
 import RelatedStores from "@/components/coupons/RelatedStores";
 
 import { fetchAllCouponsWithStoresAction } from "@/actions/couponActions";
 import { fetchStoresByCategoriesAction } from "@/actions/storeActions";
-import { fetchAllCategoriesAction } from "@/actions/categoryActions"; // <- import your action
+import { fetchAllCategoriesAction } from "@/actions/categoryActions";
 
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import type { StoreData } from "@/types/store";
-import type { CategoryData } from "@/types/category"; // <- type for categories
+import type { CategoryData } from "@/types/category";
 
-export default function CouponsPage() {
-  const [coupons, setCoupons] = useState<CouponWithStoreData[]>([]);
-  const [loadingCoupons, setLoadingCoupons] = useState(true);
-  const [errorCoupons, setErrorCoupons] = useState<string | null>(null);
+export default async function CouponsPage() {
+  // Fetch coupons and categories in parallel
+  const [couponsResult, categoriesResult] = await Promise.allSettled([
+    fetchAllCouponsWithStoresAction(),
+    fetchAllCategoriesAction(),
+  ]);
 
-  const [relatedStores, setRelatedStores] = useState<StoreData[]>([]);
-  const [loadingStores, setLoadingStores] = useState(false);
-  const [errorStores, setErrorStores] = useState<string | null>(null);
+  // Extract data or fallback to empty array
+  const coupons: CouponWithStoreData[] = couponsResult.status === "fulfilled" ? couponsResult.value?.data ?? [] : [];
+  const categories: CategoryData[] = categoriesResult.status === "fulfilled" ? categoriesResult.value?.data ?? [] : [];
 
-  const [categories, setCategories] = useState<CategoryData[]>([]);
-  const [loadingCategories, setLoadingCategories] = useState(true);
-  const [errorCategories, setErrorCategories] = useState<string | null>(null);
+  // Extract unique categories from coupons for related stores
+  const allCouponCategories = coupons
+    .map(coupon => coupon.store?.categories || [])
+    .flat();
+  const uniqueCategories = Array.from(new Set(allCouponCategories));
 
-  // Load all coupons
-  useEffect(() => {
-    async function loadCoupons() {
-      setLoadingCoupons(true);
-      setErrorCoupons(null);
-
-      try {
-        const result = await fetchAllCouponsWithStoresAction();
-        if (result.error) {
-          setErrorCoupons(result.error.message?.[0] || "Failed to fetch coupons");
-          setCoupons([]);
-        } else if (result.data && Array.isArray(result.data)) {
-          setCoupons(result.data);
-        } else {
-          setCoupons([]);
-        }
-      } catch (err: any) {
-        setErrorCoupons(err.message || "Failed to fetch coupons");
-      }
-
-      setLoadingCoupons(false);
-    }
-
-    loadCoupons();
-  }, []);
-
-  // Load all categories
-  useEffect(() => {
-    async function loadCategories() {
-      setLoadingCategories(true);
-      setErrorCategories(null);
-
-      try {
-        const result = await fetchAllCategoriesAction();
-        if (result.error) {
-          setErrorCategories(result.error.message?.[0] || "Failed to fetch categories");
-          setCategories([]);
-        } else if (result.data && Array.isArray(result.data)) {
-          setCategories(result.data);
-        } else {
-          setCategories([]);
-        }
-      } catch (err: any) {
-        setErrorCategories(err.message || "Failed to fetch categories");
-      }
-
-      setLoadingCategories(false);
-    }
-
-    loadCategories();
-  }, []);
-
-  // Load related stores when coupons update
-  useEffect(() => {
-    async function loadRelatedStores() {
-      if (coupons.length === 0) {
-        setRelatedStores([]);
-        return;
-      }
-
-      const allCategories = coupons
-        .map(coupon => coupon.store?.categories || [])
-        .flat();
-
-      const uniqueCategories = Array.from(new Set(allCategories));
-
-      if (uniqueCategories.length === 0) {
-        setRelatedStores([]);
-        return;
-      }
-
-      setLoadingStores(true);
-      setErrorStores(null);
-
-      try {
-        const result = await fetchStoresByCategoriesAction(uniqueCategories);
-        if (result.error) {
-          setErrorStores(result.error.message?.[0] || "Failed to fetch related stores");
-          setRelatedStores([]);
-        } else if (result.data && Array.isArray(result.data)) {
-          setRelatedStores(result.data);
-        } else {
-          setRelatedStores([]);
-        }
-      } catch (err: any) {
-        setErrorStores(err.message || "Failed to fetch related stores");
-      }
-
-      setLoadingStores(false);
-    }
-
-    loadRelatedStores();
-  }, [coupons]);
+  // Fetch related stores based on categories
+  let relatedStores: StoreData[] = [];
+  if (uniqueCategories.length > 0) {
+    const storesResult = await fetchStoresByCategoriesAction(uniqueCategories);
+    relatedStores = storesResult?.data ?? [];
+  }
 
   return (
     <div>
       <AllCouponsPage 
         coupons={coupons} 
-        loading={loadingCoupons} 
-        error={errorCoupons} 
-        categories={categories} // <-- pass categories as props
-        loadingCategories={loadingCategories}
-        errorCategories={errorCategories}
+        categories={categories} 
       />
 
       <RelatedStores 
         stores={relatedStores} 
-        loading={loadingStores} 
-        error={errorStores} 
       />
     </div>
   );

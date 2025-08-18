@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, startTransition } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
-import { createSubscriberAction, SubscriberFormState } from '@/actions/subscriberActions';
+import { createSubscriberAction } from '@/actions/subscriberActions';
 import { useActionState } from 'react';
 
 export type CouponModalProps = {
@@ -13,6 +13,7 @@ export type CouponModalProps = {
   title?: string;
   code?: string;
   redeemUrl?: string;
+  storeImageUrl?: string; // NEW: image URL prop
 };
 
 export default function CouponModal({
@@ -22,6 +23,7 @@ export default function CouponModal({
   title = 'Udemy Coupon: 85% Off',
   code = 'COUPON123',
   redeemUrl = 'https://udemy.com',
+  storeImageUrl, // NEW
 }: CouponModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
@@ -74,7 +76,7 @@ export default function CouponModal({
       await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    } catch { }
   }
 
   function handleSubscribe(e: React.FormEvent) {
@@ -131,11 +133,20 @@ export default function CouponModal({
             </button>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
-              {/* Left: Icon & Code */}
+              {/* Left: Image & Code */}
               <div className="flex flex-col items-center justify-center space-y-4 md:items-start">
-                <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-[#4b2a7b] text-white text-2xl font-bold">
-                  U
-                </div>
+                {storeImageUrl ? (
+                  <img
+                    src={storeImageUrl}
+                    alt={storeName}
+                    className="h-16 w-16 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-[#4b2a7b] text-white text-2xl font-bold">
+                    U
+                  </div>
+                )}
+
                 <h2 className="text-2xl font-semibold text-gray-900 text-center md:text-left">{title}</h2>
                 <p className="text-sm text-gray-600 text-center md:text-left">
                   Copy and press this code at{' '}
@@ -149,18 +160,23 @@ export default function CouponModal({
                   </a>
                 </p>
 
-                <div className="mt-4 w-full flex gap-3">
-                  <div className="flex-1 flex items-center justify-center h-14 rounded-md border border-gray-300 bg-gray-50 px-4 shadow-sm">
-                    <span className="select-all font-mono text-lg tracking-widest text-gray-900">{code}</span>
+                {code === 'DEAL_CODE' ? (
+                  <div className="mt-4 w-full text-center p-4 rounded-md bg-green-100 text-green-800 font-medium">
+                    No code needed! Just click "Redeem" to claim this deal.
                   </div>
-                  <button
-                    onClick={handleCopy}
-                    className="h-14 rounded-md bg-purple-700 px-6 text-sm font-semibold text-white hover:bg-purple-800 shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
-                  >
-                    {copied ? 'Copied!' : 'Copy'}
-                  </button>
-                </div>
-
+                ) : (
+                  <div className="mt-4 w-full flex gap-3">
+                    <div className="flex-1 flex items-center justify-center h-14 rounded-md border border-gray-300 bg-gray-50 px-4 shadow-sm">
+                      <span className="select-all font-mono text-lg tracking-widest text-gray-900">{code}</span>
+                    </div>
+                    <button
+                      onClick={handleCopy}
+                      className="h-14 rounded-md bg-purple-700 px-6 text-sm font-semibold text-white hover:bg-purple-800 shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                    >
+                      {copied ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                )}
                 <a
                   href={redeemUrl}
                   target="_blank"
@@ -186,13 +202,21 @@ export default function CouponModal({
                 <div>
                   <h3 className="font-semibold text-gray-900 text-lg mb-2">Offer Details</h3>
                   <p className="text-sm text-gray-700 leading-relaxed">
-                    Receive 85% off your order with Udemy's promo code. Redeem on checkout. Offer valid for a limited time only.
+                    Receive 85% off your order with {storeName}'s promo code. Redeem on checkout. Offer valid for a limited time only.
                   </p>
                 </div>
 
                 <div className="mt-4 text-center md:text-left">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded bg-[#4b2a7b] font-semibold text-white">U</div>
+                    {storeImageUrl ? (
+                      <img
+                        src={storeImageUrl}
+                        alt={storeName}
+                        className="h-10 w-10 rounded object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded bg-[#4b2a7b] font-semibold text-white">U</div>
+                    )}
                     <div className="text-sm font-medium text-gray-800">
                       Get coupon alerts for {storeName} and never miss another deal!
                     </div>
