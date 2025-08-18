@@ -7,20 +7,19 @@ import { fetchStoresByCategoriesAction } from "@/actions/storeActions";
 
 import type { StoreData as StoreType } from "@/types/store";
 
-interface StorePageProps {
-  params: { id: string };
-}
-
-export default async function StorePage({ params }: StorePageProps) {
+export default async function StorePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ couponId?: ""}>
+}) {
+  // Await params to get the store ID
   const { id: storeId } = await params;
-
+  const { couponId = "" } = await searchParams;
   // Fetch the store with coupons
-  const [storeResult] = await Promise.allSettled([
-    fetchStoreWithCouponsByIdAction(storeId),
-  ]);
-
-  const store: StoreType | null =
-    storeResult.status === "fulfilled" ? storeResult.value?.data ?? null : null;
+  const storeResult = await fetchStoreWithCouponsByIdAction(storeId);
+  const store: StoreType | null = storeResult?.data ?? null;
 
   if (!store) {
     return (
@@ -43,8 +42,7 @@ export default async function StorePage({ params }: StorePageProps) {
 
   return (
     <main className="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-10">
-      <StoreData store={store} />
-
+        <StoreData store={store} couponId={couponId} />
       {relatedStores.length > 0 && (
         <RelatedStores stores={relatedStores} />
       )}

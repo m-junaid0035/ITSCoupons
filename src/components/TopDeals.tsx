@@ -1,18 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import CouponModal from "@/components/coupon_popup";
 
 interface TopDealsProps {
   deals: CouponWithStoreData[];
+  couponId: string;
 }
 
-const TopDeals: React.FC<TopDealsProps> = ({ deals }) => {
+const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
   const [selectedDeal, setSelectedDeal] = useState<CouponWithStoreData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const searchParams = useSearchParams();
 
   // Lock background scroll when modal is open
   useEffect(() => {
@@ -23,16 +22,15 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals }) => {
   }, [isModalOpen]);
 
   // Auto-open modal if couponId is in URL (new tab)
-  useEffect(() => {
-    const couponId = searchParams.get("couponId");
+ useEffect(() => {
     if (couponId) {
-      const deal = deals.find(d => d._id === couponId);
-      if (deal) {
-        setSelectedDeal(deal);
+      const coupon = deals.find(c => c._id === couponId);
+      if (coupon) {
+        setSelectedDeal(coupon);
         setIsModalOpen(true);
       }
     }
-  }, [searchParams, deals]);
+  }, [couponId, deals]);
 
   if (!deals.length) {
     return (

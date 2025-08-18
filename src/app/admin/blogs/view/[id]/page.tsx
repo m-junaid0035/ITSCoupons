@@ -2,12 +2,13 @@ import { fetchBlogByIdAction } from "@/actions/blogActions";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 
-interface BlogViewPageProps {
-  params: { id: string };
-}
-
-export default async function BlogViewPage({ params }: BlogViewPageProps) {
-  const result = await fetchBlogByIdAction(params.id);
+export default async function BlogViewPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const result = await fetchBlogByIdAction(id);
 
   if (!result || result.error || !result.data) return notFound();
 

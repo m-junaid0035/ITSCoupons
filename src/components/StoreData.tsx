@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { FaTags, FaHandshake, FaClock } from "react-icons/fa";
 import { CheckCircle, Clock } from "lucide-react";
@@ -53,15 +52,15 @@ function getDiscountColor(coupon: CouponData) {
 
 interface StorePageProps {
   store: StoreWithCouponsData;
+  couponId: string;
   initialActiveTab?: "all" | "promo" | "deal";
 }
 
-export default function StorePage({ store, initialActiveTab = "all" }: StorePageProps) {
+export default function StorePage({ store,couponId, initialActiveTab = "all" }: StorePageProps) {
   const [activeTab, setActiveTab] = useState<"all" | "promo" | "deal">(initialActiveTab);
   const [selectedCoupon, setSelectedCoupon] = useState<CouponData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const searchParams = useSearchParams(); // NEW: get couponId from URL
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -104,8 +103,7 @@ export default function StorePage({ store, initialActiveTab = "all" }: StorePage
   }, [isModalOpen]);
 
   // Open modal automatically if URL has couponId
-  useEffect(() => {
-    const couponId = searchParams.get("couponId");
+ useEffect(() => {
     if (couponId) {
       const coupon = coupons.find(c => c._id === couponId);
       if (coupon) {
@@ -113,7 +111,7 @@ export default function StorePage({ store, initialActiveTab = "all" }: StorePage
         setIsModalOpen(true);
       }
     }
-  }, [searchParams, coupons]);
+  }, [couponId, coupons]);
 
   // Handle GET CODE / GET DEAL click (new tab)
   const handleGetCouponClick = (coupon: CouponData) => {

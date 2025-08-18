@@ -3,16 +3,14 @@
 import type { StoreWithCouponsData } from "@/types/storesWithCouponsData";
 import type { CategoryData } from "@/types/category";
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
-
 interface StoreCardProps {
   stores: StoreWithCouponsData[];
   categories: CategoryData[];
+  category: string;
 }
 
-export default function StoreCard({ stores, categories }: StoreCardProps) {
-  const searchParams = useSearchParams();
-  const categoryFromQuery = searchParams.get("category");
+export default function StoreCard({ stores, categories , category }: StoreCardProps) {
+  const categoryFromQuery = category
 
   const [selectedCategoryId, setSelectedCategoryId] = useState(() => {
     const matchedCategory = categories.find(

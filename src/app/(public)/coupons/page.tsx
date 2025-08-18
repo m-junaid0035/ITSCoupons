@@ -10,8 +10,9 @@ import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import type { StoreData } from "@/types/store";
 import type { CategoryData } from "@/types/category";
 
-export default async function CouponsPage() {
+export default async function CouponsPage({ searchParams } : { searchParams: Promise<{ couponId?: ""}>}) {
   // Fetch coupons and categories in parallel
+  const { couponId = "" } = await searchParams;
   const [couponsResult, categoriesResult] = await Promise.allSettled([
     fetchAllCouponsWithStoresAction(),
     fetchAllCategoriesAction(),
@@ -36,13 +37,14 @@ export default async function CouponsPage() {
 
   return (
     <div>
-      <AllCouponsPage 
-        coupons={coupons} 
-        categories={categories} 
-      />
+        <AllCouponsPage
+          coupons={coupons}
+          categories={categories}
+          couponId={couponId}
+        />
 
-      <RelatedStores 
-        stores={relatedStores} 
+      <RelatedStores
+        stores={relatedStores}
       />
     </div>
   );

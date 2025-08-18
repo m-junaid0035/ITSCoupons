@@ -6,11 +6,10 @@ import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import CouponModal from "@/components/coupon_popup";
 import type { CategoryData } from "@/types/category";
 import { CheckCircle, Clock } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-
 interface AllCouponsPageProps {
   coupons: CouponWithStoreData[];
   categories?: CategoryData[];
+  couponId?: string;
 }
 
 /* ─────────────────────────── Helpers ─────────────────────────── */
@@ -42,6 +41,7 @@ function pluralize(n: number, s: string, p = s + "s") {
 export default function AllCouponsPage({
   coupons,
   categories = [],
+  couponId,
 }: AllCouponsPageProps): ReactElement {
   const [activeTab, setActiveTab] = useState<"all" | "promo" | "deal">("all");
 
@@ -62,9 +62,7 @@ export default function AllCouponsPage({
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // ───────── URL couponId support ─────────
-  const searchParams = useSearchParams();
-  useEffect(() => {
-    const couponId = searchParams.get("couponId");
+ useEffect(() => {
     if (couponId) {
       const coupon = coupons.find(c => c._id === couponId);
       if (coupon) {
@@ -72,7 +70,7 @@ export default function AllCouponsPage({
         setIsModalOpen(true);
       }
     }
-  }, [searchParams, coupons]);
+  }, [couponId, coupons]);
 
   // ─── Filter coupons
   const filtered = useMemo(() => {

@@ -22,13 +22,13 @@ interface SettingType {
   updatedAt?: string;
 }
 
-interface SettingsViewPageProps {
+export default async function SettingsViewPage({
+  params,
+}: {
   params: Promise<{ id: string }>;
-}
-
-export default async function SettingsViewPage({ params }: SettingsViewPageProps) {
-  const resolvedParams = await params;
-  const result = await fetchSettingByIdAction(resolvedParams.id);
+}) {
+  const { id } = await params;
+  const result = await fetchSettingByIdAction(id);
 
   if (!result || result.error || !result.data) return notFound();
 

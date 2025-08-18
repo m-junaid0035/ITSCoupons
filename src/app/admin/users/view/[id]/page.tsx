@@ -2,12 +2,14 @@ import { fetchUserByIdAction } from "@/actions/userActions";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 
-interface UserViewPageProps {
-  params: { id: string };
-}
 
-export default async function UserViewPage({ params }: UserViewPageProps) {
-  const result = await fetchUserByIdAction(params.id);
+export default async function UserViewPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const result = await fetchUserByIdAction(id);
 
   if (!result || result.error || !result.data) return notFound();
 

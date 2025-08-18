@@ -1,18 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import CouponModal from "@/components/coupon_popup";
 
 interface PromoCodesSectionProps {
   coupons: CouponWithStoreData[];
+  couponId: string;
 }
 
-export default function PromoCodesSection({ coupons }: PromoCodesSectionProps) {
+export default function PromoCodesSection({ coupons, couponId}: PromoCodesSectionProps) {
   const [selectedCoupon, setSelectedCoupon] = useState<CouponWithStoreData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const searchParams = useSearchParams();
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -23,8 +22,7 @@ export default function PromoCodesSection({ coupons }: PromoCodesSectionProps) {
   }, [isModalOpen]);
 
   // Open modal automatically if URL has couponId param (works in new tab)
-  useEffect(() => {
-    const couponId = searchParams.get("couponId");
+ useEffect(() => {
     if (couponId) {
       const coupon = coupons.find(c => c._id === couponId);
       if (coupon) {
@@ -32,7 +30,7 @@ export default function PromoCodesSection({ coupons }: PromoCodesSectionProps) {
         setIsModalOpen(true);
       }
     }
-  }, [searchParams, coupons]);
+  }, [couponId, coupons]);
 
   if (!coupons.length) {
     return (

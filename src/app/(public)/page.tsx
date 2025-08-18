@@ -19,7 +19,10 @@ import {
 } from "@/actions/couponActions";
 import { fetchAllBlogsAction } from "@/actions/blogActions";
 
-export default async function Home() {
+export default async function Home({ searchParams } : { searchParams: Promise<{ couponId?: ""}>}) {
+  // Fetch coupons and categories in parallel
+  const { couponId = "" } = await searchParams;
+
   // Fetch all APIs in parallel
   const [
     storesResult,
@@ -49,8 +52,8 @@ export default async function Home() {
     <main>
       <HeroSlider />
       <FeaturedStores stores={stores} />
-      <PromoCodesSection coupons={coupons} />
-      <TopDeals deals={deals} />
+      <PromoCodesSection coupons={coupons} couponId={couponId} />
+      <TopDeals deals={deals} couponId={couponId} />
       <StoresComponent popularStores={popularStores} recentlyUpdatedStores={recentlyUpdatedStores} />
       <BravoDealInfo />
       <BlogSection blogs={blogs} />

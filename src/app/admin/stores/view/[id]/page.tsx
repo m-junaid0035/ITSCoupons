@@ -2,12 +2,14 @@ import { getStoreById } from '@/functions/storeFunctions';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 
-interface StoreViewPageProps {
-  params: { id: string };
-}
 
-export default async function StoreViewPage({ params }: StoreViewPageProps) {
-  const store = await getStoreById(params.id);
+export default async function StoreViewPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const store = await getStoreById(id);
 
   if (!store) return notFound();
 

@@ -13,13 +13,13 @@ interface Category {
   isTrending?: boolean;
   description?: string | null;
 }
-
-interface CategoryViewPageProps {
-  params: { id: string };
-}
-
-export default async function CategoryViewPage({ params }: CategoryViewPageProps) {
-  const rawCategory = await getCategoryById(params.id);
+export default async function CategoryViewPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const rawCategory = await getCategoryById(id);
 
   if (!rawCategory) return notFound();
 

@@ -2,12 +2,13 @@ import { fetchRoleByIdAction } from "@/actions/roleActions";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 
-interface RoleViewPageProps {
-  params: { id: string };
-}
-
-export default async function RoleViewPage({ params }: RoleViewPageProps) {
-  const result = await fetchRoleByIdAction(params.id);
+export default async function RoleViewPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const result = await fetchRoleByIdAction(id);
 
   if (!result || result.error || !result.data) return notFound();
 

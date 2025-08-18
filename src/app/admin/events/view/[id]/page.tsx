@@ -3,12 +3,13 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 
-interface EventViewPageProps {
-  params: { id: string };
-}
-
-export default async function EventViewPage({ params }: EventViewPageProps) {
-  const result = await fetchEventByIdAction(params.id);
+export default async function EventViewPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const result = await fetchEventByIdAction(id);
 
   if (!result || result.error || !result.data) return notFound();
 

@@ -2,12 +2,13 @@ import { fetchCouponByIdAction } from "@/actions/couponActions";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 
-interface CouponViewPageProps {
-  params: { id: string };
-}
-
-export default async function CouponViewPage({ params }: CouponViewPageProps) {
-  const result = await fetchCouponByIdAction(params.id);
+export default async function CouponViewPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const result = await fetchCouponByIdAction(id);
 
   if (!result || result.error || !result.data) return notFound();
 
