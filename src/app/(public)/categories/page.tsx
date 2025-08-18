@@ -1,59 +1,40 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
+// app/categories/page.tsx (Server Component)
 import Categories from "@/components/categories/Categories";
 import CategoriesSearch from "@/components/categories/CategoriesSearch";
 
-import { fetchCategoriesWithCountsAction } from "@/actions/categoryActions"; // your server action
+import {
+  fetchCategoriesWithCountsAction,
+  fetchAllCategoriesAction,
+} from "@/actions/categoryActions";
+import type { CategoryWithCounts } from "@/types/categoryWithCounts";
+import type { CategoryData } from "@/types/category";
 
-import type { CategoryWithCounts } from "@/types/categoryWithCounts"; // define this accordingly
-import { useRouter } from "next/navigation";
+export default async function CategoriesPage() {
+  // ✅ Fetch both APIs in parallel
+  const [allCategoriesResult, categoriesWithCountsResult] =
+    await Promise.allSettled([
+      fetchAllCategoriesAction(),
+      fetchCategoriesWithCountsAction(),
+    ]);
 
-const CategoriesPage = () => {
-  const [categories, setCategories] = useState<CategoryWithCounts[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  // ✅ Extract data or fallback
+  const allCategories: CategoryData[] =
+    allCategoriesResult.status === "fulfilled" && Array.isArray(allCategoriesResult.value?.data)
+      ? allCategoriesResult.value.data
+      : [];
 
-  useEffect(() => {
-    async function loadCategories() {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const result = await fetchCategoriesWithCountsAction();
-        if (result.error) {
-          setError(result.error.message?.[0] || "Failed to fetch categories");
-          setCategories([]);
-        } else if (result.data && Array.isArray(result.data)) {
-          setCategories(result.data);
-        } else {
-          setCategories([]);
-        }
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch categories");
-      }
-      setLoading(false);
-    }
-
-    loadCategories();
-  }, []);
-
-  // Handle selecting a category (navigate to stores filtered by this category)
-  const handleSelectCategory = (categoryId: string) => {
-    router.push(`/stores?category=${categoryId}`);
-  };
+  const categoriesWithCounts: CategoryWithCounts[] =
+    categoriesWithCountsResult.status === "fulfilled" && Array.isArray(categoriesWithCountsResult.value?.data)
+      ? categoriesWithCountsResult.value.data
+      : [];
 
   return (
     <main className="p-0 m-0">
-      <CategoriesSearch
-        categories={categories}
-        onSelectCategory={handleSelectCategory} // pass the callback
-      />
-      <Categories categories={categories} loading={loading} error={error} />
+      {/* Uses plain categories (CategoryData[]) */}
+      <CategoriesSearch categories={allCategories} />
+
+      {/* Uses categories with counts (CategoryWithCounts[]) */}
+      <Categories categories={categoriesWithCounts} />
     </main>
   );
-};
-
-export default CategoriesPage;
+}

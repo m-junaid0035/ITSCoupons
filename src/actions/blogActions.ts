@@ -10,7 +10,7 @@ import {
   updateBlog,
 } from "@/functions/blogFunctions";
 
-// ✅ Blog Validation Schema
+// ✅ Blog Validation Schema (added writer & category)
 const blogSchema = z.object({
   title: z.string().trim().min(3).max(150),
   date: z.string().refine((val) => !isNaN(Date.parse(val)), {
@@ -23,6 +23,8 @@ const blogSchema = z.object({
   metaKeywords: z.string().optional(),
   focusKeywords: z.string().optional(),
   slug: z.string().min(3).max(150).optional(),
+  writer: z.string().trim().min(2).max(100).optional(), // new
+  category: z.string().trim().min(2).max(100).optional(), // new
 });
 
 type BlogFormData = z.infer<typeof blogSchema>;
@@ -32,7 +34,7 @@ export type BlogFormState = {
   data?: any;
 };
 
-// ✅ Helper: Parse FormData to BlogFormData
+// ✅ Helper: Parse FormData to BlogFormData (added writer & category)
 function parseBlogFormData(formData: FormData): BlogFormData {
   return {
     title: String(formData.get("title") || ""),
@@ -44,6 +46,8 @@ function parseBlogFormData(formData: FormData): BlogFormData {
     metaKeywords: String(formData.get("metaKeywords") || ""),
     focusKeywords: String(formData.get("focusKeywords") || ""),
     slug: String(formData.get("slug") || ""),
+    writer: String(formData.get("writer") || ""), // new
+    category: String(formData.get("category") || ""), // new
   };
 }
 

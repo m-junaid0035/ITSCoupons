@@ -62,7 +62,7 @@ export default function Header({ allStores }: HeaderProps) {
       )}
 
       {/* Main Header */}
-      <div className="bg-white shadow-sm px-4 sm:px-6 lg:px-16 py-4 flex items-center justify-between">
+      <div className="bg-white shadow-sm px-4 sm:px-6 lg:px-16 py-4 md:py-6 flex items-center justify-between">
         {/* Logo */}
         <div className="text-2xl md:text-3xl font-bold text-purple-800">
           ITS<span className="font-light text-black">Coupons</span>

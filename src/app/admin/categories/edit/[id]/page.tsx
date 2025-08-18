@@ -99,13 +99,19 @@ export default function EditCategoryForm() {
       <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex items-center justify-between border-none">
           <CardTitle>Edit Category</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/categories")}>
+          <Button
+            variant="secondary"
+            onClick={() => router.push("/admin/categories")}
+          >
             Back to Categories
           </Button>
         </CardHeader>
 
         <CardContent>
-          <form action={dispatch} className="space-y-6">
+          <form
+            action={(formData: FormData) => dispatch(formData)}
+            className="space-y-6"
+          >
             {/* Category Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Category Name</Label>
@@ -136,6 +142,48 @@ export default function EditCategoryForm() {
               {errorFor("slug") && (
                 <p className="text-sm text-red-500">{errorFor("slug")}</p>
               )}
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <textarea
+                id="description"
+                name="description"
+                rows={4}
+                defaultValue={category.description ?? ""}
+                className="w-full rounded-md border-none shadow-sm bg-gray-50 dark:bg-gray-700 p-2"
+                placeholder="Enter category description"
+              />
+              {errorFor("description") && (
+                <p className="text-sm text-red-500">{errorFor("description")}</p>
+              )}
+            </div>
+
+            {/* Is Popular */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isPopular"
+                name="isPopular"
+                value="true"
+                defaultChecked={!!category.isPopular}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="isPopular">Popular</Label>
+            </div>
+
+            {/* Is Trending */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isTrending"
+                name="isTrending"
+                value="true"
+                defaultChecked={!!category.isTrending}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="isTrending">Trending</Label>
             </div>
 
             {/* General Error */}

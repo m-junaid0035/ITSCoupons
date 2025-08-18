@@ -1,6 +1,7 @@
 import { fetchBlogByIdAction } from "@/actions/blogActions";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+
 interface BlogViewPageProps {
   params: { id: string };
 }
@@ -13,18 +14,38 @@ export default async function BlogViewPage({ params }: BlogViewPageProps) {
   const blog = result.data;
 
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg">
-      <header className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">View Blog</h2>
-        {/* You can add a back button or edit button here if needed */}
+    <div className="max-w-3xl mx-auto p-6 bg-white dark:bg-gray-800 shadow-lg rounded-lg space-y-6">
+      <header className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          View Blog
+        </h2>
+        {/* Optional back/edit buttons */}
       </header>
 
-      <section className="space-y-6">
+      <section className="space-y-4">
         {/* Title */}
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400">Title</p>
-          <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{blog.title}</p>
+          <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {blog.title}
+          </p>
         </div>
+
+        {/* Writer */}
+        {blog.writer && (
+          <div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Writer</p>
+            <p className="text-gray-700 dark:text-gray-300">{blog.writer}</p>
+          </div>
+        )}
+
+        {/* Category */}
+        {blog.category && (
+          <div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Category</p>
+            <Badge variant="secondary">{blog.category}</Badge>
+          </div>
+        )}
 
         {/* Slug */}
         {blog.slug && (
@@ -46,7 +67,9 @@ export default async function BlogViewPage({ params }: BlogViewPageProps) {
         {blog.description && (
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Description</p>
-            <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">{blog.description}</p>
+            <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">
+              {blog.description}
+            </p>
           </div>
         )}
 
@@ -103,12 +126,15 @@ export default async function BlogViewPage({ params }: BlogViewPageProps) {
           </div>
         )}
 
-        {/* Created At */}
-        {blog.createdAt && (
-          <p className="text-sm text-gray-400">
-            Created: {new Date(blog.createdAt).toLocaleString()}
-          </p>
-        )}
+        {/* Created & Updated At */}
+        <div className="text-sm text-gray-400 space-y-1">
+          {blog.createdAt && (
+            <p>Created: {new Date(blog.createdAt).toLocaleString()}</p>
+          )}
+          {blog.updatedAt && (
+            <p>Updated: {new Date(blog.updatedAt).toLocaleString()}</p>
+          )}
+        </div>
       </section>
     </div>
   );

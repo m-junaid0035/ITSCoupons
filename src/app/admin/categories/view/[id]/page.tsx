@@ -1,13 +1,17 @@
 // app/admin/categories/view/[id]/page.tsx
-import { getCategoryById } from '@/functions/categoryFunctions';
-import { notFound } from 'next/navigation';
-import { Badge } from '@/components/ui/badge'; // if you want to use Badge for slug
+import { getCategoryById } from "@/functions/categoryFunctions";
+import { notFound } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 
 interface Category {
   _id: string;
   name: string;
   slug: string;
-  createdAt: string | Date;
+  createdAt: string;
+  updatedAt?: string;
+  isPopular?: boolean;
+  isTrending?: boolean;
+  description?: string | null;
 }
 
 interface CategoryViewPageProps {
@@ -24,14 +28,18 @@ export default async function CategoryViewPage({ params }: CategoryViewPageProps
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow rounded-lg dark:bg-gray-800">
       <header className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">View Category</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          View Category
+        </h2>
       </header>
 
       <section className="space-y-6">
         {/* Name */}
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400">Name</p>
-          <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">{category.name}</p>
+          <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            {category.name}
+          </p>
         </div>
 
         {/* Slug */}
@@ -40,11 +48,41 @@ export default async function CategoryViewPage({ params }: CategoryViewPageProps
           <Badge variant="secondary">{category.slug}</Badge>
         </div>
 
+        {/* Description (optional) */}
+        {category.description && (
+          <div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Description</p>
+            <p className="text-base text-gray-700 dark:text-gray-300">
+              {category.description}
+            </p>
+          </div>
+        )}
+
+        {/* Popular / Trending */}
+        <div className="flex items-center gap-2">
+          {category.isPopular && <Badge variant="destructive">Popular</Badge>}
+          {category.isTrending && <Badge variant="outline">Trending</Badge>}
+        </div>
+
         {/* Created At */}
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400">Created At</p>
-          <p className="text-sm text-gray-400">{new Date(category.createdAt).toLocaleString()}</p>
+          <p className="text-sm text-gray-400">
+            {category.createdAt
+              ? new Date(category.createdAt).toLocaleString()
+              : "N/A"}
+          </p>
         </div>
+
+        {/* Updated At */}
+        {category.updatedAt && (
+          <div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Updated At</p>
+            <p className="text-sm text-gray-400">
+              {new Date(category.updatedAt).toLocaleString()}
+            </p>
+          </div>
+        )}
       </section>
     </div>
   );

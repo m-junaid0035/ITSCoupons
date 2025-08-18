@@ -8,33 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
-import {
-  fetchBlogByIdAction,
-  updateBlogAction,
-} from "@/actions/blogActions";
-
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { fetchBlogByIdAction, updateBlogAction } from "@/actions/blogActions";
+import { fetchCategoryNamesAction } from "@/actions/categoryActions";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 interface FieldErrors {
   [key: string]: string[];
@@ -45,9 +28,7 @@ interface FormState {
   data?: any;
 }
 
-const initialState: FormState = {
-  error: {},
-};
+const initialState: FormState = { error: {} };
 
 export default function EditBlogForm() {
   const params = useParams();
@@ -64,19 +45,30 @@ export default function EditBlogForm() {
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [writer, setWriter] = useState("");
 
   useEffect(() => {
     async function loadData() {
       const res = await fetchBlogByIdAction(blogId);
       if (res?.data) {
         setBlog(res.data);
+        setWriter(res.data.writer || "");
+        setSelectedCategory(res.data.category || "");
         if (res.data.date) setDate(new Date(res.data.date));
       }
       setLoading(false);
     }
-
     loadData();
   }, [blogId]);
+
+  // Fetch categories
+  useEffect(() => {
+    fetchCategoryNamesAction().then((res) => {
+      if (res.data) setCategories(res.data);
+    });
+  }, []);
 
   useEffect(() => {
     if (formState.data && !formState.error) {
@@ -116,9 +108,9 @@ export default function EditBlogForm() {
         <CardContent>
           <form
             action={(formData) => {
-              if (date) {
-                formData.set("date", date.toISOString());
-              }
+              if (date) formData.set("date", date.toISOString());
+              formData.set("category", selectedCategory);
+              formData.set("writer", writer);
               return dispatch(formData);
             }}
             className="space-y-6 max-w-2xl mx-auto"
@@ -132,11 +124,43 @@ export default function EditBlogForm() {
                 defaultValue={blog.title}
                 required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="Enter blog title"
               />
-              {errorFor("title") && (
-                <p className="text-sm text-red-500">{errorFor("title")}</p>
-              )}
+              {errorFor("title") && <p className="text-sm text-red-500">{errorFor("title")}</p>}
+            </div>
+
+            {/* Writer */}
+            <div className="space-y-2">
+              <Label htmlFor="writer">Writer</Label>
+              <Input
+                id="writer"
+                name="writer"
+                value={writer}
+                onChange={(e) => setWriter(e.target.value)}
+                required
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
+              {errorFor("writer") && <p className="text-sm text-red-500">{errorFor("writer")}</p>}
+            </div>
+
+            {/* Category */}
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <select
+                id="category"
+                name="category"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                required
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700 w-full p-2 rounded"
+              >
+                <option value="">Select a category</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+              {errorFor("category") && <p className="text-sm text-red-500">{errorFor("category")}</p>}
             </div>
 
             {/* Slug */}
@@ -147,11 +171,8 @@ export default function EditBlogForm() {
                 name="slug"
                 defaultValue={blog.slug}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="blog-slug"
               />
-              {errorFor("slug") && (
-                <p className="text-sm text-red-500">{errorFor("slug")}</p>
-              )}
+              {errorFor("slug") && <p className="text-sm text-red-500">{errorFor("slug")}</p>}
             </div>
 
             {/* Date */}
@@ -174,9 +195,7 @@ export default function EditBlogForm() {
                   <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
                 </PopoverContent>
               </Popover>
-              {errorFor("date") && (
-                <p className="text-sm text-red-500">{errorFor("date")}</p>
-              )}
+              {errorFor("date") && <p className="text-sm text-red-500">{errorFor("date")}</p>}
             </div>
 
             {/* Description */}
@@ -188,11 +207,8 @@ export default function EditBlogForm() {
                 rows={6}
                 defaultValue={blog.description}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="Write blog content here..."
               />
-              {errorFor("description") && (
-                <p className="text-sm text-red-500">{errorFor("description")}</p>
-              )}
+              {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
             </div>
 
             {/* Image URL */}
@@ -203,15 +219,10 @@ export default function EditBlogForm() {
                 name="image"
                 type="url"
                 defaultValue={blog.image}
-                placeholder="https://example.com/image.jpg"
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("image") && (
-                <p className="text-sm text-red-500">{errorFor("image")}</p>
-              )}
+              {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
             </div>
-
-
 
             {/* Meta Title */}
             <div className="space-y-2">
@@ -221,11 +232,8 @@ export default function EditBlogForm() {
                 name="metaTitle"
                 defaultValue={blog.metaTitle}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="SEO meta title"
               />
-              {errorFor("metaTitle") && (
-                <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
-              )}
+              {errorFor("metaTitle") && <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>}
             </div>
 
             {/* Meta Description */}
@@ -237,11 +245,8 @@ export default function EditBlogForm() {
                 rows={3}
                 defaultValue={blog.metaDescription}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="SEO meta description"
               />
-              {errorFor("metaDescription") && (
-                <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
-              )}
+              {errorFor("metaDescription") && <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>}
             </div>
 
             {/* Meta Keywords */}
@@ -252,11 +257,8 @@ export default function EditBlogForm() {
                 name="metaKeywords"
                 defaultValue={blog.metaKeywords?.join(", ") || ""}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="keyword1, keyword2, keyword3"
               />
-              {errorFor("metaKeywords") && (
-                <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
-              )}
+              {errorFor("metaKeywords") && <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>}
             </div>
 
             {/* Focus Keywords */}
@@ -267,25 +269,18 @@ export default function EditBlogForm() {
                 name="focusKeywords"
                 defaultValue={blog.focusKeywords?.join(", ") || ""}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="focus1, focus2"
               />
-              {errorFor("focusKeywords") && (
-                <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>
-              )}
+              {errorFor("focusKeywords") && <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>}
             </div>
 
             {/* General Error */}
             {"message" in (formState.error ?? {}) && (
-              <p className="text-sm text-red-500">
-                {(formState.error as any).message?.[0]}
-              </p>
+              <p className="text-sm text-red-500">{(formState.error as any).message?.[0]}</p>
             )}
 
             <CardFooter className="flex justify-end border-none px-0 pt-0">
               <Button type="submit" disabled={isPending}>
-                {isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isPending ? "Updating..." : "Update Blog"}
               </Button>
             </CardFooter>

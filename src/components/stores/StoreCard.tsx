@@ -1,23 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import type { StoreWithCouponsData } from "@/types/storesWithCouponsData";
 import type { CategoryData } from "@/types/category";
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 interface StoreCardProps {
   stores: StoreWithCouponsData[];
   categories: CategoryData[];
-  loading?: boolean;
-  error?: string | null;
 }
 
-export default function StoreCard({
-  stores,
-  categories,
-  loading,
-  error,
-}: StoreCardProps) {
+export default function StoreCard({ stores, categories }: StoreCardProps) {
   const searchParams = useSearchParams();
   const categoryFromQuery = searchParams.get("category");
 
@@ -27,17 +20,6 @@ export default function StoreCard({
     );
     return matchedCategory?._id || "all";
   });
-
-  useEffect(() => {
-    if (!categoryFromQuery) {
-      setSelectedCategoryId("all");
-      return;
-    }
-    const matchedCategory = categories.find(
-      (c) => c._id === categoryFromQuery || c.slug === categoryFromQuery
-    );
-    setSelectedCategoryId(matchedCategory?._id || "all");
-  }, [categoryFromQuery, categories]);
 
   const categoriesWithAll = [{ _id: "all", name: "All" }, ...categories];
 
@@ -51,23 +33,6 @@ export default function StoreCard({
     alert(`Copied coupon code: ${code}`);
   };
 
-  if (loading)
-    return <div className="p-4 text-center">Loading stores...</div>;
-
-  if (error)
-    return (
-      <div className="p-4 text-center text-red-600 font-semibold">
-        {error}
-      </div>
-    );
-
-  if (stores.length === 0)
-    return (
-      <div className="p-4 text-center text-gray-500 font-semibold">
-        No stores available.
-      </div>
-    );
-
   return (
     <section className="min-h-screen bg-gray-50 p-6">
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Browse All Stores</h1>
@@ -78,11 +43,10 @@ export default function StoreCard({
           <button
             key={cat._id}
             onClick={() => setSelectedCategoryId(cat._id)}
-            className={`px-4 py-1 rounded-full text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-purple-600 ${
-              selectedCategoryId === cat._id
+            className={`px-4 py-1 rounded-full text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-purple-600 ${selectedCategoryId === cat._id
                 ? "bg-purple-700 text-white border-purple-700"
                 : "bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200"
-            }`}
+              }`}
             aria-pressed={selectedCategoryId === cat._id}
             type="button"
           >
@@ -114,9 +78,7 @@ export default function StoreCard({
             </h2>
 
             {/* Store Description */}
-            <p className="text-center text-gray-600 text-sm mb-4">
-              {store.description}
-            </p>
+            <p className="text-center text-gray-600 text-sm mb-4">{store.description}</p>
 
             <hr className="border-gray-300 mb-4" />
 
@@ -152,15 +114,13 @@ export default function StoreCard({
                         {coupon.expirationDate && (
                           <span>
                             Expires:{" "}
-                            {new Date(coupon.expirationDate).toLocaleDateString(
-                              undefined,
-                              { year: "numeric", month: "2-digit", day: "2-digit" }
-                            )}
+                            {new Date(coupon.expirationDate).toISOString().split("T")[0]}
                           </span>
                         )}
                       </div>
                     </li>
                   ))}
+
                 </ul>
               ) : (
                 <p className="text-gray-500 text-xs italic">No coupons available.</p>

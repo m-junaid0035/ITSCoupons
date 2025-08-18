@@ -1,15 +1,21 @@
 import { Category } from "@/models/Category";
 import { ICategory } from "@/models/Category";
-import { Store } from "@/models/Store";
-import { Coupon } from "@/models/Coupon";
-
 
 /**
  * Helper to sanitize and format incoming category data.
  */
-const sanitizeCategoryData = (data: { name: string; slug: string }) => ({
-  name: data.name.trim(),
-  slug: data.slug.trim().toLowerCase(),
+const sanitizeCategoryData = (data: {
+  name?: string;
+  slug?: string;
+  description?: string | null; // ✅ allow null
+  isPopular?: boolean;
+  isTrending?: boolean;
+}) => ({
+  name: data.name?.trim(),
+  slug: data.slug?.trim().toLowerCase(),
+  description: data.description?.trim?.() || null, // ✅ normalize to null
+  isPopular: data.isPopular ?? false,
+  isTrending: data.isTrending ?? false,
 });
 
 /**
@@ -19,24 +25,31 @@ const serializeCategory = (category: {
   _id: any;
   name: string;
   slug: string;
+  description?: string | null; // ✅ allow null
+  isPopular?: boolean;
+  isTrending?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }) => ({
   _id: category._id.toString(),
   name: category.name,
   slug: category.slug,
-  createdAt: category.createdAt?.toISOString?.(),
-  updatedAt: category.updatedAt?.toISOString?.(),
+  description: category.description ?? null, // ✅ consistent
+  isPopular: category.isPopular ?? false,
+  isTrending: category.isTrending ?? false,
+  createdAt: category.createdAt?.toISOString?.() ?? null,
+  updatedAt: category.updatedAt?.toISOString?.() ?? null,
 });
 
 /**
  * Create a new category.
- * @param data Category input
- * @returns Created category object
  */
 export const createCategory = async (data: {
   name: string;
   slug: string;
+  description?: string | null; // ✅ match
+  isPopular?: boolean;
+  isTrending?: boolean;
 }): Promise<ReturnType<typeof serializeCategory>> => {
   const categoryData = sanitizeCategoryData(data);
   const category = await new Category(categoryData).save();
@@ -45,7 +58,6 @@ export const createCategory = async (data: {
 
 /**
  * Get all categories, sorted by newest first.
- * @returns Array of categories (plain objects)
  */
 export const getAllCategories = async (): Promise<
   ReturnType<typeof serializeCategory>[]
@@ -56,8 +68,6 @@ export const getAllCategories = async (): Promise<
 
 /**
  * Get a category by its ID.
- * @param id Category ID
- * @returns Category (plain object) or null
  */
 export const getCategoryById = async (
   id: string
@@ -68,15 +78,15 @@ export const getCategoryById = async (
 
 /**
  * Update a category by ID.
- * @param id Category ID
- * @param data New category data
- * @returns Updated category (plain object) or null
  */
 export const updateCategory = async (
   id: string,
   data: {
-    name: string;
-    slug: string;
+    name?: string;
+    slug?: string;
+    description?: string | null; // ✅ match
+    isPopular?: boolean;
+    isTrending?: boolean;
   }
 ): Promise<ReturnType<typeof serializeCategory> | null> => {
   const updatedData = sanitizeCategoryData(data);
@@ -90,8 +100,6 @@ export const updateCategory = async (
 
 /**
  * Delete a category by ID.
- * @param id Category ID
- * @returns Deleted category (plain object) or null
  */
 export const deleteCategory = async (
   id: string
@@ -99,6 +107,7 @@ export const deleteCategory = async (
   const category = await Category.findByIdAndDelete(id).lean<ICategory>();
   return category ? serializeCategory(category) : null;
 };
+
 /**
  * Get all categories with total stores and total coupons counts.
  */
@@ -108,7 +117,6 @@ export const getCategoriesWithStoreAndCouponCounts = async (): Promise<
     totalCoupons: number;
   })[]
 > => {
-  // Mongo aggregation pipeline
   const categoriesWithCounts = await Category.aggregate([
     {
       $lookup: {
@@ -124,13 +132,10 @@ export const getCategoriesWithStoreAndCouponCounts = async (): Promise<
       },
     },
     {
-      // Lookup coupons for all the stores found for this category
       $lookup: {
         from: "coupons",
         let: { storeIds: "$stores._id" },
-        pipeline: [
-          { $match: { $expr: { $in: ["$store", "$$storeIds"] } } },
-        ],
+        pipeline: [{ $match: { $expr: { $in: ["$store", "$$storeIds"] } } }],
         as: "coupons",
       },
     },
@@ -152,9 +157,43 @@ export const getCategoriesWithStoreAndCouponCounts = async (): Promise<
     _id: cat._id.toString(),
     name: cat.name,
     slug: cat.slug,
-    createdAt: cat.createdAt?.toISOString(),
-    updatedAt: cat.updatedAt?.toISOString(),
+    description: cat.description ?? null, // ✅ consistent
+    isPopular: cat.isPopular ?? false,
+    isTrending: cat.isTrending ?? false,
+    createdAt: cat.createdAt?.toISOString?.() ?? null,
+    updatedAt: cat.updatedAt?.toISOString?.() ?? null,
     totalStores: cat.totalStores,
     totalCoupons: cat.totalCoupons,
   }));
+};
+
+/**
+ * Get only popular categories
+ */
+export const getPopularCategories = async (): Promise<
+  ReturnType<typeof serializeCategory>[]
+> => {
+  const categories = await Category.find({ isPopular: true })
+    .sort({ createdAt: -1 })
+    .lean<ICategory[]>();
+  return categories.map(serializeCategory);
+};
+
+/**
+ * Get only trending categories
+ */
+export const getTrendingCategories = async (): Promise<
+  ReturnType<typeof serializeCategory>[]
+> => {
+  const categories = await Category.find({ isTrending: true })
+    .sort({ createdAt: -1 })
+    .lean<ICategory[]>();
+  return categories.map(serializeCategory);
+};
+/**
+ * Get all category names only.
+ */
+export const getCategoryNames = async (): Promise<string[]> => {
+  const categories = await Category.find().select("name").lean<{ name: string }[]>();
+  return categories.map((cat) => cat.name);
 };

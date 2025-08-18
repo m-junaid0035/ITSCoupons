@@ -14,6 +14,8 @@ const sanitizeBlogData = (data: {
   metaKeywords?: string;
   focusKeywords?: string;
   slug?: string;
+  writer?: string; // new
+  category?: string; // new
 }) => ({
   title: data.title.trim(),
   date: new Date(data.date),
@@ -24,6 +26,8 @@ const sanitizeBlogData = (data: {
   metaKeywords: data.metaKeywords?.trim(),
   focusKeywords: data.focusKeywords?.trim(),
   slug: data.slug?.trim(),
+  writer: data.writer?.trim(), // new
+  category: data.category?.trim(), // new
 });
 
 /**
@@ -40,6 +44,8 @@ const serializeBlog = (blog: any) => ({
   metaKeywords: blog.metaKeywords,
   focusKeywords: blog.focusKeywords,
   slug: blog.slug,
+  writer: blog.writer, // new
+  category: blog.category, // new
   createdAt: blog.createdAt?.toISOString?.(),
   updatedAt: blog.updatedAt?.toISOString?.(),
 });
@@ -57,6 +63,8 @@ export const createBlog = async (data: {
   metaKeywords?: string;
   focusKeywords?: string;
   slug?: string;
+  writer?: string; // new
+  category?: string; // new
 }) => {
   const blogData = sanitizeBlogData(data);
   const blog = await new Blog(blogData).save();
@@ -94,6 +102,8 @@ export const updateBlog = async (
     metaKeywords?: string;
     focusKeywords?: string;
     slug?: string;
+    writer?: string; // new
+    category?: string; // new
   }
 ) => {
   const updatedData = sanitizeBlogData(data);

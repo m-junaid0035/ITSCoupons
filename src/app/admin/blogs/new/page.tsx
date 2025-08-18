@@ -10,29 +10,13 @@ import { Button } from "@/components/ui/button";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { createBlogAction } from "@/actions/blogActions";
+import { fetchCategoryNamesAction } from "@/actions/categoryActions";
 import { toast } from "@/hooks/use-toast";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 interface FieldErrors {
   [key: string]: string[];
@@ -43,18 +27,17 @@ interface FormState {
   data?: any;
 }
 
-const initialState: FormState = {
-  error: {},
-};
+const initialState: FormState = { error: {} };
 
 export default function BlogCreatePage() {
   const router = useRouter();
-  const [formState, dispatch, isPending] = useActionState(
-    createBlogAction,
-    initialState
-  );
+  const [formState, dispatch, isPending] = useActionState(createBlogAction, initialState);
+
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [writer, setWriter] = useState("");
 
   const errorFor = (field: string) => {
     return formState.error &&
@@ -64,17 +47,30 @@ export default function BlogCreatePage() {
       : null;
   };
 
+  // Fetch category names for dropdown
+  useEffect(() => {
+    fetchCategoryNamesAction().then((res) => {
+      if (res.data) setCategories(res.data);
+      if (res.error) {
+        toast({
+          title: "Error",
+          description: res.error.message?.[0],
+          variant: "destructive",
+        });
+      }
+    });
+  }, []);
+
+  // Handle success or error messages
   useEffect(() => {
     if (formState.data && !formState.error) {
-      // Open confirmation dialog instead of toast
       setSuccessDialogOpen(true);
     }
 
     if (formState.error && "message" in formState.error) {
       toast({
         title: "Error",
-        description:
-          (formState.error as any).message?.[0] || "Something went wrong",
+        description: (formState.error as any).message?.[0] || "Something went wrong",
         variant: "destructive",
       });
     }
@@ -93,9 +89,9 @@ export default function BlogCreatePage() {
         <CardContent>
           <form
             action={(formData) => {
-              if (date) {
-                formData.set("date", date.toISOString());
-              }
+              if (date) formData.set("date", date.toISOString());
+              formData.set("category", selectedCategory);
+              formData.set("writer", writer);
               return dispatch(formData);
             }}
             className="space-y-6"
@@ -110,9 +106,43 @@ export default function BlogCreatePage() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Enter blog title"
               />
-              {errorFor("title") && (
-                <p className="text-sm text-red-500">{errorFor("title")}</p>
-              )}
+              {errorFor("title") && <p className="text-sm text-red-500">{errorFor("title")}</p>}
+            </div>
+
+            {/* Writer / Author */}
+            <div className="space-y-2">
+              <Label htmlFor="writer">Writer</Label>
+              <Input
+                id="writer"
+                name="writer"
+                value={writer}
+                onChange={(e) => setWriter(e.target.value)}
+                required
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="Enter writer's name"
+              />
+              {errorFor("writer") && <p className="text-sm text-red-500">{errorFor("writer")}</p>}
+            </div>
+
+            {/* Category */}
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <select
+                id="category"
+                name="category"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                required
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700 w-full p-2 rounded"
+              >
+                <option value="">Select a category</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+              {errorFor("category") && <p className="text-sm text-red-500">{errorFor("category")}</p>}
             </div>
 
             {/* Slug */}
@@ -124,9 +154,7 @@ export default function BlogCreatePage() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="example-blog-slug"
               />
-              {errorFor("slug") && (
-                <p className="text-sm text-red-500">{errorFor("slug")}</p>
-              )}
+              {errorFor("slug") && <p className="text-sm text-red-500">{errorFor("slug")}</p>}
             </div>
 
             {/* Date */}
@@ -146,17 +174,10 @@ export default function BlogCreatePage() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                  />
+                  <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
                 </PopoverContent>
               </Popover>
-              {errorFor("date") && (
-                <p className="text-sm text-red-500">{errorFor("date")}</p>
-              )}
+              {errorFor("date") && <p className="text-sm text-red-500">{errorFor("date")}</p>}
             </div>
 
             {/* Description */}
@@ -169,12 +190,10 @@ export default function BlogCreatePage() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Write the blog description here..."
               />
-              {errorFor("description") && (
-                <p className="text-sm text-red-500">{errorFor("description")}</p>
-              )}
+              {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
             </div>
 
-            {/* Image (URL) */}
+            {/* Image URL */}
             <div className="space-y-2">
               <Label htmlFor="image">Image URL</Label>
               <Input
@@ -183,9 +202,7 @@ export default function BlogCreatePage() {
                 placeholder="https://example.com/image.jpg"
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("image") && (
-                <p className="text-sm text-red-500">{errorFor("image")}</p>
-              )}
+              {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
             </div>
 
             {/* Meta Title */}
@@ -197,9 +214,7 @@ export default function BlogCreatePage() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="SEO meta title"
               />
-              {errorFor("metaTitle") && (
-                <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
-              )}
+              {errorFor("metaTitle") && <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>}
             </div>
 
             {/* Meta Description */}
@@ -212,9 +227,7 @@ export default function BlogCreatePage() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="SEO meta description"
               />
-              {errorFor("metaDescription") && (
-                <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
-              )}
+              {errorFor("metaDescription") && <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>}
             </div>
 
             {/* Meta Keywords */}
@@ -226,9 +239,7 @@ export default function BlogCreatePage() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="keyword1, keyword2, keyword3"
               />
-              {errorFor("metaKeywords") && (
-                <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
-              )}
+              {errorFor("metaKeywords") && <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>}
             </div>
 
             {/* Focus Keywords */}
@@ -240,16 +251,12 @@ export default function BlogCreatePage() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="keyword1, keyword2"
               />
-              {errorFor("focusKeywords") && (
-                <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>
-              )}
+              {errorFor("focusKeywords") && <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>}
             </div>
 
             {/* General Error */}
             {"message" in (formState.error ?? {}) && (
-              <p className="text-sm text-red-500">
-                {(formState.error as any).message?.[0]}
-              </p>
+              <p className="text-sm text-red-500">{(formState.error as any).message?.[0]}</p>
             )}
 
             {/* Footer */}

@@ -1,6 +1,17 @@
-'use client';
+"use client";
 
-import { useState, FC } from 'react';
+import { useState, useEffect, startTransition, FC } from "react";
+import { useActionState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { createSubscriberAction } from "@/actions/subscriberActions";
 
 interface FAQ {
   question: string;
@@ -21,17 +32,51 @@ interface TeamCardProps {
 }
 
 const TeamCard: FC<TeamCardProps> = ({ name, title, color }) => (
-  <div className={`p-6 rounded-lg shadow-md ${color} text-white`}>
-    <h3 className="text-lg font-semibold">{name}</h3>
-    <p className="text-sm mt-1">{title}</p>
+  <div
+    className={`p-8 rounded-lg shadow-md ${color} text-white min-h-[220px] flex flex-col justify-center`}
+  >
+    <h3 className="text-lg sm:text-xl font-semibold">{name}</h3>
+    <p className="text-sm sm:text-base mt-2">{title}</p>
   </div>
 );
+
+
+interface FieldErrors {
+  [key: string]: string[];
+}
 
 const AboutPage: FC = () => {
   const [openFAQ, setOpenFAQ] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'story' | 'mission' | 'values'>('story');
 
   const toggleFAQ = (index: number) => setOpenFAQ(openFAQ === index ? null : index);
+
+  // Newsletter form state using useActionState
+  const [email, setEmail] = useState("");
+  const [formState, dispatch, isPending] = useActionState(createSubscriberAction, {});
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+
+  const errorFor = (field: string) => {
+    return formState.error &&
+      typeof formState.error === "object" &&
+      field in formState.error
+      ? (formState.error as FieldErrors)[field]?.[0]
+      : null;
+  };
+
+  useEffect(() => {
+    if (formState.data && !formState.error) {
+      setDialogMessage("You have been successfully subscribed!");
+      setDialogOpen(true);
+      setEmail("");
+    }
+
+    if (formState.error && "message" in formState.error) {
+      setDialogMessage((formState.error as any).message?.[0] || "Something went wrong!");
+      setDialogOpen(true);
+    }
+  }, [formState]);
 
   return (
     <div className="text-gray-800">
@@ -58,7 +103,7 @@ const AboutPage: FC = () => {
         </div>
       </section>
 
-      {/* Tabs */}
+      {/* Tabs Section */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
         <div className="flex flex-wrap sm:flex-nowrap justify-center sm:justify-start space-x-0 sm:space-x-8 border-b mb-8 text-sm font-medium">
           {['story', 'mission', 'values'].map((tab) => {
@@ -102,7 +147,6 @@ const AboutPage: FC = () => {
               </div>
             </>
           )}
-
           {activeTab === 'mission' && (
             <div className="md:col-span-2">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4">Our Mission & Vision</h2>
@@ -117,7 +161,6 @@ const AboutPage: FC = () => {
               </p>
             </div>
           )}
-
           {activeTab === 'values' && (
             <div className="md:col-span-2">
               <h2 className="text-xl sm:text-2xl font-semibold mb-4">Our Core Values</h2>
@@ -132,7 +175,7 @@ const AboutPage: FC = () => {
         </div>
       </section>
 
-      {/* Team */}
+      {/* Team Section */}
       <section className="bg-gray-50 py-16 px-4">
         <h2 className="text-2xl sm:text-3xl font-bold text-center mb-10">Meet Our Leadership Team</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto text-center">
@@ -143,7 +186,7 @@ const AboutPage: FC = () => {
         </div>
       </section>
 
-      {/* FAQ */}
+      {/* FAQ Section */}
       <section className="py-16 px-4 max-w-4xl mx-auto">
         <h2 className="text-2xl sm:text-3xl font-bold text-center mb-10">Frequently Asked Questions</h2>
         <div className="space-y-4">
@@ -156,29 +199,67 @@ const AboutPage: FC = () => {
                 {faq.question}
               </button>
               {openFAQ === i && (
-                <div className="px-4 py-3 text-sm sm:text-base text-gray-700 bg-white">
-                  {faq.answer}
-                </div>
+                <div className="px-4 py-3 text-gray-700">{faq.answer}</div>
               )}
             </div>
           ))}
         </div>
       </section>
 
-      {/* Newsletter */}
-      <section className="bg-gray-100 py-12 px-4 text-center">
-        <h3 className="text-lg sm:text-xl font-semibold mb-2">Stay Updated with Our Latest Deals</h3>
-        <p className="text-sm sm:text-base text-gray-600 mb-4">Join our newsletter for exclusive savings, new coupons, and more.</p>
-        <form className="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
-          <input
+      {/* Newsletter Section */}
+      <section className="bg-white text-center py-12 px-4 sm:px-6 lg:px-8">
+        <h2 className="text-2xl md:text-3xl font-bold mb-4">Join the Savings Revolution</h2>
+        <p className="text-gray-600 max-w-xl mx-auto mb-6">
+          Get exclusive access to the best deals, early notifications of sales, and personalized coupon recommendations.
+        </p>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.set("email", email);
+
+            startTransition(() => {
+              dispatch(formData);
+            });
+          }}
+          className="flex flex-col sm:flex-row justify-center items-center gap-4 max-w-md mx-auto"
+        >
+          <Input
             type="email"
-            placeholder="Enter your email"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            placeholder="Enter your email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="px-4 py-2 w-full sm:w-auto border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
-          <button type="submit" className="bg-purple-700 hover:bg-purple-800 text-white px-5 py-2 rounded-md transition">
-            Subscribe
-          </button>
+          <Button
+            type="submit"
+            className="bg-purple-700 text-white px-6 py-2 rounded-md hover:bg-purple-800 transition shadow-sm"
+            disabled={isPending}
+          >
+            {isPending ? "Subscribing..." : "Subscribe"}
+          </Button>
         </form>
+
+        {errorFor("email") && <p className="text-red-500 mt-2">{errorFor("email")}</p>}
+
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="sm:max-w-md mx-4 sm:mx-auto">
+            <DialogHeader>
+              <DialogTitle className="text-lg sm:text-xl">Subscription Status</DialogTitle>
+            </DialogHeader>
+            <p className="py-2 text-sm sm:text-base">{dialogMessage}</p>
+            <DialogFooter>
+              <Button
+                className="bg-purple-700 text-white px-6 py-2 rounded-md hover:bg-purple-800 transition shadow-sm"
+                onClick={() => setDialogOpen(false)}
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </section>
     </div>
   );

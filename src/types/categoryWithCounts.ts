@@ -1,9 +1,10 @@
-// types/category.ts
-
 // Input type for creating/updating a category
 export interface CategoryInput {
   name: string;
   slug: string;
+  description?: string; // ✅ added
+  isPopular?: boolean;
+  isTrending?: boolean;
 }
 
 // Output type for a category returned from API
@@ -11,6 +12,9 @@ export interface CategoryData {
   _id: string;
   name: string;
   slug: string;
+  description?: string | null; // ✅ added with null support
+  isPopular?: boolean;
+  isTrending?: boolean;
   createdAt?: string | null;
   updatedAt?: string | null;
 }

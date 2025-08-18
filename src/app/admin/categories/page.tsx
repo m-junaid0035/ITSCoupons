@@ -45,6 +45,8 @@ interface ICategory {
   _id: string;
   name: string;
   slug: string;
+  isPopular: boolean;
+  isTrending: boolean;
 }
 
 function CategoriesTable({
@@ -76,7 +78,9 @@ function CategoriesTable({
           <TableRow className="border-b border-muted">
             <TableHead>Name</TableHead>
             <TableHead>Slug</TableHead>
-            <TableHead className="w-[140px] text-right">Actions</TableHead>
+            <TableHead>Popular</TableHead>
+            <TableHead>Trending</TableHead>
+            <TableHead className="w-[160px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -88,6 +92,16 @@ function CategoriesTable({
               >
                 <TableCell className="font-medium">{category.name}</TableCell>
                 <TableCell>{category.slug}</TableCell>
+                <TableCell>{category.isPopular ? (
+                    <span className="text-green-600 font-semibold">Yes</span>
+                  ) : (
+                    <span className="text-gray-400">No</span>
+                  )}</TableCell>
+                <TableCell>{category.isTrending ? (
+                    <span className="text-green-600 font-semibold">Yes</span>
+                  ) : (
+                    <span className="text-gray-400">No</span>
+                  )}</TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-1.5">
                     <Button
@@ -124,7 +138,7 @@ function CategoriesTable({
           ) : (
             <TableRow>
               <TableCell
-                colSpan={3}
+                colSpan={5}
                 className="text-center text-muted-foreground py-6"
               >
                 No categories found.
@@ -167,27 +181,26 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = async (id: string) => {
-  startTransition(() => {
-    deleteOptimistic(id);
-  });
-
-  const result = await deleteCategoryAction(id);
-  if (result?.error) {
-    toast({
-      title: "Error",
-      description: result.error.message || "Failed to delete category",
-      variant: "destructive",
+    startTransition(() => {
+      deleteOptimistic(id);
     });
-    await loadCategories(); // revert if failed
-  } else {
-    setCategories(prev => prev.filter(cat => cat._id !== id)); // keep in sync
-    toast({
-      title: "Deleted",
-      description: "Category deleted successfully.",
-    });
-  }
-};
 
+    const result = await deleteCategoryAction(id);
+    if (result?.error) {
+      toast({
+        title: "Error",
+        description: result.error.message || "Failed to delete category",
+        variant: "destructive",
+      });
+      await loadCategories(); // revert if failed
+    } else {
+      setCategories((prev) => prev.filter((cat) => cat._id !== id)); // keep in sync
+      toast({
+        title: "Deleted",
+        description: "Category deleted successfully.",
+      });
+    }
+  };
 
   useEffect(() => {
     loadCategories();

@@ -14,9 +14,9 @@ export default async function BlogPage({ params }: BlogPageProps) {
 
   if (result.error) {
     return (
-      <div className="py-12 text-center text-red-600">
-        <h2 className="text-2xl font-bold mb-4">Error</h2>
-        <p>{result.error.message?.[0] || "Failed to load blog."}</p>
+      <div className="py-16 text-center text-red-600">
+        <h2 className="text-3xl font-bold mb-4">Oops! Something went wrong</h2>
+        <p className="text-lg">{result.error.message?.[0] || "Failed to load the blog."}</p>
       </div>
     );
   }
@@ -26,31 +26,35 @@ export default async function BlogPage({ params }: BlogPageProps) {
   return (
     <section className="py-12 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
       {/* Blog Title */}
-      <h1 className="text-3xl md:text-4xl font-bold text-purple-800 mb-6">
+      <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-purple-800 mb-4 leading-tight">
         {blog.title}
       </h1>
 
       {/* Blog Date */}
       {blog.date && (
-        <p className="text-gray-500 mb-6">
-          {new Date(blog.date).toLocaleDateString()}
+        <p className="text-gray-500 text-sm sm:text-base mb-6">
+          {new Date(blog.date).toLocaleDateString(undefined, {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
         </p>
       )}
 
       {/* Blog Image */}
       {blog.image && (
-        <div className="w-full h-[300px] mb-6 overflow-hidden rounded-xl shadow-md">
+        <div className="w-full h-64 sm:h-80 md:h-96 mb-8 overflow-hidden rounded-2xl shadow-lg">
           <img
             src={blog.image}
             alt={blog.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center transition-transform duration-500 hover:scale-105"
             loading="lazy"
           />
         </div>
       )}
 
-      {/* Blog Content / Description */}
-      <div className="prose prose-purple max-w-full">
+      {/* Blog Content */}
+      <div className="prose prose-purple max-w-full sm:prose-lg md:prose-xl mx-auto">
         <p>{blog.description || "No description available."}</p>
       </div>
     </section>

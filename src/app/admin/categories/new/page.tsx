@@ -51,7 +51,6 @@ export default function CategoryForm() {
     }
 
     if (formState.error && "message" in formState.error) {
-      // Replace alert with your toast if you want
       alert(
         formState.error.message?.[0] || "An error occurred while saving category"
       );
@@ -63,13 +62,21 @@ export default function CategoryForm() {
       <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex items-center justify-between border-none">
           <CardTitle>Create Category</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/categories")}>
+          <Button
+            variant="secondary"
+            onClick={() => router.push("/admin/categories")}
+          >
             Back to Categories
           </Button>
         </CardHeader>
 
         <CardContent>
-          <form action={dispatch} className="space-y-6">
+          <form
+            action={(formData: FormData) => {
+              return dispatch(formData); // FormData now automatically includes isPopular and isTrending if checked
+            }}
+            className="space-y-6"
+          >
             {/* Category Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Category Name</Label>
@@ -80,7 +87,6 @@ export default function CategoryForm() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Enter category name"
               />
-              {/* You can add per-field error display here if needed */}
             </div>
 
             {/* Slug */}
@@ -93,6 +99,42 @@ export default function CategoryForm() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="category-slug"
               />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <textarea
+                id="description"
+                name="description"
+                rows={4}
+                className="w-full rounded-md border-none shadow-sm bg-gray-50 dark:bg-gray-700 p-2"
+                placeholder="Enter category description"
+              />
+            </div>
+
+            {/* Is Popular */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isPopular"
+                name="isPopular"
+                value="true"
+                className="w-4 h-4"
+              />
+              <Label htmlFor="isPopular">Popular</Label>
+            </div>
+
+            {/* Is Trending */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isTrending"
+                name="isTrending"
+                value="true"
+                className="w-4 h-4"
+              />
+              <Label htmlFor="isTrending">Trending</Label>
             </div>
 
             <CardFooter className="flex justify-end border-none">

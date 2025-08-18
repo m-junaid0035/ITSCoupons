@@ -9,12 +9,21 @@ import {
   getCategoryById,
   updateCategory,
   getCategoriesWithStoreAndCouponCounts,
+  getCategoryNames,
 } from "@/functions/categoryFunctions";
 
 // ✅ Category Validation Schema
 const categorySchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(50),
   slug: z.string().trim().min(2, "Slug must be at least 2 characters").max(50),
+  description: z
+    .string()
+    .trim()
+    .max(500, "Description must be less than 500 characters")
+    .optional()
+    .nullable(),
+  isPopular: z.coerce.boolean().optional().default(false),
+  isTrending: z.coerce.boolean().optional().default(false),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -29,6 +38,15 @@ function parseFormData(formData: FormData): CategoryFormData {
   return {
     name: String(formData.get("name") || ""),
     slug: String(formData.get("slug") || ""),
+    description: formData.get("description")
+      ? String(formData.get("description"))
+      : null,
+    isPopular:
+      formData.get("isPopular") === "true" ||
+      formData.get("isPopular") === "on",
+    isTrending:
+      formData.get("isTrending") === "true" ||
+      formData.get("isTrending") === "on",
   };
 }
 
@@ -53,7 +71,9 @@ export async function createCategoryAction(
     if (error.code === 11000) {
       return { error: { slug: ["Slug must be unique"] } };
     }
-    return { error: { message: [error.message || "Failed to create category"] } };
+    return {
+      error: { message: [error.message || "Failed to create category"] },
+    };
   }
 }
 
@@ -76,7 +96,9 @@ export async function updateCategoryAction(
     const updated = await updateCategory(id, result.data);
     return { data: updated };
   } catch (error: any) {
-    return { error: { message: [error.message || "Failed to update category"] } };
+    return {
+      error: { message: [error.message || "Failed to update category"] },
+    };
   }
 }
 
@@ -87,7 +109,9 @@ export async function deleteCategoryAction(id: string) {
     const deleted = await deleteCategory(id);
     return { data: deleted };
   } catch (error: any) {
-    return { error: { message: [error.message || "Failed to delete category"] } };
+    return {
+      error: { message: [error.message || "Failed to delete category"] },
+    };
   }
 }
 
@@ -96,9 +120,11 @@ export async function fetchAllCategoriesAction() {
   await connectToDatabase();
   try {
     const categories = await getAllCategories();
-    return { data: categories }; // already serialized in categoryFunctions
+    return { data: categories };
   } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch categories"] } };
+    return {
+      error: { message: [error.message || "Failed to fetch categories"] },
+    };
   }
 }
 
@@ -112,7 +138,9 @@ export async function fetchCategoryByIdAction(id: string) {
     }
     return { data: category };
   } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch category"] } };
+    return {
+      error: { message: [error.message || "Failed to fetch category"] },
+    };
   }
 }
 
@@ -124,6 +152,23 @@ export async function fetchCategoriesWithCountsAction() {
     const categoriesWithCounts = await getCategoriesWithStoreAndCouponCounts();
     return { data: categoriesWithCounts };
   } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch categories with counts"] } };
+    return {
+      error: {
+        message: [error.message || "Failed to fetch categories with counts"],
+      },
+    };
+  }
+}
+// ✅ FETCH ONLY CATEGORY NAMES
+export async function fetchCategoryNamesAction() {
+  await connectToDatabase();
+
+  try {
+    const names = await getCategoryNames();
+    return { data: names }; // array of strings
+  } catch (error: any) {
+    return {
+      error: { message: [error.message || "Failed to fetch category names"] },
+    };
   }
 }

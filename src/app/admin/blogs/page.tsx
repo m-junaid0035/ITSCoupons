@@ -1,49 +1,15 @@
 "use client";
-import { startTransition } from "react";
-import {
-  Suspense,
-  useEffect,
-  useState,
-  useOptimistic,
-} from "react";
+import { startTransition, Suspense, useEffect, useState, useOptimistic } from "react";
 import { useRouter } from "next/navigation";
-import {
-  fetchAllBlogsAction,
-  deleteBlogAction,
-} from "@/actions/blogActions";
+import { fetchAllBlogsAction, deleteBlogAction } from "@/actions/blogActions";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 
 interface IBlog {
@@ -57,6 +23,8 @@ interface IBlog {
   metaKeywords?: string;
   focusKeywords?: string;
   slug?: string;
+  writer?: string;
+  category?: string;
 }
 
 function BlogsTable({
@@ -87,6 +55,8 @@ function BlogsTable({
         <TableHeader>
           <TableRow className="border-b border-muted">
             <TableHead>Title</TableHead>
+            <TableHead>Writer</TableHead>
+            <TableHead>Category</TableHead>
             <TableHead>Date</TableHead>
             <TableHead>Description</TableHead>
             <TableHead>Image</TableHead>
@@ -101,60 +71,31 @@ function BlogsTable({
         <TableBody>
           {blogs.length > 0 ? (
             blogs.map((blog) => (
-              <TableRow
-                key={blog._id}
-                className="hover:bg-muted/40 transition-colors"
-              >
+              <TableRow key={blog._id} className="hover:bg-muted/40 transition-colors">
                 <TableCell className="font-medium">{blog.title}</TableCell>
+                <TableCell>{blog.writer || "-"}</TableCell>
+                <TableCell>{blog.category || "-"}</TableCell>
                 <TableCell>{new Date(blog.date).toLocaleDateString()}</TableCell>
-                <TableCell className="line-clamp-2 max-w-xs">
-                  {blog.description || "-"}
-                </TableCell>
+                <TableCell className="line-clamp-2 max-w-xs">{blog.description || "-"}</TableCell>
                 <TableCell>
                   {blog.image ? (
-                    <img
-                      src={blog.image}
-                      alt="Blog"
-                      className="h-10 w-10 object-cover rounded"
-                    />
-                  ) : (
-                    "-"
-                  )}
+                    <img src={blog.image} alt="Blog" className="h-10 w-10 object-cover rounded" />
+                  ) : "-"}
                 </TableCell>
                 <TableCell>{blog.metaTitle || "-"}</TableCell>
-                <TableCell className="line-clamp-2 max-w-xs">
-                  {blog.metaDescription || "-"}
-                </TableCell>
+                <TableCell className="line-clamp-2 max-w-xs">{blog.metaDescription || "-"}</TableCell>
                 <TableCell>{blog.metaKeywords || "-"}</TableCell>
                 <TableCell>{blog.focusKeywords || "-"}</TableCell>
                 <TableCell>{blog.slug || "-"}</TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onView(blog._id)}
-                      title="View"
-                    >
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onView(blog._id)} title="View">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onEdit(blog._id)}
-                      title="Edit"
-                    >
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(blog._id)} title="Edit">
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => onDelete(blog._id)}
-                      title="Delete"
-                    >
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => onDelete(blog._id)} title="Delete">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -163,10 +104,7 @@ function BlogsTable({
             ))
           ) : (
             <TableRow>
-              <TableCell
-                colSpan={10}
-                className="text-center text-muted-foreground py-6"
-              >
+              <TableCell colSpan={12} className="text-center text-muted-foreground py-6">
                 No blogs found.
               </TableCell>
             </TableRow>
@@ -208,7 +146,7 @@ export default function BlogsPage() {
 
   const handleDelete = async (id: string) => {
     startTransition(() => {
-      deleteOptimistic(id); // remove from UI immediately
+      deleteOptimistic(id);
     });
 
     const result = await deleteBlogAction(id);
@@ -218,9 +156,9 @@ export default function BlogsPage() {
         description: result.error.message || "Failed to delete blog",
         variant: "destructive",
       });
-      await loadBlogs(); // revert if failed
+      await loadBlogs();
     } else {
-      setBlogs(prev => prev.filter(blog => blog._id !== id)); // keep state in sync
+      setBlogs((prev) => prev.filter((blog) => blog._id !== id));
       toast({
         title: "Deleted",
         description: "Blog deleted successfully.",
@@ -228,19 +166,13 @@ export default function BlogsPage() {
     }
   };
 
-
   useEffect(() => {
     loadBlogs();
   }, []);
 
-  const filteredBlogs = optimisticBlogs.filter((b) =>
-    b.title.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredBlogs = optimisticBlogs.filter((b) => b.title.toLowerCase().includes(search.toLowerCase()));
   const totalPages = Math.ceil(filteredBlogs.length / pageSize);
-  const paginatedBlogs = filteredBlogs.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const paginatedBlogs = filteredBlogs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <Card className="w-full border-none shadow-none">
@@ -256,9 +188,7 @@ export default function BlogsPage() {
             }}
             className="sm:w-64"
           />
-          <Button onClick={() => router.push("/admin/blogs/new")}>
-            Create Blog
-          </Button>
+          <Button onClick={() => router.push("/admin/blogs/new")}>Create Blog</Button>
         </div>
       </CardHeader>
 
@@ -278,24 +208,17 @@ export default function BlogsPage() {
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  />
+                  <PaginationPrevious onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} />
                 </PaginationItem>
                 {Array.from({ length: totalPages }, (_, i) => (
                   <PaginationItem key={i}>
-                    <PaginationLink
-                      isActive={currentPage === i + 1}
-                      onClick={() => setCurrentPage(i + 1)}
-                    >
+                    <PaginationLink isActive={currentPage === i + 1} onClick={() => setCurrentPage(i + 1)}>
                       {i + 1}
                     </PaginationLink>
                   </PaginationItem>
                 ))}
                 <PaginationItem>
-                  <PaginationNext
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  />
+                  <PaginationNext onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} />
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
@@ -303,25 +226,14 @@ export default function BlogsPage() {
         )}
       </CardContent>
 
-      <Dialog
-        open={!!confirmDeleteId}
-        onOpenChange={() => setConfirmDeleteId(null)}
-      >
+      <Dialog open={!!confirmDeleteId} onOpenChange={() => setConfirmDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
-          <p>
-            Are you sure you want to delete this blog? This action cannot be
-            undone.
-          </p>
+          <p>Are you sure you want to delete this blog? This action cannot be undone.</p>
           <DialogFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setConfirmDeleteId(null)}
-            >
-              Cancel
-            </Button>
+            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
             <Button
               variant="destructive"
               onClick={() => {

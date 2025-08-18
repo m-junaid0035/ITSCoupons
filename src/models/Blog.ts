@@ -10,6 +10,8 @@ export interface IBlog extends Document {
   metaDescription?: string;
   metaKeywords?: string[];
   focusKeywords?: string[];
+  writer: string;      // new
+  category: string;    // new
   createdAt: Date;
   updatedAt: Date;
 }
@@ -30,6 +32,7 @@ const blogSchema = new Schema<IBlog>(
     description: {
       type: String,
       required: [true, "Description is required"],
+      trim: true,
     },
     image: {
       type: String,
@@ -55,11 +58,22 @@ const blogSchema = new Schema<IBlog>(
       type: [String],
       default: [],
     },
+    writer: {
+      type: String,
+      required: [true, "Writer is required"], // make it required
+      trim: true,
+    },
+    category: {
+      type: String,
+      required: [true, "Category is required"], // make it required
+      trim: true,
+    },
   },
   {
     timestamps: true,
   }
 );
 
+// Avoid recompiling model if it already exists
 export const Blog: Model<IBlog> =
   mongoose.models.Blog || mongoose.model<IBlog>("Blog", blogSchema);

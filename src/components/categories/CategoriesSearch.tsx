@@ -1,14 +1,21 @@
 "use client";
 
 import { Check, Tag } from "lucide-react";
+import { useRouter } from "next/navigation";
 import type { CategoryData } from "@/types/category";
 
 interface CategoriesSearchProps {
   categories: CategoryData[];
-  onSelectCategory: (categoryId: string) => void;
 }
 
-export default function CategoriesSearch({ categories, onSelectCategory }: CategoriesSearchProps) {
+export default function CategoriesSearch({ categories }: CategoriesSearchProps) {
+  const router = useRouter();
+
+  // Handle category selection and navigate to filtered stores
+  const handleSelectCategory = (categoryId: string) => {
+    router.push(`/stores?category=${categoryId}`);
+  };
+
   return (
     <section className="bg-purple-800 text-white py-20 px-4 text-center">
       <h1 className="text-3xl md:text-4xl font-bold mb-2">Browse by Categories</h1>
@@ -25,7 +32,7 @@ export default function CategoriesSearch({ categories, onSelectCategory }: Categ
         {categories.map((cat) => (
           <button
             key={cat._id}
-            onClick={() => onSelectCategory(cat._id)}
+            onClick={() => handleSelectCategory(cat._id)}
             className="flex items-center gap-2 bg-white text-purple-800 font-semibold px-4 py-2 rounded-md hover:bg-purple-100 hover:text-purple-900 transition"
           >
             <Tag className="w-5 h-5" />

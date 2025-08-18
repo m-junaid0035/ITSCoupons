@@ -17,6 +17,18 @@ export default function LoadingSkeleton() {
           <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
         </div>
 
+        {/* Writer */}
+        <div className="space-y-2">
+          <div className="h-4 w-20 bg-gray-300 dark:bg-gray-700 rounded"></div>
+          <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
+        </div>
+
+        {/* Category */}
+        <div className="space-y-2">
+          <div className="h-4 w-24 bg-gray-300 dark:bg-gray-700 rounded"></div>
+          <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
+        </div>
+
         {/* Slug */}
         <div className="space-y-2">
           <div className="h-4 w-20 bg-gray-300 dark:bg-gray-700 rounded"></div>

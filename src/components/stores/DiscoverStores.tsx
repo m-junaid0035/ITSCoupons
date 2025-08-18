@@ -1,46 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Search, Check } from "lucide-react";
+import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { fetchAllStoresAction } from "@/actions/storeActions";
+import { Check } from "lucide-react";
 import type { StoreData } from "@/types/store";
 
-export default function DiscoverStores() {
-  const [allStores, setAllStores] = useState<StoreData[]>([]);
+interface DiscoverStoresProps {
+  stores: StoreData[];
+}
+
+export default function DiscoverStores({ stores }: DiscoverStoresProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredStores, setFilteredStores] = useState<StoreData[]>([]);
   const router = useRouter();
 
-  // Load all stores
-  useEffect(() => {
-    async function loadStores() {
-      try {
-        const result = await fetchAllStoresAction();
-        const storesArray = Array.isArray(result?.data) ? result.data : [];
-        setAllStores(storesArray);
-      } catch (error) {
-        console.error("Error fetching stores:", error);
-      }
-    }
-    loadStores();
-  }, []);
-
   // Filter stores based on search term
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredStores([]);
-      return;
-    }
-    const filtered = allStores.filter((store) =>
+  const filteredStores = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+    return stores.filter((store) =>
       store.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    setFilteredStores(filtered);
-  }, [searchTerm, allStores]);
+  }, [searchTerm, stores]);
 
   const handleSelectStore = (storeId: string) => {
     setSearchTerm("");
-    setFilteredStores([]);
     router.push(`/stores/${storeId}`);
   };
 
@@ -88,7 +70,8 @@ export default function DiscoverStores() {
         <button
           className="bg-white text-[#9400A5] font-semibold px-5 py-3 rounded-md border border-white hover:bg-purple-100 transition"
           onClick={() => {
-            if (filteredStores.length === 1) handleSelectStore(filteredStores[0]._id);
+            if (filteredStores.length === 1)
+              handleSelectStore(filteredStores[0]._id);
           }}
         >
           Search Stores

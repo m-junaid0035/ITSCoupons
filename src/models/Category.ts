@@ -4,6 +4,9 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 export interface ICategory extends Document {
   name: string;
   slug: string;
+  description?: string;
+  isPopular: boolean;
+  isTrending: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,6 +28,20 @@ const categorySchema = new Schema<ICategory>(
       trim: true,
       unique: true,
       lowercase: true,
+    },
+    description: {
+      type: String,
+      trim: true,
+      default: null,
+      maxlength: [300, "Description must be less than 300 characters"],
+    },
+    isPopular: {
+      type: Boolean,
+      default: false,
+    },
+    isTrending: {
+      type: Boolean,
+      default: false,
     },
   },
   {

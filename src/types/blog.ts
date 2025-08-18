@@ -11,6 +11,8 @@ export interface BlogInput {
   metaKeywords?: string;
   focusKeywords?: string;
   slug?: string;
+  writer?: string; // new field
+  category?: string; // new field
 }
 
 // Output type for a blog returned from API
@@ -25,6 +27,8 @@ export interface BlogData {
   metaKeywords?: string;
   focusKeywords?: string;
   slug?: string;
+  writer?: string; // new field
+  category?: string; // new field
   createdAt?: string | null;
   updatedAt?: string | null;
 }

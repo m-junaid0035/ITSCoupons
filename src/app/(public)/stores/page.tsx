@@ -1,85 +1,36 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
+// app/stores/page.tsx (Server Component)
 import DiscoverStores from "@/components/stores/DiscoverStores";
 import StoreCard from "@/components/stores/StoreCard";
 
-import { fetchAllStoresWithCouponsAction } from "@/actions/storeActions"; // new action to fetch stores with coupons
+import { fetchAllStoresAction, fetchAllStoresWithCouponsAction } from "@/actions/storeActions";
 import { fetchAllCategoriesAction } from "@/actions/categoryActions";
 
-import type { StoreWithCouponsData } from "@/types/storesWithCouponsData"; // extended Store type with coupons
+import type { StoreData } from "@/types/store";
+import type { StoreWithCouponsData } from "@/types/storesWithCouponsData";
 import type { CategoryData } from "@/types/category";
 
-const StorePage = () => {
-  const [stores, setStores] = useState<StoreWithCouponsData[]>([]);
-  const [categories, setCategories] = useState<CategoryData[]>([]);
+export default async function StorePage() {
+  // Fetch all needed data in parallel
+  const [discoverStoresResult, storesWithCouponsResult, categoriesResult] = await Promise.allSettled([
+    fetchAllStoresAction(), // for DiscoverStores
+    fetchAllStoresWithCouponsAction(), // for StoreCard
+    fetchAllCategoriesAction(), // categories
+  ]);
 
-  const [loadingStores, setLoadingStores] = useState(true);
-  const [errorStores, setErrorStores] = useState<string | null>(null);
+  // Extract data or fallback to empty arrays
+  const discoverStores: StoreData[] =
+    discoverStoresResult.status === "fulfilled" ? discoverStoresResult.value?.data ?? [] : [];
 
-  const [loadingCategories, setLoadingCategories] = useState(true);
-  const [errorCategories, setErrorCategories] = useState<string | null>(null);
+  const storesWithCoupons: StoreWithCouponsData[] =
+    storesWithCouponsResult.status === "fulfilled" ? storesWithCouponsResult.value?.data ?? [] : [];
 
-  useEffect(() => {
-    async function loadStores() {
-      setLoadingStores(true);
-      setErrorStores(null);
-
-      try {
-        const result = await fetchAllStoresWithCouponsAction();
-        if (result.error) {
-          setErrorStores(result.error.message?.[0] || "Failed to fetch stores");
-          setStores([]);
-        } else if (result.data && Array.isArray(result.data)) {
-          setStores(result.data);
-        } else {
-          setStores([]);
-        }
-      } catch (err: any) {
-        setErrorStores(err.message || "Failed to fetch stores");
-      }
-      setLoadingStores(false);
-    }
-
-    async function loadCategories() {
-      setLoadingCategories(true);
-      setErrorCategories(null);
-
-      try {
-        const result = await fetchAllCategoriesAction();
-        if (result.error) {
-          setErrorCategories(result.error.message?.[0] || "Failed to fetch categories");
-          setCategories([]);
-        } else if (result.data && Array.isArray(result.data)) {
-          setCategories(result.data);
-        } else {
-          setCategories([]);
-        }
-      } catch (err: any) {
-        setErrorCategories(err.message || "Failed to fetch categories");
-      }
-      setLoadingCategories(false);
-    }
-
-    loadStores();
-    loadCategories();
-  }, []);
-
-  const loading = loadingStores || loadingCategories;
-  const error = errorStores || errorCategories;
+  const categories: CategoryData[] =
+    categoriesResult.status === "fulfilled" ? categoriesResult.value?.data ?? [] : [];
 
   return (
     <main>
-      <DiscoverStores />
-      <StoreCard
-        stores={stores}
-        categories={categories}
-        loading={loading}
-        error={error}
-      />
+      <DiscoverStores stores={discoverStores} />
+      <StoreCard stores={storesWithCoupons} categories={categories} />
     </main>
   );
-};
-
-export default StorePage;
+}

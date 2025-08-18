@@ -2,27 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  FaTshirt,
-  FaHamburger,
-  FaPlane,
-  FaFilm,
-  FaAppleAlt,
-  FaGamepad,
-  FaStore,
-  FaHeartbeat,
-} from "react-icons/fa";
+import { FaStore } from "react-icons/fa";
 
 import type { CategoryWithCounts } from "@/types/categoryWithCounts";
 
 type FilterOption = {
   label: string;
-  value: string;
+  value: "all" | "popular" | "trending";
 };
 
 interface CategoriesProps {
   categories: CategoryWithCounts[];
-  loading?: boolean;
   error?: string | null;
 }
 
@@ -32,43 +22,19 @@ const filterOptions: FilterOption[] = [
   { label: "Trending", value: "trending" },
 ];
 
-const iconMap: Record<string, any> = {
-  fashion: FaTshirt,
-  "food & drinks": FaHamburger,
-  travel: FaPlane,
-  entertainment: FaFilm,
-  grocery: FaAppleAlt,
-  gaming: FaGamepad,
-  shopping: FaStore,
-  "health & beauty": FaHeartbeat,
-};
-
 export default function Categories({
   categories,
-  loading = false,
   error = null,
 }: CategoriesProps) {
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | "popular" | "trending">("all");
   const router = useRouter();
 
   const filteredCategories = categories.filter((cat) => {
     if (activeFilter === "all") return true;
-    if (activeFilter === "popular") {
-      return ["fashion", "shopping", "food & drinks"].includes(
-        cat.slug.toLowerCase()
-      );
-    }
-    if (activeFilter === "trending") {
-      return ["travel", "gaming"].includes(cat.slug.toLowerCase());
-    }
+    if (activeFilter === "popular") return cat.isPopular === true;
+    if (activeFilter === "trending") return cat.isTrending === true;
     return true;
   });
-
-  if (loading) {
-    return (
-      <div className="text-center py-20 text-gray-500">Loading categories...</div>
-    );
-  }
 
   if (error) {
     return (
@@ -79,9 +45,9 @@ export default function Categories({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-10">
       {/* Header with filters */}
-      <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+      <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
         <h1 className="text-3xl font-bold">All Categories</h1>
         <div className="flex gap-2">
           {filterOptions.map((filter) => (
@@ -101,51 +67,61 @@ export default function Categories({
       </div>
 
       {/* Category cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCategories.length === 0 && (
           <p className="text-center text-gray-500 col-span-full">
             No categories found.
           </p>
         )}
-        {filteredCategories.map((category) => {
-          const Icon = iconMap[category.slug.toLowerCase()] || FaStore;
+        {filteredCategories.map((category) => (
+          <div
+            key={category._id}
+            className="border rounded-xl p-8 min-h-[320px] hover:shadow-lg transition-all flex flex-col justify-between h-full"
+          >
+            <div className="flex flex-col items-center text-center">
+              {/* Icon */}
+              <FaStore className="text-purple-600 text-4xl mb-4" />
 
-          return (
-            <div
-              key={category._id}
-              className="border rounded-xl p-6 hover:shadow-md transition-all flex flex-col justify-between h-full"
-            >
-              <div className="flex flex-col items-center text-center">
-                <Icon className="text-purple-600 text-3xl mb-4" />
-                <h3 className="text-lg font-semibold text-purple-700 mb-2">
-                  {category.name}
-                </h3>
-                <div className="mt-4 text-xs text-gray-400">
-                  <p>{category.totalStores.toLocaleString()} Stores</p>
-                  <p>{category.totalCoupons.toLocaleString()} Deals</p>
-                </div>
-              </div>
-              <div className="mt-6 flex gap-2 justify-center">
-                <button
-                  className="bg-purple-600 text-white px-4 py-2 rounded-md text-sm hover:bg-purple-700"
-                  onClick={() =>
-                    router.push(`/coupons?category=${category.slug}`)
-                  }
-                >
-                  Browse Deals
-                </button>
-                <button
-                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md text-sm hover:bg-gray-200"
-                  onClick={() =>
-                    router.push(`/stores?category=${category.slug}`)
-                  }
-                >
-                  View Stores
-                </button>
-              </div>
+              {/* Title */}
+              <h3 className="text-xl font-semibold text-purple-700 mb-3">
+                {category.name}
+              </h3>
+
+              {/* Description */}
+              {category.description && (
+                <p className="text-sm text-gray-500 line-clamp-3">
+                  {category.description}
+                </p>
+              )}
             </div>
-          );
-        })}
+
+            {/* Bottom row counts */}
+            <div className="mt-6 flex justify-between items-center text-sm font-medium text-gray-700">
+              <span>{category.totalStores}+ Stores</span>
+              <span>{category.totalCoupons}+ Coupons</span>
+            </div>
+
+            {/* Actions */}
+            <div className="mt-6 flex flex-col sm:flex-row gap-2 justify-center w-full">
+              <button
+                className="bg-purple-600 text-white px-5 py-2 rounded-md text-sm hover:bg-purple-700 w-full sm:w-auto"
+                onClick={() =>
+                  router.push(`/coupons?category=${category.slug}`)
+                }
+              >
+                Browse Deals
+              </button>
+              <button
+                className="bg-gray-100 text-gray-700 px-5 py-2 rounded-md text-sm hover:bg-gray-200 w-full sm:w-auto"
+                onClick={() =>
+                  router.push(`/stores?category=${category.slug}`)
+                }
+              >
+                View Stores
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

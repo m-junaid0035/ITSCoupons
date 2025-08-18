@@ -16,8 +16,7 @@ export default function Footer({ latestSetting }: FooterProps) {
         {/* Logo + Description + Socials */}
         <div className="space-y-4 col-span-2 md:col-span-1 text-center md:text-left">
           <h2 className="text-2xl font-bold">
-            {latestSetting?.siteName || "ITS"}
-            <span className="font-light">Coupons</span>
+            {latestSetting?.siteName || "ITSCoupons"}
           </h2>
           <p className="max-w-sm mx-auto md:mx-0">
             Helping you save money with verified coupons and deals from your favorite stores.
@@ -118,9 +117,9 @@ export default function Footer({ latestSetting }: FooterProps) {
         <div>
           <h4 className="font-semibold mb-2">Contact Us</h4>
           <ul className="space-y-1">
-            <li>{latestSetting?.contactEmail || "support@itscoupons.com"}</li>
-            <li>{latestSetting?.contactPhone || "(+92) 3143328342"}</li>
-            <li>{latestSetting?.address || "123, street, Discount city, 50050"}</li>
+            <li className="max-w-full break-words">{latestSetting?.contactEmail || "support@itscoupons.com"}</li>
+            <li className="max-w-full break-words">{latestSetting?.contactPhone || "(+92) 3143328342"}</li>
+            <li className="max-w-full break-words">{latestSetting?.address || "123, street, Discount city, 50050"}</li>
           </ul>
         </div>
       </div>
