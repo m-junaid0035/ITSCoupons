@@ -38,14 +38,14 @@ const BravoDealInfo: React.FC = () => {
           <br /><br />
 
           Like many coupon sites, our deals and coupons are available to users at no extra cost! We source and verify the best discount codes, ensuring everyone can access legitimate offers.
-          If you're wondering how ItsCoupons guarantees authentic savings, check out our blog{" "}
+          If you&apos;re wondering how ItsCoupons guarantees authentic savings, check out our blog{" "}
           <a href="#" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">
             Is ItsCoupons Legit
           </a>.
 
           <br /><br />
 
-          It's as easy as one click to access your savings. Once you select your promo code, you’ll be redirected to the brand’s official store. Paste your code at checkout and enjoy the discount instantly.
+          It&apos;s as easy as one click to access your savings. Once you select your promo code, you&apos;ll be redirected to the brand&apos;s official store. Paste your code at checkout and enjoy the discount instantly.
         </p>
       </section>
 
@@ -59,7 +59,7 @@ const BravoDealInfo: React.FC = () => {
 
           <br /><br />
 
-          We also offer exclusive coupon codes and special offers thanks to partnerships with your favorite brands. ItsCoupons works through an affiliate model, earning a small commission when a coupon is successfully redeemed — at no cost to you!
+          We also offer exclusive coupon codes and special offers thanks to partnerships with your favorite brands. ItsCoupons works through an affiliate model, earning a small commission when a coupon is successfully redeemed &mdash; at no cost to you!
 
           <br /><br />
 
