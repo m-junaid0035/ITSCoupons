@@ -1,11 +1,12 @@
 "use client";
 
-import React, { ReactElement, useMemo, useState } from "react";
+import React, { ReactElement, useMemo, useState, useEffect } from "react";
 import { FaSortAmountDown } from "react-icons/fa";
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import CouponModal from "@/components/coupon_popup";
 import type { CategoryData } from "@/types/category";
 import { CheckCircle, Clock } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 interface AllCouponsPageProps {
   coupons: CouponWithStoreData[];
@@ -59,6 +60,19 @@ export default function AllCouponsPage({
   // Modal
   const [selectedCoupon, setSelectedCoupon] = useState<CouponWithStoreData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // ───────── URL couponId support ─────────
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const couponId = searchParams.get("couponId");
+    if (couponId) {
+      const coupon = coupons.find(c => c._id === couponId);
+      if (coupon) {
+        setSelectedCoupon(coupon);
+        setIsModalOpen(true);
+      }
+    }
+  }, [searchParams, coupons]);
 
   // ─── Filter coupons
   const filtered = useMemo(() => {
@@ -118,19 +132,27 @@ export default function AllCouponsPage({
     return sorted.slice(start, start + perPage);
   }, [sorted, perPage, safePage]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     setPage(1);
   }, [perPage, activeTab, selectedCategories, quickVerified, quickCodesOnly, quickDealsOnly, quickFreeShipping, sortBy]);
 
+  // ───────── Open coupon in new tab & modal
+  const handleOpenCouponNewTab = (coupon: CouponWithStoreData) => {
+    const url = `/coupons/?couponId=${coupon._id}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+    if (coupon.couponUrl) {
+      window.location.href = coupon.couponUrl;
+    }
+  };
+
+  // ───────── Render ─────────
   return (
     <div className="px-4 md:px-10 py-10 max-w-7xl mx-auto text-gray-800">
       <h2 className="text-3xl font-bold mb-6">All Coupons</h2>
 
       {/* Top bar */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between text-sm text-gray-600 mb-6">
-        <div>
-          {`Showing ${paginated.length} of ${pluralize(total, "coupon")}`}
-        </div>
+        <div>{`Showing ${paginated.length} of ${pluralize(total, "coupon")}`}</div>
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
@@ -265,10 +287,7 @@ export default function AllCouponsPage({
 
               <div className="flex flex-col items-end justify-between p-4 w-[170px] border-l border-gray-100">
                 <button
-                  onClick={() => {
-                    setSelectedCoupon(coupon);
-                    setIsModalOpen(true);
-                  }}
+                  onClick={() => handleOpenCouponNewTab(coupon)}
                   className={`text-white text-sm font-semibold w-full py-2 rounded ${coupon.couponType === "coupon" ? "bg-purple-700 hover:bg-purple-800" : "bg-orange-500 hover:bg-orange-600"}`}
                 >
                   {coupon.couponType === "coupon" ? "GET CODE" : "GET DEAL"}

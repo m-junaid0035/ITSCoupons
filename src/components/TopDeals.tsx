@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import CouponModal from "@/components/coupon_popup";
 
@@ -11,14 +12,27 @@ interface TopDealsProps {
 const TopDeals: React.FC<TopDealsProps> = ({ deals }) => {
   const [selectedDeal, setSelectedDeal] = useState<CouponWithStoreData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const searchParams = useSearchParams();
 
   // Lock background scroll when modal is open
-  React.useEffect(() => {
+  useEffect(() => {
     document.body.style.overflow = isModalOpen ? "hidden" : "auto";
     return () => {
       document.body.style.overflow = "auto";
     };
   }, [isModalOpen]);
+
+  // Auto-open modal if couponId is in URL (new tab)
+  useEffect(() => {
+    const couponId = searchParams.get("couponId");
+    if (couponId) {
+      const deal = deals.find(d => d._id === couponId);
+      if (deal) {
+        setSelectedDeal(deal);
+        setIsModalOpen(true);
+      }
+    }
+  }, [searchParams, deals]);
 
   if (!deals.length) {
     return (
@@ -28,9 +42,15 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals }) => {
     );
   }
 
+  // Open new tab with couponId param
   const handleGetDealClick = (deal: CouponWithStoreData) => {
-    setSelectedDeal(deal);
-    setIsModalOpen(true);
+    const modalUrl = `/?couponId=${deal._id}`;
+    window.open(modalUrl, "_blank", "noopener,noreferrer");
+
+    // Optional: navigate current tab if there's a couponUrl
+    if (deal.couponUrl) {
+      window.location.href = deal.couponUrl;
+    }
   };
 
   return (
@@ -80,7 +100,7 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals }) => {
                   onClick={() => handleGetDealClick(deal)}
                   className="w-full bg-gray-200 text-xs font-semibold text-black rounded-full py-1 hover:bg-purple-200 transition"
                 >
-                  GET DEAL
+                  {deal.couponCode === "DEAL_CODE" ? "View Deal" : "Get Deal"}
                 </button>
               )}
             </div>

@@ -130,7 +130,7 @@ export default function StoreCard({ stores, categories }: StoreCardProps) {
             {/* Action Buttons */}
             <div className="mt-6 flex gap-3">
               <a
-                href={`/stores/${store.slug}/coupons`}
+                href={`/stores/${store._id}`}
                 className="flex-grow bg-purple-700 text-white text-center py-2 rounded-md text-sm font-semibold hover:bg-purple-800 transition"
               >
                 View All Coupons

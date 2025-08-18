@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { FaTags, FaHandshake, FaClock } from "react-icons/fa";
 import { CheckCircle, Clock } from "lucide-react";
@@ -57,9 +58,10 @@ interface StorePageProps {
 
 export default function StorePage({ store, initialActiveTab = "all" }: StorePageProps) {
   const [activeTab, setActiveTab] = useState<"all" | "promo" | "deal">(initialActiveTab);
-
   const [selectedCoupon, setSelectedCoupon] = useState<CouponData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const searchParams = useSearchParams(); // NEW: get couponId from URL
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -91,8 +93,38 @@ export default function StorePage({ store, initialActiveTab = "all" }: StorePage
 
   const handlePrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
   const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  useEffect(() => setCurrentPage(1), [activeTab]);
 
-  React.useEffect(() => setCurrentPage(1), [activeTab]);
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = isModalOpen ? "hidden" : "auto";
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isModalOpen]);
+
+  // Open modal automatically if URL has couponId
+  useEffect(() => {
+    const couponId = searchParams.get("couponId");
+    if (couponId) {
+      const coupon = coupons.find(c => c._id === couponId);
+      if (coupon) {
+        setSelectedCoupon(coupon);
+        setIsModalOpen(true);
+      }
+    }
+  }, [searchParams, coupons]);
+
+  // Handle GET CODE / GET DEAL click (new tab)
+  const handleGetCouponClick = (coupon: CouponData) => {
+    const modalUrl = `/stores/${store._id}?couponId=${coupon._id}`; // NEW: construct URL for new tab
+    window.open(modalUrl, "_blank", "noopener,noreferrer");
+
+    // Optional: redirect current tab if coupon URL exists
+    if (coupon.couponUrl) {
+      window.location.href = coupon.couponUrl;
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 text-gray-800">
@@ -186,12 +218,9 @@ export default function StorePage({ store, initialActiveTab = "all" }: StorePage
                         ? "bg-purple-700 hover:bg-purple-800"
                         : "bg-gray-400"
                     }`}
-                    onClick={() => {
-                      setSelectedCoupon(coupon);
-                      setIsModalOpen(true);
-                    }}
+                    onClick={() => handleGetCouponClick(coupon)} // UPDATED
                   >
-                    {coupon.couponType === "coupon" ? "Get Promo Code" : "Get Deal"}
+                    {coupon.couponType === "coupon" ? "GET CODE" : "GET DEAL"}
                   </button>
                   <div className="text-xs mt-2 text-right">
                     {coupon.verified && (
