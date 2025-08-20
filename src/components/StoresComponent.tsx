@@ -1,6 +1,7 @@
 "use client";
 
 import type { StoreData } from "@/types/store";
+import Link from "next/link";
 
 interface ButtonGridProps {
   stores: StoreData[];
@@ -14,21 +15,22 @@ function ButtonGrid({ stores }: ButtonGridProps) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-y-6 gap-x-4 sm:gap-x-6 justify-items-center w-full">
       {stores.map((store) => (
-        <button
-          key={store._id}
-          style={{
-            width: "166px",
-            height: "38px",
-            borderRadius: "12px",
-            borderWidth: "1px",
-            padding: "6px 16px",
-            gap: "10px",
-            boxShadow: "0px 4px 4px 0px #00000040",
-          }}
-          className="border border-gray-300 bg-white shadow-sm hover:bg-gray-100 transition font-medium"
-        >
-          {store.name}
-        </button>
+        <Link href={`/stores/${store._id}`} key={store._id}>
+          <button
+            style={{
+              width: "166px",
+              height: "38px",
+              borderRadius: "12px",
+              borderWidth: "1px",
+              padding: "6px 16px",
+              gap: "10px",
+              boxShadow: "0px 4px 4px 0px #00000040",
+            }}
+            className="border border-gray-300 bg-white shadow-sm hover:bg-gray-100 transition font-medium"
+          >
+            {store.name}
+          </button>
+        </Link>
       ))}
     </div>
   );

@@ -17,7 +17,7 @@ export default function Header({ allStores }: HeaderProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredStores, setFilteredStores] = useState<StoreData[]>([]);
   const pathname = usePathname();
-  const router = useRouter();
+  const router = useRouter(); 
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -64,9 +64,9 @@ export default function Header({ allStores }: HeaderProps) {
       {/* Main Header */}
       <div className="bg-white shadow-sm px-4 sm:px-6 lg:px-16 py-4 md:py-6 flex items-center justify-between">
         {/* Logo */}
-        <div className="text-2xl md:text-3xl font-bold text-purple-800">
+        <Link href="/" className="text-2xl md:text-3xl font-bold text-purple-800">
           ITS<span className="font-light text-black">Coupons</span>
-        </div>
+        </Link>
 
         {/* Navbar (visible only when width >= 1201px) */}
         <div className="hidden min-[1201px]:flex items-center w-full max-w-6xl justify-between relative">
@@ -79,8 +79,8 @@ export default function Header({ allStores }: HeaderProps) {
                   key={href}
                   href={href}
                   className={`px-1 py-1 ${isActive
-                      ? "text-purple-800 font-semibold underline underline-offset-4"
-                      : "text-gray-700 hover:text-purple-700"
+                    ? "text-purple-800 font-semibold underline underline-offset-4"
+                    : "text-gray-700 hover:text-purple-700"
                     }`}
                 >
                   {label}
@@ -153,8 +153,8 @@ export default function Header({ allStores }: HeaderProps) {
                   href={href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`${isActive
-                      ? "text-purple-800 underline underline-offset-4"
-                      : "hover:text-purple-700"
+                    ? "text-purple-800 underline underline-offset-4"
+                    : "hover:text-purple-700"
                     }`}
                 >
                   {label}
