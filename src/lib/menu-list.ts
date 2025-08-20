@@ -1,5 +1,4 @@
 import {
-  PaintRoller,
   Users,
   Settings,
   SquarePen,

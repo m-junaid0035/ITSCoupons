@@ -4,6 +4,7 @@ import React from "react";
 import { FaWhatsapp, FaFacebookF, FaInstagram } from "react-icons/fa";
 import { SiX } from "react-icons/si";
 import type { SettingData } from "@/types/setting";
+import Link from "next/link";
 
 interface FooterProps {
   latestSetting: SettingData | null;
@@ -23,44 +24,44 @@ export default function Footer({ latestSetting }: FooterProps) {
           </p>
           <div className="flex justify-center md:justify-start space-x-4">
             {latestSetting?.whatsappUrl && (
-              <a
+              <Link
                 href={latestSetting.whatsappUrl}
                 className="bg-purple-900 p-2 rounded"
                 target="_blank"
                 rel="noreferrer"
               >
                 <FaWhatsapp />
-              </a>
+              </Link>
             )}
             {latestSetting?.facebookUrl && (
-              <a
+              <Link
                 href={latestSetting.facebookUrl}
                 className="bg-purple-900 p-2 rounded"
                 target="_blank"
                 rel="noreferrer"
               >
                 <FaFacebookF />
-              </a>
+              </Link>
             )}
             {latestSetting?.XUrl && (
-              <a
+              <Link
                 href={latestSetting.XUrl}
                 className="bg-purple-900 p-2 rounded"
                 target="_blank"
                 rel="noreferrer"
               >
                 <SiX />
-              </a>
+              </Link>
             )}
             {latestSetting?.instagramUrl && (
-              <a
+              <Link
                 href={latestSetting.instagramUrl}
                 className="bg-purple-900 p-2 rounded"
                 target="_blank"
                 rel="noreferrer"
               >
                 <FaInstagram />
-              </a>
+              </Link>
             )}
           </div>
         </div>
@@ -69,11 +70,31 @@ export default function Footer({ latestSetting }: FooterProps) {
         <div>
           <h4 className="font-semibold mb-2">Deals & Shop</h4>
           <ul className="space-y-1">
-            <li>Promo Codes</li>
-            <li>Latest Deals</li>
-            <li>Exclusives</li>
-            <li>Product Deals</li>
-            <li>Stores</li>
+            <li>
+              <Link href="/coupons" className="hover:underline">
+                Promo Codes
+              </Link>
+            </li>
+            <li>
+              <Link href="/coupons" className="hover:underline">
+                Latest Deals
+              </Link>
+            </li>
+            <li>
+              <Link href="/coupons" className="hover:underline">
+                Exclusives
+              </Link>
+            </li>
+            <li>
+              <Link href="/coupons" className="hover:underline">
+                Product Deals
+              </Link>
+            </li>
+            <li>
+              <Link href="/coupons" className="hover:underline">
+                Stores
+              </Link>
+            </li>
           </ul>
         </div>
 
@@ -90,12 +111,12 @@ export default function Footer({ latestSetting }: FooterProps) {
               { href: "/aboutus", label: "About us" },
             ].map((link) => (
               <li key={link.href}>
-                <a
+                <Link
                   href={link.href}
                   className="hover:text-purple-400 transition-colors duration-200"
                 >
                   {link.label}
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
@@ -105,14 +126,33 @@ export default function Footer({ latestSetting }: FooterProps) {
         <div>
           <h4 className="font-semibold mb-2">Top Categories</h4>
           <ul className="space-y-1">
-            <li>Fashion</li>
-            <li>Electronics</li>
-            <li>Food & Drinks</li>
-            <li>Travel</li>
-            <li>Beauty & Health</li>
+            <li>
+              <Link href="/categories" className="hover:underline">
+                Fashion
+              </Link>
+            </li>
+            <li>
+              <Link href="/categories" className="hover:underline">
+                Electronics
+              </Link>
+            </li>
+            <li>
+              <Link href="/categories" className="hover:underline">
+                Food & Drinks
+              </Link>
+            </li>
+            <li>
+              <Link href="/categories" className="hover:underline">
+                Travel
+              </Link>
+            </li>
+            <li>
+              <Link href="/categories" className="hover:underline">
+                Beauty & Health
+              </Link>
+            </li>
           </ul>
         </div>
-
         {/* Contact Info */}
         <div>
           <h4 className="font-semibold mb-2">Contact Us</h4>

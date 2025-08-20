@@ -232,13 +232,13 @@ export default function SettingForm() {
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="XUrl">Twitter URL</Label>
+                <Label htmlFor="XUrl">X URL</Label>
                 <Input
                   id="XUrl"
                   name="XUrl"
                   type="url"
                   className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                  placeholder="https://twitter.com/yourprofile"
+                  placeholder="https://x.com/yourprofile"
                 />
                 {errorFor("XUrl") && (
                   <p className="text-sm text-red-500">{errorFor("XUrl")}</p>
@@ -271,6 +271,7 @@ export default function SettingForm() {
                 )}
               </div>
             </div>
+
 
             {/* General Error */}
             {"message" in (formState.error ?? {}) && (

@@ -12,9 +12,10 @@ export interface ISetting extends Document {
   metaDescription?: string;
   metaKeywords?: string[];
   facebookUrl?: string;
-  twitterUrl?: string;
+  XUrl?: string;           // renamed from twitterUrl → XUrl
   instagramUrl?: string;
   linkedinUrl?: string;
+  whatsappUrl?: string;    // new (replaces telegramUrl)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,7 +64,7 @@ const settingSchema = new Schema<ISetting>(
       type: String,
       trim: true,
     },
-    twitterUrl: {
+    XUrl: {                  // ✅ updated
       type: String,
       trim: true,
     },
@@ -72,6 +73,10 @@ const settingSchema = new Schema<ISetting>(
       trim: true,
     },
     linkedinUrl: {
+      type: String,
+      trim: true,
+    },
+    whatsappUrl: {           // ✅ added
       type: String,
       trim: true,
     },

@@ -3,14 +3,27 @@
 import type { StoreWithCouponsData } from "@/types/storesWithCouponsData";
 import type { CategoryData } from "@/types/category";
 import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
 interface StoreCardProps {
   stores: StoreWithCouponsData[];
   categories: CategoryData[];
   category: string;
 }
 
-export default function StoreCard({ stores, categories , category }: StoreCardProps) {
-  const categoryFromQuery = category
+export default function StoreCard({
+  stores,
+  categories,
+  category,
+}: StoreCardProps) {
+  const categoryFromQuery = category;
 
   const [selectedCategoryId, setSelectedCategoryId] = useState(() => {
     const matchedCategory = categories.find(
@@ -26,25 +39,36 @@ export default function StoreCard({ stores, categories , category }: StoreCardPr
       ? stores
       : stores.filter((store) => store.categories.includes(selectedCategoryId));
 
+  // Dialog state
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+
   const copyCodeToClipboard = (code: string) => {
     navigator.clipboard.writeText(code);
-    alert(`Copied coupon code: ${code}`);
+    setDialogMessage(`Copied coupon code: ${code}`);
+    setDialogOpen(true);
   };
 
   return (
     <section className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">Browse All Stores</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">
+        Browse All Stores
+      </h1>
 
       {/* Filter Buttons */}
-      <nav aria-label="Store categories filter" className="flex flex-wrap gap-2 mb-6">
+      <nav
+        aria-label="Store categories filter"
+        className="flex flex-wrap gap-2 mb-6"
+      >
         {categoriesWithAll.map((cat) => (
           <button
             key={cat._id}
             onClick={() => setSelectedCategoryId(cat._id)}
-            className={`px-4 py-1 rounded-full text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-purple-600 ${selectedCategoryId === cat._id
+            className={`px-4 py-1 rounded-full text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-purple-600 ${
+              selectedCategoryId === cat._id
                 ? "bg-purple-700 text-white border-purple-700"
                 : "bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200"
-              }`}
+            }`}
             aria-pressed={selectedCategoryId === cat._id}
             type="button"
           >
@@ -74,9 +98,6 @@ export default function StoreCard({ stores, categories , category }: StoreCardPr
             <h2 className="text-center text-purple-700 font-bold text-lg mb-2">
               {store.name}
             </h2>
-
-            {/* Store Description */}
-            <p className="text-center text-gray-600 text-sm mb-4">{store.description}</p>
 
             <hr className="border-gray-300 mb-4" />
 
@@ -112,16 +133,19 @@ export default function StoreCard({ stores, categories , category }: StoreCardPr
                         {coupon.expirationDate && (
                           <span>
                             Expires:{" "}
-                            {new Date(coupon.expirationDate).toISOString().split("T")[0]}
+                            {new Date(coupon.expirationDate)
+                              .toISOString()
+                              .split("T")[0]}
                           </span>
                         )}
                       </div>
                     </li>
                   ))}
-
                 </ul>
               ) : (
-                <p className="text-gray-500 text-xs italic">No coupons available.</p>
+                <p className="text-gray-500 text-xs italic">
+                  No coupons available.
+                </p>
               )}
             </div>
 
@@ -146,6 +170,26 @@ export default function StoreCard({ stores, categories , category }: StoreCardPr
           </article>
         ))}
       </div>
+
+      {/* Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="sm:max-w-md mx-4 sm:mx-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg sm:text-xl">
+              Coupon Copied
+            </DialogTitle>
+          </DialogHeader>
+          <p className="py-2 text-sm sm:text-base">{dialogMessage}</p>
+          <DialogFooter>
+            <Button
+              className="bg-purple-700 text-white px-6 py-2 rounded-md hover:bg-purple-800 transition shadow-sm"
+              onClick={() => setDialogOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
