@@ -64,11 +64,10 @@ export default function StoreCard({
           <button
             key={cat._id}
             onClick={() => setSelectedCategoryId(cat._id)}
-            className={`px-4 py-1 rounded-full text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-purple-600 ${
-              selectedCategoryId === cat._id
+            className={`px-4 py-1 rounded-full text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-purple-600 ${selectedCategoryId === cat._id
                 ? "bg-purple-700 text-white border-purple-700"
                 : "bg-gray-100 text-gray-800 border-gray-300 hover:bg-gray-200"
-            }`}
+              }`}
             aria-pressed={selectedCategoryId === cat._id}
             type="button"
           >
@@ -102,7 +101,7 @@ export default function StoreCard({
             <hr className="border-gray-300 mb-4" />
 
             {/* Coupons Section */}
-            <div>
+            <div className="flex-1">   {/* 👈 makes this section expand */}
               <h3 className="text-gray-800 font-semibold mb-3 text-sm">
                 Latest Coupons
               </h3>
@@ -133,9 +132,7 @@ export default function StoreCard({
                         {coupon.expirationDate && (
                           <span>
                             Expires:{" "}
-                            {new Date(coupon.expirationDate)
-                              .toISOString()
-                              .split("T")[0]}
+                            {new Date(coupon.expirationDate).toISOString().split("T")[0]}
                           </span>
                         )}
                       </div>
@@ -143,9 +140,7 @@ export default function StoreCard({
                   ))}
                 </ul>
               ) : (
-                <p className="text-gray-500 text-xs italic">
-                  No coupons available.
-                </p>
+                <p className="text-gray-500 text-xs italic">No coupons available.</p>
               )}
             </div>
 
@@ -168,6 +163,7 @@ export default function StoreCard({
               </a>
             </div>
           </article>
+
         ))}
       </div>
 

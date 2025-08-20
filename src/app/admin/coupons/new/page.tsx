@@ -192,13 +192,15 @@ export default function CouponForm() {
               <Input
                 id="couponCode"
                 name="couponCode"
-                required
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="Enter coupon code"
-                value={couponType === "deal" ? "DEAL_CODE" : couponCode}
+                value={couponType === "deal" ? "NO_CODE" : couponCode}
                 onChange={(e) => setCouponCode(e.target.value)}
                 disabled={couponType === "deal"}
               />
+
+              {couponType === "deal" && (
+                <input type="hidden" name="couponCode" value="NO_CODE" />
+              )}
+
               {errorFor("couponCode") && (
                 <p className="text-sm text-red-500">{errorFor("couponCode")}</p>
               )}
