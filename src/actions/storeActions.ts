@@ -25,8 +25,8 @@ type NetworkName = (typeof allowedNetworks)[number];
 const storeSchema = z.object({
   name: z.string().trim().min(3).max(100),
   networkName: z.enum(allowedNetworks).default("N/A"),
-  storeNetworkUrl: z.string().url("Invalid URL").optional(),
-  directUrl: z.string().url("Invalid direct URL").optional(), // ✅ added
+  storeNetworkUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
+  directUrl: z.string().url("Invalid direct URL").optional().or(z.literal("")),
   categories: z.array(z.string().min(1, "Invalid category ID")),
   totalCouponUsedTimes: z.coerce.number().min(0).optional(),
   image: z.string().min(1, "Image is required"),
@@ -40,7 +40,7 @@ const storeSchema = z.object({
   isActive: z.coerce.boolean().optional().default(true),
 }).superRefine((data, ctx) => {
   // Conditional validation: storeNetworkUrl required if networkName != "N/A"
-  if (data.networkName !== "N/A" && !data.storeNetworkUrl) {
+  if (data.networkName !== "N/A" && !data.storeNetworkUrl?.trim()) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["storeNetworkUrl"],
@@ -84,7 +84,7 @@ async function parseStoreFormData(
     name: String(formData.get("name") || ""),
     networkName,
     storeNetworkUrl: String(formData.get("storeNetworkUrl") || ""),
-    directUrl: String(formData.get("directUrl") || ""), // ✅ added
+    directUrl: String(formData.get("directUrl") || ""),
     categories: categoryIds,
     totalCouponUsedTimes: Number(formData.get("totalCouponUsedTimes") || 0),
     image: imagePath,

@@ -25,7 +25,10 @@ const sanitizeStoreData = (data: {
 }) => ({
   name: data.name.trim(),
   networkName: data.networkName,
-  storeNetworkUrl: data.storeNetworkUrl?.trim() ?? "",
+  storeNetworkUrl:
+    data.networkName !== "N/A" && data.storeNetworkUrl
+      ? data.storeNetworkUrl.trim()
+      : undefined,
   directUrl: data.directUrl?.trim() ?? "", // ✅ added
   categories: data.categories.map((id) => new Types.ObjectId(id)),
   totalCouponUsedTimes: data.totalCouponUsedTimes ?? 0,

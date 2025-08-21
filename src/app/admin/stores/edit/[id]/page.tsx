@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useActionState } from "react";
 import { Label } from "@/components/ui/label";
@@ -8,37 +8,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2, X } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-
-import LoadingSkeleton from "./loading";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+
 import { fetchStoreByIdAction, updateStoreAction } from "@/actions/storeActions";
 import { fetchAllCategoriesAction } from "@/actions/categoryActions";
+import DescriptionEditor from "@/components/DescriptionEditor";
+import LoadingSkeleton from "./loading";
 
-interface FormState {
-  error?: Record<string, string[]> | { message?: string[] };
-  data?: any;
-}
+interface Category { _id: string; name: string; }
+interface FormState { error?: Record<string, string[]> | { message?: string[] }; data?: any; }
 
 const initialState: FormState = { error: {} };
-interface Category { _id: string; name: string; }
 const allowedNetworks = ["N/A", "CJ", "Rakuten", "Awin", "Impact", "ShareASale"];
 
 export default function EditStoreForm() {
@@ -48,22 +30,20 @@ export default function EditStoreForm() {
 
   const [store, setStore] = useState<any>(null);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [networkName, setNetworkName] = useState<string>("N/A");
+  const [descriptionHtml, setDescriptionHtml] = useState<string>("");
+  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [formState, dispatch, isPending] = useActionState(
     async (prevState: FormState, formData: FormData) =>
       await updateStoreAction(prevState, storeId, formData),
     initialState
   );
-
-  // Image state
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-
-  // Network Name state
-  const [networkName, setNetworkName] = useState<string>("N/A");
 
   useEffect(() => {
     async function loadData() {
@@ -73,10 +53,12 @@ export default function EditStoreForm() {
           fetchAllCategoriesAction(),
         ]);
         if (storeRes?.data) {
-          setStore(storeRes.data);
-          setSelectedCategories(storeRes.data.categories || []);
-          setImagePreview(storeRes.data.image || null);
-          setNetworkName(storeRes.data.networkName || "N/A");
+          const s = storeRes.data;
+          setStore(s);
+          setSelectedCategories(s.categories || []);
+          setImagePreview(s.image || null);
+          setNetworkName(s.networkName || "N/A");
+          setDescriptionHtml(s.description || "");
         }
         if (categoriesRes?.data) setCategories(categoriesRes.data);
       } catch (error) {
@@ -89,14 +71,11 @@ export default function EditStoreForm() {
   }, [storeId]);
 
   useEffect(() => {
-    if (formState.data && !formState.error) {
-      setSuccessDialogOpen(true);
-    }
+    if (formState.data && !formState.error) setSuccessDialogOpen(true);
     if (formState.error && "message" in formState.error) {
       toast({
         title: "Error",
-        description:
-          (formState.error as any).message?.[0] || "Something went wrong",
+        description: (formState.error as any).message?.[0] || "Something went wrong",
         variant: "destructive",
       });
     }
@@ -110,11 +89,8 @@ export default function EditStoreForm() {
   if (loading) return <LoadingSkeleton />;
   if (!store) return <p className="text-red-500 text-center mt-4">Store not found</p>;
 
-  const toggleCategory = (id: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
-    );
-  };
+  const toggleCategory = (id: string) =>
+    setSelectedCategories((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -123,9 +99,7 @@ export default function EditStoreForm() {
       const reader = new FileReader();
       reader.onload = () => setImagePreview(reader.result as string);
       reader.readAsDataURL(file);
-    } else {
-      setImagePreview(null);
-    }
+    } else setImagePreview(null);
   };
 
   const removeImage = () => {
@@ -140,6 +114,7 @@ export default function EditStoreForm() {
 
     formData.delete("categories");
     selectedCategories.forEach((c) => formData.append("categories", c));
+    formData.set("description", descriptionHtml);
 
     const requiredFields = ["name", "description", "metaTitle", "metaDescription", "slug"];
     for (const field of requiredFields) {
@@ -149,7 +124,6 @@ export default function EditStoreForm() {
       }
     }
 
-    // Validate image
     if (!imageFile && !imagePreview) {
       toast({ title: "Validation Error", description: "Store image is required", variant: "destructive" });
       return;
@@ -157,7 +131,16 @@ export default function EditStoreForm() {
 
     if (imageFile) formData.set("imageFile", imageFile);
 
-    dispatch(formData);
+    const networkValue = formData.get("networkName")?.toString() || "N/A";
+    if (networkValue !== "N/A") {
+      const url = formData.get("storeNetworkUrl")?.toString() || "";
+      if (!url.trim()) {
+        toast({ title: "Validation Error", description: "Store Network URL is required", variant: "destructive" });
+        return;
+      }
+    } else formData.delete("storeNetworkUrl");
+
+    startTransition(() => dispatch(formData));
   };
 
   return (
@@ -165,151 +148,113 @@ export default function EditStoreForm() {
       <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex items-center justify-between border-none">
           <CardTitle>Edit Store</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/stores")}>Back to Stores</Button>
+          <Button variant="secondary" onClick={() => router.push("/admin/stores")}>Back</Button>
         </CardHeader>
 
         <CardContent>
-          <form className="space-y-6 max-w-2xl mx-auto" id="edit-store-form" onSubmit={handleSubmit} encType="multipart/form-data">
+          <form id="edit-store-form" className="space-y-6 max-w-2xl mx-auto" onSubmit={handleSubmit} encType="multipart/form-data">
 
             {/* Store Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Store Name</Label>
-              <Input id="name" name="name" required defaultValue={store.name} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input id="name" name="name" defaultValue={store.name} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               {errorFor("name") && <p className="text-sm text-red-500">{errorFor("name")}</p>}
             </div>
 
-            {/* Network Name */}
+            {/* Network */}
             <div className="space-y-2">
               <Label htmlFor="networkName">Network Name</Label>
-              <select
-                id="networkName"
-                name="networkName"
-                value={networkName}
-                onChange={(e) => setNetworkName(e.target.value)}
-                className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              >
-                {allowedNetworks.map((network) => (
-                  <option key={network} value={network}>{network}</option>
-                ))}
+              <select id="networkName" name="networkName" value={networkName} onChange={e => setNetworkName(e.target.value)} className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700">
+                {allowedNetworks.map(n => <option key={n} value={n}>{n}</option>)}
               </select>
             </div>
 
-            {/* Store Network URL: only show if networkName !== "N/A" */}
+            {/* Conditional Network URL */}
             {networkName !== "N/A" && (
               <div className="space-y-2">
                 <Label htmlFor="storeNetworkUrl">Store Network URL</Label>
-                <Input id="storeNetworkUrl" name="storeNetworkUrl" type="url" required defaultValue={store.storeNetworkUrl} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+                <Input id="storeNetworkUrl" name="storeNetworkUrl" type="url" defaultValue={store.storeNetworkUrl} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
                 {errorFor("storeNetworkUrl") && <p className="text-sm text-red-500">{errorFor("storeNetworkUrl")}</p>}
               </div>
             )}
 
+            {/* Direct URL */}
+            <div className="space-y-2">
+              <Label htmlFor="directUrl">Direct URL</Label>
+              <Input id="directUrl" name="directUrl" type="url" defaultValue={store.directUrl} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              {errorFor("directUrl") && <p className="text-sm text-red-500">{errorFor("directUrl")}</p>}
+            </div>
+
             {/* Categories */}
             <div className="space-y-2">
               <Label>Categories</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal border-none shadow-sm bg-gray-50 dark:bg-gray-700",
-                      selectedCategories.length === 0 && "text-muted-foreground"
-                    )}
-                  >
-                    {selectedCategories.length > 0 ? `${selectedCategories.length} selected` : "Select categories"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-2 max-h-48 overflow-y-auto">
-                  {categories.map((cat) => (
-                    <label key={cat._id} className="flex items-center space-x-2 py-1">
-                      <input type="checkbox" value={cat._id} checked={selectedCategories.includes(cat._id)} onChange={() => toggleCategory(cat._id)} className="h-4 w-4" />
-                      <span>{cat.name}</span>
-                    </label>
-                  ))}
-                </PopoverContent>
-              </Popover>
+              <div className="grid grid-cols-2 gap-2">
+                {categories.map(cat => (
+                  <label key={cat._id} className="flex items-center space-x-2">
+                    <input type="checkbox" value={cat._id} checked={selectedCategories.includes(cat._id)} onChange={() => toggleCategory(cat._id)} className="h-4 w-4" />
+                    <span>{cat.name}</span>
+                  </label>
+                ))}
+              </div>
               {errorFor("categories") && <p className="text-sm text-red-500">{errorFor("categories")}</p>}
-            </div>
-
-            {/* Total Coupon Used Times */}
-            <div className="space-y-2">
-              <Label htmlFor="totalCouponUsedTimes">Total Coupon Used Times</Label>
-              <Input id="totalCouponUsedTimes" name="totalCouponUsedTimes" type="number" defaultValue={store.totalCouponUsedTimes ?? 0} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorFor("totalCouponUsedTimes") && <p className="text-sm text-red-500">{errorFor("totalCouponUsedTimes")}</p>}
             </div>
 
             {/* Image Upload */}
             <div className="space-y-2">
               <Label htmlFor="imageFile">Store Image</Label>
-              <Input id="imageFile" name="imageFile" type="file" accept="image/*" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" onChange={handleImageChange} />
+              <Input id="imageFile" name="imageFile" type="file" accept="image/*" onChange={handleImageChange} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               {imagePreview && (
                 <div className="relative mt-2 max-h-40 w-fit">
                   <img src={imagePreview} alt="Preview" className="rounded shadow-md max-h-40" />
-                  <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full">
-                    <X className="h-4 w-4" />
-                  </button>
+                  <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"><X className="h-4 w-4" /></button>
                 </div>
               )}
-              {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
             </div>
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea id="description" name="description" rows={4} required defaultValue={store.description} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
+              <Label>Description</Label>
+              <Button variant="outline" onClick={() => setDescriptionModalOpen(true)}>Edit Description</Button>
             </div>
 
-            {/* Meta Title */}
+            {/* Meta Fields */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
-              <Input id="metaTitle" name="metaTitle" required defaultValue={store.metaTitle} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorFor("metaTitle") && <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>}
+              <Input id="metaTitle" name="metaTitle" defaultValue={store.metaTitle} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
-
-            {/* Meta Description */}
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
-              <Textarea id="metaDescription" name="metaDescription" rows={3} required defaultValue={store.metaDescription} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorFor("metaDescription") && <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>}
+              <Textarea id="metaDescription" name="metaDescription" rows={3} defaultValue={store.metaDescription} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
-
-            {/* Meta Keywords */}
             <div className="space-y-2">
-              <Label htmlFor="metaKeywords">Meta Keywords (comma separated)</Label>
+              <Label htmlFor="metaKeywords">Meta Keywords</Label>
               <Input id="metaKeywords" name="metaKeywords" defaultValue={store.metaKeywords} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorFor("metaKeywords") && <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="focusKeywords">Focus Keywords</Label>
+              <Input id="focusKeywords" name="focusKeywords" defaultValue={store.focusKeywords} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
 
-            {/* Focus Keywords */}
-            <div className="space-y-2">
-              <Label htmlFor="focusKeywords">Focus Keywords (comma separated)</Label>
-              <Input id="focusKeywords" name="focusKeywords" defaultValue={store.focusKeywords} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorFor("focusKeywords") && <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>}
+            {/* Popular & Active */}
+            <div className="flex items-center space-x-4">
+              <label className="flex items-center space-x-2">
+                <input type="checkbox" id="isPopular" name="isPopular" value="true" defaultChecked={store.isPopular} className="w-4 h-4" />
+                <span>Popular</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input type="checkbox" id="isActive" name="isActive" value="true" defaultChecked={store.isActive} className="w-4 h-4" />
+                <span>Active</span>
+              </label>
             </div>
 
             {/* Slug */}
             <div className="space-y-2">
               <Label htmlFor="slug">Slug</Label>
-              <Input id="slug" name="slug" required defaultValue={store.slug} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorFor("slug") && <p className="text-sm text-red-500">{errorFor("slug")}</p>}
-            </div>
-
-            {/* Is Popular */}
-            <div className="flex items-center space-x-2">
-              <input id="isPopular" name="isPopular" type="checkbox" defaultChecked={store.isPopular} className="h-4 w-4" />
-              <Label htmlFor="isPopular" className="mb-0 cursor-pointer">Mark as Popular</Label>
-            </div>
-
-            {/* Is Active */}
-            <div className="flex items-center space-x-2">
-              <input id="isActive" name="isActive" type="checkbox" defaultChecked={store.isActive} className="h-4 w-4" />
-              <Label htmlFor="isActive" className="mb-0 cursor-pointer">Mark as Active</Label>
+              <Input id="slug" name="slug" defaultValue={store.slug} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
 
             {/* General Error */}
-            {"message" in (formState.error || {}) && (
-              <p className="text-sm text-red-500">{(formState.error as { message?: string[] }).message?.[0]}</p>
-            )}
+            {"message" in (formState.error ?? {}) && <p className="text-sm text-red-500">{(formState.error as any).message?.[0]}</p>}
 
           </form>
         </CardContent>
@@ -321,6 +266,20 @@ export default function EditStoreForm() {
           </Button>
         </CardFooter>
       </Card>
+
+      {/* Description Modal */}
+      <Dialog open={descriptionModalOpen} onOpenChange={setDescriptionModalOpen}>
+        <DialogContent className="max-w-3xl w-full">
+          <DialogHeader>
+            <DialogTitle>Edit Description</DialogTitle>
+          </DialogHeader>
+          <DescriptionEditor initialContent={descriptionHtml} onChange={setDescriptionHtml} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDescriptionModalOpen(false)}>Cancel</Button>
+            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
