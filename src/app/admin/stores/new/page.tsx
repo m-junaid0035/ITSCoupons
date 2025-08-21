@@ -25,13 +25,13 @@ import {
 
 import { createStoreAction, StoreFormState } from "@/actions/storeActions";
 import { fetchAllCategoriesAction } from "@/actions/categoryActions";
+import { fetchLatestSEOAction } from "@/actions/seoActions";
 
 import DescriptionEditor from "@/components/DescriptionEditor";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Category { _id: string; name: string; }
 const allowedNetworks = ["CJ", "Rakuten", "Awin", "Impact", "ShareASale", "N/A"];
-
 const initialState: StoreFormState = { error: {} };
 
 export default function StoreForm() {
@@ -48,6 +48,16 @@ export default function StoreForm() {
   const [descriptionHtml, setDescriptionHtml] = useState<string>("");
   const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
 
+  // SEO state
+  const [seo, setSeo] = useState({
+    metaTitle: "",
+    metaDescription: "",
+    metaKeywords: "",
+    focusKeywords: "",
+    slug: "",
+  });
+
+  /** ---------------- Load Categories ---------------- */
   useEffect(() => {
     async function loadCategories() {
       const result = await fetchAllCategoriesAction();
@@ -56,6 +66,7 @@ export default function StoreForm() {
     loadCategories();
   }, []);
 
+  /** ---------------- Error Helper ---------------- */
   const errorFor = (field: string) => {
     return formState.error &&
       typeof formState.error === "object" &&
@@ -64,6 +75,7 @@ export default function StoreForm() {
       : null;
   };
 
+  /** ---------------- Toast & Success ---------------- */
   useEffect(() => {
     if (formState.data && !formState.error) setSuccessDialogOpen(true);
     if (formState.error && "message" in formState.error) {
@@ -75,6 +87,7 @@ export default function StoreForm() {
     }
   }, [formState]);
 
+  /** ---------------- Image Handling ---------------- */
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setImageFile(file);
@@ -84,72 +97,94 @@ export default function StoreForm() {
       reader.readAsDataURL(file);
     } else setImagePreview(null);
   };
-
   const removeImage = () => {
     setImageFile(null);
     setImagePreview(null);
   };
 
- const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  const form = e.currentTarget;
-  const formData = new FormData(form);
+  /** ---------------- Auto SEO Update ---------------- */
+  const updateSEO = async (storeName: string) => {
+    const { data: latestSEO } = await fetchLatestSEOAction();
+    if (!latestSEO) return;
 
-  // Required fields
-  const requiredFields = ["name", "metaTitle", "metaDescription", "slug"];
-  for (const field of requiredFields) {
-    if (!formData.get(field)?.toString().trim()) {
-      toast({
-        title: "Validation Error",
-        description: `${field} is required`,
-        variant: "destructive",
-      });
+    const replaceStoreName = (text: string) =>
+      text.replace(/{{storeName}}|s_n/gi, storeName);
+
+    setSeo({
+      metaTitle: replaceStoreName(latestSEO.metaTitle || ""),
+      metaDescription: replaceStoreName(latestSEO.metaDescription || ""),
+      metaKeywords: (latestSEO.metaKeywords || []).map(replaceStoreName).join(", "),
+      focusKeywords: (latestSEO.focusKeywords || []).map(replaceStoreName).join(", "),
+      slug: replaceStoreName(latestSEO.slug || storeName.toLowerCase().replace(/\s+/g, "-")),
+    });
+  };
+
+  /** ---------------- Listen Store Name Changes ---------------- */
+  useEffect(() => {
+    const nameInput = document.getElementById("name") as HTMLInputElement | null;
+    if (!nameInput) return;
+
+    const listener = () => {
+      const storeName = nameInput.value.trim();
+      if (storeName) updateSEO(storeName);
+    };
+    nameInput.addEventListener("input", listener);
+    return () => nameInput.removeEventListener("input", listener);
+  }, []);
+
+  /** ---------------- Submit Handler ---------------- */
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    // Required fields
+    const requiredFields = ["name", "metaTitle", "metaDescription", "slug"];
+    for (const field of requiredFields) {
+      if (!formData.get(field)?.toString().trim()) {
+        toast({ title: "Validation Error", description: `${field} is required`, variant: "destructive" });
+        return;
+      }
+    }
+
+    if (!descriptionHtml.trim()) {
+      toast({ title: "Validation Error", description: "Description is required", variant: "destructive" });
       return;
     }
-  }
+    formData.set("description", descriptionHtml);
 
-  if (!descriptionHtml.trim()) {
-    toast({ title: "Validation Error", description: "Description is required", variant: "destructive" });
-    return;
-  }
-  formData.set("description", descriptionHtml);
-
-  if (!imageFile) {
-    toast({ title: "Validation Error", description: "Store image is required", variant: "destructive" });
-    return;
-  }
-  formData.set("imageFile", imageFile);
-
-  // Handle network URL
-  const networkNameValue = formData.get("networkName")?.toString() || "N/A";
-  if (networkNameValue !== "N/A") {
-    const url = formData.get("storeNetworkUrl")?.toString() || "";
-    if (!url.trim()) {
-      toast({
-        title: "Validation Error",
-        description: "Store Network URL is required if network is selected",
-        variant: "destructive",
-      });
+    if (!imageFile) {
+      toast({ title: "Validation Error", description: "Store image is required", variant: "destructive" });
       return;
     }
-  } else {
-    // ✅ Remove storeNetworkUrl if networkName is N/A
-    formData.delete("storeNetworkUrl");
-  }
+    formData.set("imageFile", imageFile);
 
-  // Submit
-  startTransition(() => {
-    dispatch(formData);
-  });
-};
+    // Network URL validation
+    const networkNameValue = formData.get("networkName")?.toString() || "N/A";
+    if (networkNameValue !== "N/A") {
+      const url = formData.get("storeNetworkUrl")?.toString() || "";
+      if (!url.trim()) {
+        toast({ title: "Validation Error", description: "Store Network URL is required if network is selected", variant: "destructive" });
+        return;
+      }
+    } else formData.delete("storeNetworkUrl");
 
+    // Add auto-populated SEO fields
+    formData.set("metaTitle", seo.metaTitle);
+    formData.set("metaDescription", seo.metaDescription);
+    formData.set("metaKeywords", seo.metaKeywords);
+    formData.set("focusKeywords", seo.focusKeywords);
+    formData.set("slug", seo.slug);
+
+    startTransition(() => dispatch(formData));
+  };
 
   return (
     <>
       <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex items-center justify-between border-none">
           <CardTitle>Create Store</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/stores")}>Back</Button>
+          <Button variant="secondary" onClick={() => router.push("/admin/stores")}>Back to Stores</Button>
         </CardHeader>
 
         <CardContent>
@@ -200,7 +235,7 @@ export default function StoreForm() {
               {errorFor("categories") && <p className="text-sm text-red-500">{errorFor("categories")}</p>}
             </div>
 
-            {/* Image Upload */}
+            {/* Image */}
             <div className="space-y-2">
               <Label htmlFor="imageFile">Store Image</Label>
               <Input id="imageFile" name="imageFile" type="file" accept="image/*" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" onChange={handleImageChange} />
@@ -218,23 +253,65 @@ export default function StoreForm() {
               <Button variant="outline" onClick={() => setDescriptionModalOpen(true)}>Edit Description</Button>
             </div>
 
-            {/* Meta Fields */}
+            {/* SEO Fields (default auto-updated, user can see but no need to edit) */}
+            {/* SEO Fields (auto-populated but editable) */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
-              <Input id="metaTitle" name="metaTitle" placeholder="Meta title" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input
+                id="metaTitle"
+                name="metaTitle"
+                placeholder="Meta title"
+                value={seo.metaTitle}
+                onChange={e => setSeo(prev => ({ ...prev, metaTitle: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
-              <Textarea id="metaDescription" name="metaDescription" rows={3} placeholder="Meta description" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Textarea
+                id="metaDescription"
+                name="metaDescription"
+                rows={3}
+                placeholder="Meta description"
+                value={seo.metaDescription}
+                onChange={e => setSeo(prev => ({ ...prev, metaDescription: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="metaKeywords">Meta Keywords</Label>
-              <Input id="metaKeywords" name="metaKeywords" placeholder="keyword1, keyword2" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input
+                id="metaKeywords"
+                name="metaKeywords"
+                placeholder="keyword1, keyword2"
+                value={seo.metaKeywords}
+                onChange={e => setSeo(prev => ({ ...prev, metaKeywords: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="focusKeywords">Focus Keywords</Label>
-              <Input id="focusKeywords" name="focusKeywords" placeholder="keyword1, keyword2" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input
+                id="focusKeywords"
+                name="focusKeywords"
+                placeholder="keyword1, keyword2"
+                value={seo.focusKeywords}
+                onChange={e => setSeo(prev => ({ ...prev, focusKeywords: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="slug">Slug</Label>
+              <Input
+                id="slug"
+                name="slug"
+                placeholder="store-slug"
+                value={seo.slug}
+                onChange={e => setSeo(prev => ({ ...prev, slug: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
+            </div>
+
 
             {/* Popular & Active */}
             <div className="flex items-center space-x-4">
@@ -247,15 +324,6 @@ export default function StoreForm() {
                 <span>Active</span>
               </label>
             </div>
-
-            {/* Slug */}
-            <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
-              <Input id="slug" name="slug" placeholder="store-slug" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-            </div>
-
-            {/* General Error */}
-            {"message" in (formState.error ?? {}) && <p className="text-sm text-red-500">{(formState.error as any).message?.[0]}</p>}
 
             <CardFooter className="flex justify-end border-none px-0">
               <Button type="submit" disabled={isPending} form="store-form">

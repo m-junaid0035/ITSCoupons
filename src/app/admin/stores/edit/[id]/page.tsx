@@ -148,7 +148,7 @@ export default function EditStoreForm() {
       <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex items-center justify-between border-none">
           <CardTitle>Edit Store</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/stores")}>Back</Button>
+          <Button variant="secondary" onClick={() => router.push("/admin/stores")}>Back to Stores</Button>
         </CardHeader>
 
         <CardContent>
