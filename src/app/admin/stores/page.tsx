@@ -12,6 +12,7 @@ import {
   fetchAllStoresAction,
   deleteStoreAction,
 } from "@/actions/storeActions";
+import { fetchCouponCountByStoreIdAction } from "@/actions/storeActions";
 
 import {
   Card,
@@ -50,12 +51,8 @@ import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 interface IStore {
   _id: string;
   name: string;
-  storeNetworkUrl: string;
-  categories: string[];
-  image: string;
-  slug: string;
-  isPopular?: boolean;
-  isActive?: boolean;
+  networkName: string;
+  totalCoupons?: number;
 }
 
 function StoresTable({
@@ -63,12 +60,14 @@ function StoresTable({
   onView,
   onEdit,
   onDelete,
+  onCouponsClick,
   loading,
 }: {
   stores: IStore[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onCouponsClick: (id: string) => void;
   loading: boolean;
 }) {
   if (loading) {
@@ -86,12 +85,8 @@ function StoresTable({
         <TableHeader>
           <TableRow className="border-b border-muted">
             <TableHead>Name</TableHead>
-            <TableHead>Store Network URL</TableHead>
-            <TableHead>Categories</TableHead>
-            <TableHead>Image</TableHead>
-            <TableHead>Slug</TableHead>
-            <TableHead>Popular</TableHead>
-            <TableHead>Active</TableHead>
+            <TableHead>Network</TableHead>
+            <TableHead>Total Coupons</TableHead>
             <TableHead className="w-[140px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -103,30 +98,15 @@ function StoresTable({
                 className="hover:bg-muted/40 transition-colors"
               >
                 <TableCell className="font-medium">{store.name}</TableCell>
-                <TableCell>{store.storeNetworkUrl}</TableCell>
+                <TableCell>{store.networkName}</TableCell>
                 <TableCell>
-                  {store.categories.length > 0
-                    ? store.categories.join(", ")
-                    : "-"}
+                  <button
+                    onClick={() => onCouponsClick(store._id)}
+                    className="text-blue-600 hover:underline"
+                  >
+                    {store.totalCoupons ?? 0}
+                  </button>
                 </TableCell>
-                <TableCell>
-                  <img
-                    src={store.image}
-                    alt={store.name}
-                    className="h-10 w-10 rounded object-cover border"
-                  />
-                </TableCell>
-                <TableCell>{store.slug}</TableCell>
-                <TableCell>{store.isPopular ? (
-                    <span className="text-green-600 font-semibold">Yes</span>
-                  ) : (
-                    <span className="text-gray-400">No</span>
-                  )}</TableCell>
-                <TableCell>{store.isActive ? (
-                    <span className="text-green-600 font-semibold">Yes</span>
-                  ) : (
-                    <span className="text-gray-400">No</span>
-                  )}</TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-1.5">
                     <Button
@@ -163,7 +143,7 @@ function StoresTable({
           ) : (
             <TableRow>
               <TableCell
-                colSpan={8}
+                colSpan={4}
                 className="text-center text-muted-foreground py-6"
               >
                 No stores found.
@@ -194,7 +174,16 @@ export default function StoresPage() {
     setLoading(true);
     const result = await fetchAllStoresAction();
     if (result?.data && Array.isArray(result.data)) {
-      setStores(result.data);
+      const storesWithCounts = await Promise.all(
+        result.data.map(async (store: IStore) => {
+          const countRes = await fetchCouponCountByStoreIdAction(store._id);
+          return {
+            ...store,
+            totalCoupons: countRes?.data ?? 0,
+          };
+        })
+      );
+      setStores(storesWithCounts);
     } else {
       toast({
         title: "Error",
@@ -206,27 +195,26 @@ export default function StoresPage() {
   };
 
   const handleDelete = async (id: string) => {
-  startTransition(() => {
-  deleteOptimistic(id);
-  });
-
-  const result = await deleteStoreAction(id);
-  if (result?.error) {
-    toast({
-      title: "Error",
-      description: result.error.message || "Failed to delete store",
-      variant: "destructive",
+    startTransition(() => {
+      deleteOptimistic(id);
     });
-    await loadStores(); // rollback optimistic update
-  } else {
-    setStores(prev => prev.filter(store => store._id !== id)); // sync state
-    toast({
-      title: "Deleted",
-      description: "Store deleted successfully.",
-    });
-  }
-};
 
+    const result = await deleteStoreAction(id);
+    if (result?.error) {
+      toast({
+        title: "Error",
+        description: result.error.message || "Failed to delete store",
+        variant: "destructive",
+      });
+      await loadStores(); // rollback optimistic update
+    } else {
+      setStores((prev) => prev.filter((store) => store._id !== id));
+      toast({
+        title: "Deleted",
+        description: "Store deleted successfully.",
+      });
+    }
+  };
 
   useEffect(() => {
     loadStores();
@@ -276,6 +264,7 @@ export default function StoresPage() {
             onView={(id) => router.push(`/admin/stores/view/${id}`)}
             onEdit={(id) => router.push(`/admin/stores/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
+            onCouponsClick={(id) => router.push(`/admin/coupons?storeId=${id}`)}
             loading={loading}
           />
         </Suspense>
@@ -286,9 +275,7 @@ export default function StoresPage() {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() =>
-                      setCurrentPage((p) => Math.max(1, p - 1))
-                    }
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   />
                 </PaginationItem>
                 {Array.from({ length: totalPages }, (_, i) => (
@@ -327,7 +314,10 @@ export default function StoresPage() {
             undone.
           </p>
           <DialogFooter>
-            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmDeleteId(null)}
+            >
               Cancel
             </Button>
             <Button

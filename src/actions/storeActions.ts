@@ -14,15 +14,22 @@ import {
   getStoresByCategories,
   getStoresWithCoupons,
   getStoreWithCouponsById,
+  getCouponCountByStoreId,
 } from "@/functions/storeFunctions";
+import { saveStoreImage } from "@/lib/uploadStoreImage";
 
-// Store validation schema
+/* ---------------------------- 📝 Validation Schema ---------------------------- */
+const allowedNetworks = ["CJ", "Rakuten", "Awin", "Impact", "ShareASale", "N/A"] as const;
+type NetworkName = (typeof allowedNetworks)[number];
+
 const storeSchema = z.object({
   name: z.string().trim().min(3).max(100),
-  storeNetworkUrl: z.string().url("Invalid URL"),
+  networkName: z.enum(allowedNetworks).default("N/A"),
+  storeNetworkUrl: z.string().url("Invalid URL").optional(),
+  directUrl: z.string().url("Invalid direct URL").optional(), // ✅ added
   categories: z.array(z.string().min(1, "Invalid category ID")),
   totalCouponUsedTimes: z.coerce.number().min(0).optional(),
-  image: z.string().url("Invalid image URL"),
+  image: z.string().min(1, "Image is required"),
   description: z.string().min(5),
   metaTitle: z.string().min(3),
   metaDescription: z.string().min(3),
@@ -31,6 +38,15 @@ const storeSchema = z.object({
   slug: z.string().trim().min(3).max(100),
   isPopular: z.coerce.boolean().optional().default(false),
   isActive: z.coerce.boolean().optional().default(true),
+}).superRefine((data, ctx) => {
+  // Conditional validation: storeNetworkUrl required if networkName != "N/A"
+  if (data.networkName !== "N/A" && !data.storeNetworkUrl) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["storeNetworkUrl"],
+      message: "storeNetworkUrl is required if networkName is not 'N/A'",
+    });
+  }
 });
 
 type StoreFormData = z.infer<typeof storeSchema>;
@@ -40,67 +56,75 @@ export type StoreFormState = {
   data?: any;
 };
 
-// ✅ Parse FormData including checkbox coercion
-function parseStoreFormData(formData: FormData): StoreFormData {
+/* ---------------------------- 🛠️ Helper Parser ---------------------------- */
+async function parseStoreFormData(
+  formData: FormData
+): Promise<StoreFormData & { imageFile: File }> {
   const categoryIds = formData.getAll("categories") as string[];
 
-  const metaKeywords = (formData.get("metaKeywords") || "")
-    .toString()
-    .split(",")
-    .map((k) => k.trim())
-    .filter(Boolean);
+  const parseCSV = (value: FormDataEntryValue | null) =>
+    (value?.toString() || "")
+      .split(",")
+      .map((k) => k.trim())
+      .filter(Boolean);
 
-  const focusKeywords = (formData.get("focusKeywords") || "")
-    .toString()
-    .split(",")
-    .map((k) => k.trim())
-    .filter(Boolean);
+  const uploadedFile = formData.get("imageFile") as File | null;
+  if (!uploadedFile || uploadedFile.size === 0) {
+    throw new Error("Image file is required");
+  }
+
+  const imagePath = await saveStoreImage(uploadedFile);
+
+  const rawNetworkName = String(formData.get("networkName") || "N/A");
+  const networkName: NetworkName = allowedNetworks.includes(rawNetworkName as NetworkName)
+    ? (rawNetworkName as NetworkName)
+    : "N/A";
 
   return {
     name: String(formData.get("name") || ""),
+    networkName,
     storeNetworkUrl: String(formData.get("storeNetworkUrl") || ""),
+    directUrl: String(formData.get("directUrl") || ""), // ✅ added
     categories: categoryIds,
     totalCouponUsedTimes: Number(formData.get("totalCouponUsedTimes") || 0),
-    image: String(formData.get("image") || ""),
+    image: imagePath,
     description: String(formData.get("description") || ""),
     metaTitle: String(formData.get("metaTitle") || ""),
     metaDescription: String(formData.get("metaDescription") || ""),
-    metaKeywords,
-    focusKeywords,
+    metaKeywords: parseCSV(formData.get("metaKeywords")),
+    focusKeywords: parseCSV(formData.get("focusKeywords")),
     slug: String(formData.get("slug") || ""),
-    isPopular:
-      formData.get("isPopular") === "true" || formData.get("isPopular") === "on",
-    isActive:
-      formData.get("isActive") === "true" || formData.get("isActive") === "on",
+    isPopular: ["true", "on", "1"].includes(String(formData.get("isPopular"))),
+    isActive: ["true", "on", "1"].includes(String(formData.get("isActive"))),
+    imageFile: uploadedFile,
   };
 }
 
-// CREATE STORE
+/* ---------------------------- 🔹 CREATE ---------------------------- */
 export async function createStoreAction(
   prevState: StoreFormState,
   formData: FormData
 ): Promise<StoreFormState> {
   await connectToDatabase();
 
-  const parsed = parseStoreFormData(formData);
-  const result = storeSchema.safeParse(parsed);
-
-  if (!result.success) {
-    return { error: result.error.flatten().fieldErrors };
-  }
-
   try {
-    const store = await createStore(result.data);
+    const parsed = await parseStoreFormData(formData);
+    const result = storeSchema.safeParse(parsed);
+
+    if (!result.success) return { error: result.error.flatten().fieldErrors };
+
+    const store = await createStore({
+      ...result.data,
+      imageFile: parsed.imageFile,
+    });
+
     return { data: store };
   } catch (error: any) {
-    if (error.code === 11000) {
-      return { error: { slug: ["Slug must be unique"] } };
-    }
     return { error: { message: [error.message || "Failed to create store"] } };
   }
 }
 
-// UPDATE STORE
+/* ---------------------------- 🔹 UPDATE ---------------------------- */
 export async function updateStoreAction(
   prevState: StoreFormState,
   id: string,
@@ -108,129 +132,97 @@ export async function updateStoreAction(
 ): Promise<StoreFormState> {
   await connectToDatabase();
 
-  const parsed = parseStoreFormData(formData);
-  const result = storeSchema.safeParse(parsed);
-
-  if (!result.success) {
-    return { error: result.error.flatten().fieldErrors };
-  }
-
   try {
-    const updated = await updateStore(id, result.data);
+    const parsed = await parseStoreFormData(formData);
+    const result = storeSchema.safeParse(parsed);
+
+    if (!result.success) return { error: result.error.flatten().fieldErrors };
+
+    const updated = await updateStore(id, {
+      ...result.data,
+      imageFile: parsed.imageFile,
+    });
+
+    if (!updated) return { error: { message: ["Store not found"] } };
     return { data: updated };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to update store"] } };
   }
 }
 
-// DELETE STORE
+/* ---------------------------- 🔹 DELETE ---------------------------- */
 export async function deleteStoreAction(id: string) {
   await connectToDatabase();
   try {
     const deleted = await deleteStore(id);
+    if (!deleted) return { error: { message: ["Store not found"] } };
     return { data: deleted };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to delete store"] } };
   }
 }
 
-// FETCH ALL STORES
+/* ---------------------------- 🔹 FETCHES ---------------------------- */
 export async function fetchAllStoresAction() {
   await connectToDatabase();
-  try {
-    const stores = await getAllStores();
-    return { data: stores };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch stores"] } };
-  }
+  try { return { data: await getAllStores() }; } 
+  catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores"] } }; }
 }
 
-// FETCH ALL ACTIVE STORES
 export async function fetchAllActiveStoresAction() {
   await connectToDatabase();
-  try {
-    const stores = await getAllActiveStores();
-    return { data: stores };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch stores"] } };
-  }
+  try { return { data: await getAllActiveStores() }; } 
+  catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores"] } }; }
 }
 
-// FETCH SINGLE STORE
 export async function fetchStoreByIdAction(id: string) {
   await connectToDatabase();
   try {
     const store = await getStoreById(id);
-    if (!store) {
-      return { error: { message: ["Store not found"] } };
-    }
+    if (!store) return { error: { message: ["Store not found"] } };
     return { data: store };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch store"] } };
-  }
+  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch store"] } }; }
 }
 
-// FETCH POPULAR STORES
 export async function fetchPopularStoresAction() {
   await connectToDatabase();
-  try {
-    const stores = await getPopularStores();
-    return { data: stores };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch popular stores"] } };
-  }
+  try { return { data: await getPopularStores() }; } 
+  catch (error: any) { return { error: { message: [error.message || "Failed to fetch popular stores"] } }; }
 }
 
-// FETCH RECENTLY UPDATED STORES
 export async function fetchRecentlyUpdatedStoresAction() {
   await connectToDatabase();
-  try {
-    const stores = await getRecentlyUpdatedStores();
-    return { data: stores };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch recently updated stores"] } };
-  }
+  try { return { data: await getRecentlyUpdatedStores() }; } 
+  catch (error: any) { return { error: { message: [error.message || "Failed to fetch recently updated stores"] } }; }
 }
 
-// FETCH STORES BY CATEGORIES
 export async function fetchStoresByCategoriesAction(categories: string[]) {
   await connectToDatabase();
-
   try {
-    if (!categories.length) {
-      return { data: [] };
-    }
-
-    const stores = await getStoresByCategories(categories);
-    return { data: stores };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch stores by categories"] } };
-  }
+    if (!categories.length) return { data: [] };
+    return { data: await getStoresByCategories(categories) };
+  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores by categories"] } }; }
 }
 
-// FETCH STORES WITH COUPONS
 export async function fetchAllStoresWithCouponsAction() {
   await connectToDatabase();
-
-  try {
-    const storesWithCoupons = await getStoresWithCoupons();
-    return { data: storesWithCoupons };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch stores with coupons"] } };
-  }
+  try { return { data: await getStoresWithCoupons() }; } 
+  catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores with coupons"] } }; }
 }
+
 export async function fetchStoreWithCouponsByIdAction(storeId: string) {
   await connectToDatabase();
-
   try {
     const store = await getStoreWithCouponsById(storeId);
-
-    if (!store) {
-      return { error: { message: ["Store not found"] } };
-    }
-
+    if (!store) return { error: { message: ["Store not found"] } };
     return { data: store };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch store"] } };
-  }
+  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch store"] } }; }
+}
+
+export async function fetchCouponCountByStoreIdAction(storeId: string) {
+  await connectToDatabase();
+  try {
+    const count = await getCouponCountByStoreId(storeId);
+    return { data: count };
+  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch coupon count"] } }; }
 }

@@ -1,13 +1,16 @@
 import { Store } from "@/models/Store";
 import { Types } from "mongoose";
+import { saveStoreImage } from "@/lib/uploadStoreImage";
+import { Coupon } from "@/models/Coupon";
 
 /**
- * Helper to sanitize and format incoming store data.
- * Ensures isPopular and isActive always have boolean defaults.
+ * Sanitize and format incoming store data before saving/updating.
  */
 const sanitizeStoreData = (data: {
   name: string;
-  storeNetworkUrl: string;
+  networkName: string;
+  storeNetworkUrl?: string;
+  directUrl?: string; // ✅ added
   categories: string[];
   totalCouponUsedTimes?: number;
   image: string;
@@ -21,7 +24,9 @@ const sanitizeStoreData = (data: {
   isActive?: boolean;
 }) => ({
   name: data.name.trim(),
-  storeNetworkUrl: data.storeNetworkUrl.trim(),
+  networkName: data.networkName,
+  storeNetworkUrl: data.storeNetworkUrl?.trim() ?? "",
+  directUrl: data.directUrl?.trim() ?? "", // ✅ added
   categories: data.categories.map((id) => new Types.ObjectId(id)),
   totalCouponUsedTimes: data.totalCouponUsedTimes ?? 0,
   image: data.image.trim(),
@@ -31,54 +36,54 @@ const sanitizeStoreData = (data: {
   metaKeywords: data.metaKeywords ?? [],
   focusKeywords: data.focusKeywords ?? [],
   slug: data.slug.trim().toLowerCase().replace(/\s+/g, "-"),
-  isPopular: data.isPopular ?? false, // default false
-  isActive: data.isActive ?? true,    // default true
+  isPopular: data.isPopular ?? false,
+  isActive: data.isActive ?? true,
 });
 
 /**
- * Serialize coupon (basic fields) for embedding in store result.
+ * Serialize coupon (for embedding in store).
  */
 const serializeCoupon = (coupon: any) => ({
   _id: coupon._id.toString(),
   title: coupon.title,
-  description: coupon.description ?? "",       // ensure description exists
-  couponType: coupon.couponType ?? "coupon",   // ensure couponType exists
-  couponCode: coupon.couponCode,
+  description: coupon.description ?? "",
+  couponType: coupon.couponType ?? "coupon",
+  couponCode: coupon.couponCode ?? "",
   expirationDate: coupon.expirationDate?.toISOString?.(),
   status: coupon.status,
   discount: coupon.discount,
   isTopOne: coupon.isTopOne ?? false,
-  uses: coupon.uses ?? 0,                      // default 0
-  verified: coupon.verified ?? false,          // default false
-  couponUrl: coupon.couponUrl ?? "",           // include couponUrl if available
-  storeName: coupon.storeName ?? "",           // include storeName if available
-  storeId: coupon.storeId?.toString() ?? "",   // convert ObjectId to string
+  uses: coupon.uses ?? 0,
+  verified: coupon.verified ?? false,
+  couponUrl: coupon.couponUrl ?? "",
+  storeName: coupon.storeName ?? "",
+  storeId: coupon.storeId?.toString() ?? "",
   createdAt: coupon.createdAt?.toISOString?.(),
   updatedAt: coupon.updatedAt?.toISOString?.(),
 });
 
-
 /**
- * Convert a Mongoose store document to plain object safe for Client Components.
- * Adds embedded coupons if present.
+ * Serialize store (safe for Client Components).
  */
 const serializeStore = (store: any) => ({
   _id: store._id.toString(),
   name: store.name,
+  networkName: store.networkName,
   storeNetworkUrl: store.storeNetworkUrl,
-  categories: store.categories.map((cat: any) =>
+  directUrl: store.directUrl, // ✅ added
+  categories: (store.categories || []).map((cat: any) =>
     typeof cat === "object" && cat._id ? cat._id.toString() : cat.toString()
   ),
-  totalCouponUsedTimes: store.totalCouponUsedTimes,
+  totalCouponUsedTimes: store.totalCouponUsedTimes ?? 0,
   image: store.image,
   description: store.description,
   metaTitle: store.metaTitle,
   metaDescription: store.metaDescription,
-  metaKeywords: store.metaKeywords,
-  focusKeywords: store.focusKeywords,
+  metaKeywords: store.metaKeywords ?? [],
+  focusKeywords: store.focusKeywords ?? [],
   slug: store.slug,
-  isPopular: store.isPopular ?? false, // default false
-  isActive: store.isActive ?? true,    // default true
+  isPopular: store.isPopular ?? false,
+  isActive: store.isActive ?? true,
   createdAt: store.createdAt?.toISOString?.(),
   updatedAt: store.updatedAt?.toISOString?.(),
   coupons: (store.coupons || []).map(serializeCoupon),
@@ -89,10 +94,12 @@ const serializeStore = (store: any) => ({
  */
 export const createStore = async (data: {
   name: string;
-  storeNetworkUrl: string;
+  networkName: string;
+  storeNetworkUrl?: string;
+  directUrl?: string; // ✅ added
   categories: string[];
   totalCouponUsedTimes?: number;
-  image: string;
+  imageFile: File;
   description: string;
   metaTitle: string;
   metaDescription: string;
@@ -101,52 +108,59 @@ export const createStore = async (data: {
   slug: string;
   isPopular?: boolean;
   isActive?: boolean;
-}): Promise<ReturnType<typeof serializeStore>> => {
-  const storeData = sanitizeStoreData(data);
+}) => {
+  const imagePath = await saveStoreImage(data.imageFile);
+
+  const storeData = sanitizeStoreData({
+    ...data,
+    image: imagePath,
+  });
+
   const store = await new Store(storeData).save();
   return serializeStore(store);
 };
 
 /**
- * Get all stores (active only), sorted by newest first.
+ * Get all active stores.
  */
-export const getAllActiveStores = async (): Promise<ReturnType<typeof serializeStore>[]> => {
+export const getAllActiveStores = async () => {
   const stores = await Store.find({ isActive: true })
     .sort({ createdAt: -1 })
     .limit(12)
     .lean();
-
   return stores.map(serializeStore);
 };
 
-
 /**
- * Get all stores, sorted by newest first.
+ * Get all stores.
  */
-export const getAllStores = async (): Promise<ReturnType<typeof serializeStore>[]> => {
+export const getAllStores = async () => {
   const stores = await Store.find().sort({ createdAt: -1 }).lean();
   return stores.map(serializeStore);
 };
 
 /**
- * Get a store by its ID.
+ * Get a store by ID.
  */
-export const getStoreById = async (id: string): Promise<ReturnType<typeof serializeStore> | null> => {
+export const getStoreById = async (id: string) => {
   const store = await Store.findById(id).lean();
   return store ? serializeStore(store) : null;
 };
 
 /**
- * Update a store by ID.
+ * Update store (optionally with new image).
  */
 export const updateStore = async (
   id: string,
   data: {
     name: string;
-    storeNetworkUrl: string;
+    networkName: string;
+    storeNetworkUrl?: string;
+    directUrl?: string; // ✅ added
     categories: string[];
     totalCouponUsedTimes?: number;
-    image: string;
+    imageFile?: File;
+    image?: string;
     description: string;
     metaTitle: string;
     metaDescription: string;
@@ -156,52 +170,70 @@ export const updateStore = async (
     isPopular?: boolean;
     isActive?: boolean;
   }
-): Promise<ReturnType<typeof serializeStore> | null> => {
-  const updatedData = sanitizeStoreData(data);
-  const store = await Store.findByIdAndUpdate(id, { $set: updatedData }, { new: true, runValidators: true }).lean();
+) => {
+  let imagePath = data.image ?? "";
+
+  if (data.imageFile) {
+    imagePath = await saveStoreImage(data.imageFile);
+  }
+
+  const updatedData = sanitizeStoreData({
+    ...data,
+    image: imagePath,
+  });
+
+  const store = await Store.findByIdAndUpdate(
+    id,
+    { $set: updatedData },
+    { new: true, runValidators: true }
+  ).lean();
+
   return store ? serializeStore(store) : null;
 };
 
 /**
  * Delete a store by ID.
  */
-export const deleteStore = async (id: string): Promise<ReturnType<typeof serializeStore> | null> => {
+export const deleteStore = async (id: string) => {
   const store = await Store.findByIdAndDelete(id).lean();
   return store ? serializeStore(store) : null;
 };
 
 /**
- * Get all popular stores (isPopular === true and active), sorted by newest first.
+ * Get popular stores.
  */
-export const getPopularStores = async (): Promise<ReturnType<typeof serializeStore>[]> => {
-  const stores = await Store.find({ isPopular: true, isActive: true }).sort({ createdAt: -1 }).lean();
+export const getPopularStores = async () => {
+  const stores = await Store.find({ isPopular: true, isActive: true })
+    .sort({ createdAt: -1 })
+    .lean();
   return stores.map(serializeStore);
 };
 
 /**
- * Get all recently updated stores (active only), sorted by updatedAt descending.
+ * Get recently updated stores.
  */
-export const getRecentlyUpdatedStores = async (): Promise<ReturnType<typeof serializeStore>[]> => {
-  const stores = await Store.find({ isActive: true }).sort({ updatedAt: -1 }).lean();
+export const getRecentlyUpdatedStores = async () => {
+  const stores = await Store.find({ isActive: true })
+    .sort({ updatedAt: -1 })
+    .lean();
   return stores.map(serializeStore);
 };
 
 /**
- * Get stores by category IDs (active only).
+ * Get stores by category IDs.
  */
-export const getStoresByCategories = async (categories: string[]): Promise<ReturnType<typeof serializeStore>[]> => {
+export const getStoresByCategories = async (categories: string[]) => {
   const stores = await Store.find({
     categories: { $in: categories.map((id) => new Types.ObjectId(id)) },
     isActive: true,
   }).lean();
-
   return stores.map(serializeStore);
 };
 
 /**
- * Get all stores with their coupons (active stores only), joined via $lookup.
+ * Get stores with coupons.
  */
-export const getStoresWithCoupons = async (): Promise<ReturnType<typeof serializeStore>[]> => {
+export const getStoresWithCoupons = async () => {
   const storesWithCoupons = await Store.aggregate([
     { $match: { isActive: true } },
     {
@@ -217,12 +249,11 @@ export const getStoresWithCoupons = async (): Promise<ReturnType<typeof serializ
 
   return storesWithCoupons.map(serializeStore);
 };
+
 /**
- * Get a single store with all its coupons (active only)
+ * Get a store with coupons by ID.
  */
-export const getStoreWithCouponsById = async (
-  storeId: string
-): Promise<ReturnType<typeof serializeStore> | null> => {
+export const getStoreWithCouponsById = async (storeId: string) => {
   if (!Types.ObjectId.isValid(storeId)) return null;
 
   const [storeWithCoupons] = await Store.aggregate([
@@ -238,4 +269,16 @@ export const getStoreWithCouponsById = async (
   ]);
 
   return storeWithCoupons ? serializeStore(storeWithCoupons) : null;
+};
+
+/**
+ * Get the total number of coupons of a particular store.
+ */
+export const getCouponCountByStoreId = async (storeId: string) => {
+  if (!Types.ObjectId.isValid(storeId)) return 0;
+
+  const count = await Coupon.countDocuments({
+    storeId: new Types.ObjectId(storeId),
+  });
+  return count;
 };
