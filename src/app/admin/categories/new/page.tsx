@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import DescriptionEditor from "@/components/DescriptionEditor";
 
 interface FormState {
   error?: Record<string, string[]> & { message?: string[] };
@@ -44,6 +45,8 @@ export default function CategoryForm() {
   );
 
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
+  const [descriptionHtml, setDescriptionHtml] = useState("");
 
   useEffect(() => {
     if (formState.data && !formState.error) {
@@ -73,7 +76,9 @@ export default function CategoryForm() {
         <CardContent>
           <form
             action={(formData: FormData) => {
-              return dispatch(formData); // FormData now automatically includes isPopular and isTrending if checked
+              // attach description HTML before submitting
+              formData.set("description", descriptionHtml);
+              return dispatch(formData);
             }}
             className="space-y-6"
           >
@@ -101,16 +106,12 @@ export default function CategoryForm() {
               />
             </div>
 
-            {/* Description */}
+            {/* Description Modal */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <textarea
-                id="description"
-                name="description"
-                rows={4}
-                className="w-full rounded-md border-none shadow-sm bg-gray-50 dark:bg-gray-700 p-2"
-                placeholder="Enter category description"
-              />
+              <Label>Description</Label>
+              <Button type="button" onClick={() => setDescriptionModalOpen(true)}>
+                Edit Description
+              </Button>
             </div>
 
             {/* Is Popular */}
@@ -146,6 +147,25 @@ export default function CategoryForm() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Description Modal */}
+      <Dialog open={descriptionModalOpen} onOpenChange={setDescriptionModalOpen}>
+        <DialogContent className="max-w-3xl w-full">
+          <DialogHeader>
+            <DialogTitle>Edit Description</DialogTitle>
+          </DialogHeader>
+          <DescriptionEditor
+            initialContent={descriptionHtml}
+            onChange={setDescriptionHtml}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDescriptionModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Success Confirmation Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>

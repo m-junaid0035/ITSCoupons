@@ -26,6 +26,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+import DescriptionEditor from "@/components/DescriptionEditor";
+
 import {
   fetchCategoryByIdAction,
   updateCategoryAction,
@@ -49,6 +51,9 @@ export default function EditCategoryForm() {
   const [loading, setLoading] = useState(true);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
+  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
+  const [descriptionHtml, setDescriptionHtml] = useState("");
+
   const [formState, dispatch, isPending] = useActionState(
     async (prevState: FormState, formData: FormData) =>
       await updateCategoryAction(prevState, categoryId, formData),
@@ -60,6 +65,7 @@ export default function EditCategoryForm() {
       const res = await fetchCategoryByIdAction(categoryId);
       if (res?.data) {
         setCategory(res.data);
+        setDescriptionHtml(res.data.description ?? "");
       }
       setLoading(false);
     }
@@ -109,7 +115,10 @@ export default function EditCategoryForm() {
 
         <CardContent>
           <form
-            action={(formData: FormData) => dispatch(formData)}
+            action={(formData: FormData) => {
+              formData.set("description", descriptionHtml);
+              return dispatch(formData);
+            }}
             className="space-y-6"
           >
             {/* Category Name */}
@@ -146,18 +155,13 @@ export default function EditCategoryForm() {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <textarea
-                id="description"
-                name="description"
-                rows={4}
-                defaultValue={category.description ?? ""}
-                className="w-full rounded-md border-none shadow-sm bg-gray-50 dark:bg-gray-700 p-2"
-                placeholder="Enter category description"
-              />
-              {errorFor("description") && (
-                <p className="text-sm text-red-500">{errorFor("description")}</p>
-              )}
+              <Label>Description</Label>
+              <Button
+                type="button"
+                onClick={() => setDescriptionModalOpen(true)}
+              >
+                Edit Description
+              </Button>
             </div>
 
             {/* Is Popular */}
@@ -202,6 +206,31 @@ export default function EditCategoryForm() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Description Modal */}
+      <Dialog
+        open={descriptionModalOpen}
+        onOpenChange={setDescriptionModalOpen}
+      >
+        <DialogContent className="max-w-3xl w-full">
+          <DialogHeader>
+            <DialogTitle>Edit Description</DialogTitle>
+          </DialogHeader>
+          <DescriptionEditor
+            initialContent={descriptionHtml}
+            onChange={setDescriptionHtml}
+          />
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDescriptionModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Success Confirmation Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
