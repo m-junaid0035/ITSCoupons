@@ -16,7 +16,7 @@ import {
   getCouponsByStore,
 } from "@/functions/couponFunctions";
 
-// ✅ Coupon Validation Schema with new fields added
+// ✅ Coupon Validation Schema with new fields
 const couponSchema = z.object({
   title: z.string().trim().min(3).max(100),
   description: z.string().optional(),
@@ -31,7 +31,7 @@ const couponSchema = z.object({
   storeId: z.string().min(1, "Invalid Store ID"),
   isTopOne: z.coerce.boolean().optional().default(false),
 
-  // NEW fields here
+  // NEW fields
   discount: z.string().optional(),
   uses: z.number().int().min(0).optional().default(0),
   verified: z.coerce.boolean().optional().default(false),
@@ -58,7 +58,7 @@ function parseCouponFormData(formData: FormData): CouponFormData {
     storeId: String(formData.get("storeId") || ""),
     isTopOne: formData.get("isTopOne") === "true" || formData.get("isTopOne") === "on",
     discount: formData.get("discount") ? String(formData.get("discount")) : undefined,
-    uses: formData.get("uses") ? Number(formData.get("uses")) : 0,  // <--- always number, default 0
+    uses: formData.get("uses") ? Number(formData.get("uses")) : 0,
     verified: formData.get("verified") === "true" || formData.get("verified") === "on",
   };
 }
@@ -135,9 +135,7 @@ export async function fetchCouponByIdAction(id: string) {
   await connectToDatabase();
   try {
     const coupon = await getCouponById(id);
-    if (!coupon) {
-      return { error: { message: ["Coupon not found"] } };
-    }
+    if (!coupon) return { error: { message: ["Coupon not found"] } };
     return { data: coupon };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch coupon"] } };
@@ -198,6 +196,8 @@ export async function fetchTopDealsWithStoresAction() {
     return { error: { message: [error.message || "Failed to fetch top deals with stores"] } };
   }
 }
+
+// ✅ FETCH COUPONS BY STORE
 export async function fetchCouponsByStoreAction(storeId: string) {
   await connectToDatabase();
 

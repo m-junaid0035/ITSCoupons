@@ -44,7 +44,6 @@ const couponSchema = new Schema<ICoupon>(
     couponCode: {
       type: String,
       required: [true, "Coupon code is required"],
-      unique: true,
       trim: true,
     },
     expirationDate: {
