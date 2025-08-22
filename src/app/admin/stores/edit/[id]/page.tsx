@@ -259,7 +259,7 @@ export default function EditStoreForm() {
           </form>
         </CardContent>
 
-        <CardFooter className="flex justify-end border-none px-0">
+        <CardFooter className="flex justify-end border-none mr-10 px-0">
           <Button type="submit" disabled={isPending} form="edit-store-form">
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {isPending ? "Updating..." : "Update Store"}

@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2, X } from "lucide-react";
 import {
@@ -23,21 +24,24 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-import { createStoreAction, StoreFormState } from "@/actions/storeActions";
+import { createStoreAction } from "@/actions/storeActions";
 import { fetchAllCategoriesAction } from "@/actions/categoryActions";
-import { fetchLatestSEOAction } from "@/actions/seoActions";
+import { fetchLatestSEOAction } from "@/actions/seoActions"; // <-- Added for SEO
 
 import DescriptionEditor from "@/components/DescriptionEditor";
-import { Textarea } from "@/components/ui/textarea";
 
+interface FormState {
+  error?: Record<string, string[]> | { message?: string[] };
+  data?: any;
+}
+
+const initialState: FormState = { error: {} };
 interface Category { _id: string; name: string; }
 const allowedNetworks = ["CJ", "Rakuten", "Awin", "Impact", "ShareASale", "N/A"];
-const initialState: StoreFormState = { error: {} };
 
 export default function StoreForm() {
   const router = useRouter();
   const [formState, dispatch, isPending] = useActionState(createStoreAction, initialState);
-
   const [categories, setCategories] = useState<Category[]>([]);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
@@ -45,10 +49,11 @@ export default function StoreForm() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [networkName, setNetworkName] = useState<string>("N/A");
-  const [descriptionHtml, setDescriptionHtml] = useState<string>("");
-  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
 
-  // SEO state
+  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
+  const [seoModalOpen, setSeoModalOpen] = useState(false);
+
+  const [descriptionHtml, setDescriptionHtml] = useState("");
   const [seo, setSeo] = useState({
     metaTitle: "",
     metaDescription: "",
@@ -66,7 +71,6 @@ export default function StoreForm() {
     loadCategories();
   }, []);
 
-  /** ---------------- Error Helper ---------------- */
   const errorFor = (field: string) => {
     return formState.error &&
       typeof formState.error === "object" &&
@@ -75,9 +79,9 @@ export default function StoreForm() {
       : null;
   };
 
-  /** ---------------- Toast & Success ---------------- */
   useEffect(() => {
     if (formState.data && !formState.error) setSuccessDialogOpen(true);
+
     if (formState.error && "message" in formState.error) {
       toast({
         title: "Error",
@@ -138,8 +142,7 @@ export default function StoreForm() {
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    // Required fields
-    const requiredFields = ["name", "metaTitle", "metaDescription", "slug"];
+    const requiredFields = ["name", "slug"];
     for (const field of requiredFields) {
       if (!formData.get(field)?.toString().trim()) {
         toast({ title: "Validation Error", description: `${field} is required`, variant: "destructive" });
@@ -147,36 +150,24 @@ export default function StoreForm() {
       }
     }
 
-    if (!descriptionHtml.trim()) {
-      toast({ title: "Validation Error", description: "Description is required", variant: "destructive" });
-      return;
-    }
-    formData.set("description", descriptionHtml);
-
     if (!imageFile) {
       toast({ title: "Validation Error", description: "Store image is required", variant: "destructive" });
       return;
     }
+
+    // Attach image and SEO/description fields
     formData.set("imageFile", imageFile);
-
-    // Network URL validation
-    const networkNameValue = formData.get("networkName")?.toString() || "N/A";
-    if (networkNameValue !== "N/A") {
-      const url = formData.get("storeNetworkUrl")?.toString() || "";
-      if (!url.trim()) {
-        toast({ title: "Validation Error", description: "Store Network URL is required if network is selected", variant: "destructive" });
-        return;
-      }
-    } else formData.delete("storeNetworkUrl");
-
-    // Add auto-populated SEO fields
+    formData.set("description", descriptionHtml);
     formData.set("metaTitle", seo.metaTitle);
     formData.set("metaDescription", seo.metaDescription);
     formData.set("metaKeywords", seo.metaKeywords);
     formData.set("focusKeywords", seo.focusKeywords);
     formData.set("slug", seo.slug);
+    startTransition(() => {
+      dispatch(formData);
+    });
 
-    startTransition(() => dispatch(formData));
+
   };
 
   return (
@@ -189,23 +180,27 @@ export default function StoreForm() {
 
         <CardContent>
           <form id="store-form" className="space-y-6 max-w-2xl mx-auto" onSubmit={handleSubmit} encType="multipart/form-data">
-
             {/* Store Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Store Name</Label>
-              <Input id="name" name="name" placeholder="Enter store name" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input id="name" name="name" required placeholder="Enter store name" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               {errorFor("name") && <p className="text-sm text-red-500">{errorFor("name")}</p>}
             </div>
 
-            {/* Network */}
+            {/* Network Name */}
             <div className="space-y-2">
               <Label htmlFor="networkName">Network Name</Label>
-              <select id="networkName" name="networkName" value={networkName} onChange={e => setNetworkName(e.target.value)} className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700">
-                {allowedNetworks.map(n => <option key={n} value={n}>{n}</option>)}
+              <select
+                id="networkName"
+                name="networkName"
+                className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                value={networkName}
+                onChange={(e) => setNetworkName(e.target.value)}
+              >
+                {allowedNetworks.map((network) => <option key={network} value={network}>{network}</option>)}
               </select>
             </div>
 
-            {/* Conditional Network URL */}
             {networkName !== "N/A" && (
               <div className="space-y-2">
                 <Label htmlFor="storeNetworkUrl">Store Network URL</Label>
@@ -225,7 +220,7 @@ export default function StoreForm() {
             <div className="space-y-2">
               <Label>Categories</Label>
               <div className="grid grid-cols-2 gap-2">
-                {categories.map(cat => (
+                {categories.map((cat) => (
                   <label key={cat._id} className="flex items-center space-x-2">
                     <input type="checkbox" name="categories" value={cat._id} className="h-4 w-4" />
                     <span>{cat.name}</span>
@@ -235,95 +230,52 @@ export default function StoreForm() {
               {errorFor("categories") && <p className="text-sm text-red-500">{errorFor("categories")}</p>}
             </div>
 
-            {/* Image */}
+            {/* Image File */}
             <div className="space-y-2">
               <Label htmlFor="imageFile">Store Image</Label>
               <Input id="imageFile" name="imageFile" type="file" accept="image/*" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" onChange={handleImageChange} />
               {imagePreview && (
                 <div className="relative mt-2 max-h-40 w-fit">
                   <img src={imagePreview} alt="Preview" className="rounded shadow-md max-h-40" />
-                  <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"><X className="h-4 w-4" /></button>
+                  <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full">
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               )}
             </div>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <Button variant="outline" onClick={() => setDescriptionModalOpen(true)}>Edit Description</Button>
+            {/* Description modal trigger */}
+            <div>
+              <Button type="button" onClick={() => setDescriptionModalOpen(true)}>Edit Description</Button>
             </div>
 
-            {/* SEO Fields (default auto-updated, user can see but no need to edit) */}
-            {/* SEO Fields (auto-populated but editable) */}
-            <div className="space-y-2">
-              <Label htmlFor="metaTitle">Meta Title</Label>
-              <Input
-                id="metaTitle"
-                name="metaTitle"
-                placeholder="Meta title"
-                value={seo.metaTitle}
-                onChange={e => setSeo(prev => ({ ...prev, metaTitle: e.target.value }))}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
+            {/* SEO modal trigger */}
+            <div>
+              <Button type="button" onClick={() => setSeoModalOpen(true)}>Edit SEO Fields</Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="metaDescription">Meta Description</Label>
-              <Textarea
-                id="metaDescription"
-                name="metaDescription"
-                rows={3}
-                placeholder="Meta description"
-                value={seo.metaDescription}
-                onChange={e => setSeo(prev => ({ ...prev, metaDescription: e.target.value }))}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
+
+            {/* isPopular */}
+            <div className="flex items-center space-x-2">
+              <input type="checkbox" id="isPopular" name="isPopular" value="true" className="w-4 h-4" />
+              <Label htmlFor="isPopular">Mark as Popular</Label>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="metaKeywords">Meta Keywords</Label>
-              <Input
-                id="metaKeywords"
-                name="metaKeywords"
-                placeholder="keyword1, keyword2"
-                value={seo.metaKeywords}
-                onChange={e => setSeo(prev => ({ ...prev, metaKeywords: e.target.value }))}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
+
+            {/* isActive */}
+            <div className="flex items-center space-x-2">
+              <input type="checkbox" id="isActive" name="isActive" value="true" defaultChecked className="w-4 h-4" />
+              <Label htmlFor="isActive">Mark as Active</Label>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="focusKeywords">Focus Keywords</Label>
-              <Input
-                id="focusKeywords"
-                name="focusKeywords"
-                placeholder="keyword1, keyword2"
-                value={seo.focusKeywords}
-                onChange={e => setSeo(prev => ({ ...prev, focusKeywords: e.target.value }))}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-            </div>
+
+            {/* Slug */}
             <div className="space-y-2">
               <Label htmlFor="slug">Slug</Label>
-              <Input
-                id="slug"
-                name="slug"
-                placeholder="store-slug"
-                value={seo.slug}
-                onChange={e => setSeo(prev => ({ ...prev, slug: e.target.value }))}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
+              <Input id="slug" name="slug" required placeholder="store-slug" value={seo.slug} onChange={(e) => setSeo(prev => ({ ...prev, slug: e.target.value }))} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
 
-
-            {/* Popular & Active */}
-            <div className="flex items-center space-x-4">
-              <label className="flex items-center space-x-2">
-                <input type="checkbox" id="isPopular" name="isPopular" value="true" className="w-4 h-4" />
-                <span>Popular</span>
-              </label>
-              <label className="flex items-center space-x-2">
-                <input type="checkbox" id="isActive" name="isActive" value="true" defaultChecked className="w-4 h-4" />
-                <span>Active</span>
-              </label>
-            </div>
+            {/* General Error */}
+            {"message" in (formState.error ?? {}) && (
+              <p className="text-sm text-red-500">{(formState.error as any).message?.[0]}</p>
+            )}
 
             <CardFooter className="flex justify-end border-none px-0">
               <Button type="submit" disabled={isPending} form="store-form">
@@ -345,6 +297,41 @@ export default function StoreForm() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDescriptionModalOpen(false)}>Cancel</Button>
             <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* SEO Modal */}
+      <Dialog open={seoModalOpen} onOpenChange={setSeoModalOpen}>
+        <DialogContent className="max-w-3xl w-full">
+          <DialogHeader>
+            <DialogTitle>Edit SEO Fields</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="metaTitle">Meta Title</Label>
+              <Input id="metaTitle" value={seo.metaTitle} onChange={e => setSeo(prev => ({ ...prev, metaTitle: e.target.value }))} className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+            </div>
+            <div>
+              <Label htmlFor="metaDescription">Meta Description</Label>
+              <Textarea id="metaDescription" rows={3} value={seo.metaDescription} onChange={e => setSeo(prev => ({ ...prev, metaDescription: e.target.value }))} className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+            </div>
+            <div>
+              <Label htmlFor="metaKeywords">Meta Keywords</Label>
+              <Input id="metaKeywords" value={seo.metaKeywords} onChange={e => setSeo(prev => ({ ...prev, metaKeywords: e.target.value }))} className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+            </div>
+            <div>
+              <Label htmlFor="focusKeywords">Focus Keywords</Label>
+              <Input id="focusKeywords" value={seo.focusKeywords} onChange={e => setSeo(prev => ({ ...prev, focusKeywords: e.target.value }))} className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+            </div>
+            <div>
+              <Label htmlFor="slug">Slug</Label>
+              <Input id="slugModal" value={seo.slug} onChange={e => setSeo(prev => ({ ...prev, slug: e.target.value }))} className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSeoModalOpen(false)}>Cancel</Button>
+            <Button onClick={() => setSeoModalOpen(false)}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

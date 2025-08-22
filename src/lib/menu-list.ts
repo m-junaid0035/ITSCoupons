@@ -9,7 +9,8 @@ import {
   Gift,
   Calendar,
   Key,
-  PaintRollerIcon,
+  Shield,
+  Tag,
 } from "lucide-react";
 
 type Submenu = {
@@ -85,7 +86,7 @@ export function getMenuList(pathname: string): Group[] {
         {
           href: "/admin/roles",
           label: "Roles",
-          icon: PaintRollerIcon,
+          icon: Shield,
         },
         {
           href: "/admin/subscribers",
@@ -101,6 +102,11 @@ export function getMenuList(pathname: string): Group[] {
           href: "/admin/settings",
           label: "Settings",
           icon: Settings
+        },
+        {
+          href: "/admin/seo",
+          label: "SEO Templates",
+          icon: Tag
         },
       ]
     }

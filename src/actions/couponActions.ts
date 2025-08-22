@@ -13,6 +13,7 @@ import {
   getAllCouponsWithStores,
   getTopCouponsWithStores,
   getTopDealsWithStores,
+  getCouponsByStore,
 } from "@/functions/couponFunctions";
 
 // ✅ Coupon Validation Schema with new fields added
@@ -195,5 +196,19 @@ export async function fetchTopDealsWithStoresAction() {
     return { data: deals };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch top deals with stores"] } };
+  }
+}
+export async function fetchCouponsByStoreAction(storeId: string) {
+  await connectToDatabase();
+
+  if (!storeId) {
+    return { error: { message: ["Store ID is required"] } };
+  }
+
+  try {
+    const coupons = await getCouponsByStore(storeId);
+    return { data: coupons };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch coupons for store"] } };
   }
 }

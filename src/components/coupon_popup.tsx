@@ -160,7 +160,7 @@ export default function CouponModal({
                   </a>
                 </p>
 
-                {code === 'DEAL_CODE' ? (
+                {code === 'NO_CODE' ? (
                   <div className="mt-4 w-full text-center p-4 rounded-md bg-green-100 text-green-800 font-medium">
                     No code needed! Just click "Redeem" to claim this deal.
                   </div>

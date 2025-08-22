@@ -281,3 +281,15 @@ export const getTopDealsWithStores = async () => {
   ]);
   return dealsWithStores.map(serializeCouponWithStore);
 };
+/**
+ * Get all coupons for a specific store by storeId, sorted by newest first.
+ */
+export const getCouponsByStore = async (
+  storeId: string
+): Promise<ReturnType<typeof serializeCoupon>[]> => {
+  const coupons = await Coupon.find({ storeId: new Types.ObjectId(storeId) })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return coupons.map(serializeCoupon);
+};

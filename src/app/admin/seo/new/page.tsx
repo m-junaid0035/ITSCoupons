@@ -91,7 +91,7 @@ export default function SEOForm() {
                 id="metaTitle"
                 name="metaTitle"
                 required
-                placeholder="Enter meta title"
+                placeholder="Enter meta title (add s_n where you want to add the store name)"
               />
               {errorFor("metaTitle") && (
                 <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
@@ -105,7 +105,7 @@ export default function SEOForm() {
                 id="metaDescription"
                 name="metaDescription"
                 rows={3}
-                placeholder="Enter meta description"
+                placeholder="Enter meta description (add s_n where you want to add the store name)"
               />
               {errorFor("metaDescription") && (
                 <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
@@ -118,7 +118,7 @@ export default function SEOForm() {
               <Input
                 id="metaKeywords"
                 name="metaKeywords"
-                placeholder="keyword1, keyword2"
+                placeholder="keyword1, keyword2 (add s_n where you want to add the store name)"
               />
               {errorFor("metaKeywords") && (
                 <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
@@ -131,7 +131,7 @@ export default function SEOForm() {
               <Input
                 id="focusKeywords"
                 name="focusKeywords"
-                placeholder="focus1, focus2"
+                placeholder="focus1, focus2 (add s_n where you want to add the store name)"
               />
               {errorFor("focusKeywords") && (
                 <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>
@@ -145,7 +145,7 @@ export default function SEOForm() {
                 id="slug"
                 name="slug"
                 required
-                placeholder="seo-entry-slug"
+                placeholder="seo-entry-slug (add s_n where you want to add the store name)"
               />
               {errorFor("slug") && (
                 <p className="text-sm text-red-500">{errorFor("slug")}</p>

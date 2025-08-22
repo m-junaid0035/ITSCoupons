@@ -6,10 +6,12 @@ import {
   useState,
   useOptimistic,
   startTransition,
+  use,
 } from "react";
 import { useRouter } from "next/navigation";
 import {
   fetchAllCouponsAction,
+  fetchCouponsByStoreAction,
   deleteCouponAction,
 } from "@/actions/couponActions";
 
@@ -166,7 +168,12 @@ function CouponsTable({
   );
 }
 
-export default function CouponsPage() {
+export default function CouponsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ storeId?: string }>;
+}) {
+  const { storeId = "" } = use(searchParams);
   const router = useRouter();
   const [coupons, setCoupons] = useState<ICoupon[]>([]);
   const [search, setSearch] = useState("");
@@ -182,7 +189,13 @@ export default function CouponsPage() {
 
   const loadCoupons = async () => {
     setLoading(true);
-    const result = await fetchAllCouponsAction();
+    let result;
+    if (storeId) {
+      result = await fetchCouponsByStoreAction(storeId);
+    } else {
+      result = await fetchAllCouponsAction();
+    }
+
     if (result?.data && Array.isArray(result.data)) {
       setCoupons(result.data);
     } else {
@@ -195,30 +208,30 @@ export default function CouponsPage() {
     setLoading(false);
   };
 
- const handleDelete = async (id: string) => {
-  startTransition(() => {
-  deleteOptimistic(id);
-  });
-  const result = await deleteCouponAction(id);
-  if (result?.error) {
-    toast({
-      title: "Error",
-      description: result.error.message || "Failed to delete coupon",
-      variant: "destructive",
+  const handleDelete = async (id: string) => {
+    startTransition(() => {
+      deleteOptimistic(id);
     });
-    await loadCoupons(); // rollback optimistic update
-  } else {
-    setCoupons(prev => prev.filter(coupon => coupon._id !== id)); // sync state
-    toast({
-      title: "Deleted",
-      description: "Coupon deleted successfully.",
-    });
-  }
-};
+    const result = await deleteCouponAction(id);
+    if (result?.error) {
+      toast({
+        title: "Error",
+        description: result.error.message || "Failed to delete coupon",
+        variant: "destructive",
+      });
+      await loadCoupons(); // rollback optimistic update
+    } else {
+      setCoupons((prev) => prev.filter((coupon) => coupon._id !== id)); // sync state
+      toast({
+        title: "Deleted",
+        description: "Coupon deleted successfully.",
+      });
+    }
+  };
 
   useEffect(() => {
     loadCoupons();
-  }, []);
+  }, [storeId]);
 
   // Filter and paginate
   const filteredCoupons = optimisticCoupons.filter((c) =>
@@ -274,7 +287,9 @@ export default function CouponsPage() {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.max(1, p - 1))
+                    }
                   />
                 </PaginationItem>
                 {Array.from({ length: totalPages }, (_, i) => (
@@ -289,7 +304,9 @@ export default function CouponsPage() {
                 ))}
                 <PaginationItem>
                   <PaginationNext
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
                   />
                 </PaginationItem>
               </PaginationContent>
