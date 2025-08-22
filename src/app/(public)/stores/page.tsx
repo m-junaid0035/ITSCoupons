@@ -1,38 +1,11 @@
-// app/stores/page.tsx (Server Component)
-import DiscoverStores from "@/components/stores/DiscoverStores";
-import StoreCard from "@/components/stores/StoreCard";
+// app/stores/page.tsx
+import StoreList from "@/components/StoreList";
+import { fetchAllStoresAction } from "@/actions/storeActions";
 
-import { fetchAllStoresAction, fetchAllStoresWithCouponsAction } from "@/actions/storeActions";
-import { fetchAllCategoriesAction } from "@/actions/categoryActions";
+export default async function StorePage({ searchParams } : { searchParams: Promise<{ letter?: ""}>}) {
+  const storesResult = await fetchAllStoresAction();
+  const stores = storesResult?.data ?? [];
+  const { letter = "" } = await searchParams;
 
-import type { StoreData } from "@/types/store";
-import type { StoreWithCouponsData } from "@/types/storesWithCouponsData";
-import type { CategoryData } from "@/types/category";
-
-export default async function StorePage({ searchParams } : { searchParams: Promise<{ category?: ""}>}) {
-  // Fetch coupons and categories in parallel
-  const { category = "" } = await searchParams;
-  // Fetch all needed data in parallel
-  const [discoverStoresResult, storesWithCouponsResult, categoriesResult] = await Promise.allSettled([
-    fetchAllStoresAction(), // for DiscoverStores
-    fetchAllStoresWithCouponsAction(), // for StoreCard
-    fetchAllCategoriesAction(), // categories
-  ]);
-
-  // Extract data or fallback to empty arrays
-  const discoverStores: StoreData[] =
-    discoverStoresResult.status === "fulfilled" ? discoverStoresResult.value?.data ?? [] : [];
-
-  const storesWithCoupons: StoreWithCouponsData[] =
-    storesWithCouponsResult.status === "fulfilled" ? storesWithCouponsResult.value?.data ?? [] : [];
-
-  const categories: CategoryData[] =
-    categoriesResult.status === "fulfilled" ? categoriesResult.value?.data ?? [] : [];
-
-  return (
-    <main>
-      <DiscoverStores stores={discoverStores} />
-      <StoreCard stores={storesWithCoupons} categories={categories} category={category}/>
-    </main>
-  );
+  return <StoreList stores={stores} selectedLetter={letter} />;
 }
