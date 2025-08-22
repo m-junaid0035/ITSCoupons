@@ -2,36 +2,27 @@
 
 import fs from "fs";
 import path from "path";
+import { v4 as uuidv4 } from "uuid";
 
-// ✅ Directory where images are stored
-const storeDir = path.join(process.cwd(), "public", "stores");
+// ✅ Directory to store store images
+const storeDir = "/root/ITSCoupons-uploads/stores";
 
-// Ensure the folder exists
-if (!fs.existsSync(storeDir)) {
-  fs.mkdirSync(storeDir, { recursive: true });
-}
+// Ensure folder exists
+if (!fs.existsSync(storeDir)) fs.mkdirSync(storeDir, { recursive: true });
 
 export async function saveStoreImage(file: File): Promise<string> {
   if (!file) throw new Error("No file provided");
 
-  const ext = path.extname(file.name) || ".png";
-
-  // ✅ Determine next incremental filename
-  const existingFiles = fs.readdirSync(storeDir).filter((f) => f.startsWith("s"));
-  const numbers = existingFiles
-    .map((f) => parseInt(f.replace(/\D/g, ""), 10))
-    .filter((n) => !isNaN(n));
-
-  const nextNumber = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
-  const fileName = `s${nextNumber}${ext}`;
+  const ext = path.extname(file.name) || ".png"; // default to png
+  const fileName = `s-${uuidv4()}${ext}`; // UUID-based filename
   const filePath = path.join(storeDir, fileName);
 
   // Convert File → ArrayBuffer → Uint8Array
   const arrayBuffer = await file.arrayBuffer();
-  const buffer = new Uint8Array(arrayBuffer);
+  const uint8Array = new Uint8Array(arrayBuffer);
 
-  fs.writeFileSync(filePath, buffer);
+  fs.writeFileSync(filePath, uint8Array);
 
-  // ✅ Return relative path (for DB/frontend usage)
+  // Return relative path for frontend/DB
   return `/stores/${fileName}`;
 }
