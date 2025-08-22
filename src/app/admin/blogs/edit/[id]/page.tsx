@@ -209,20 +209,27 @@ export default function EditBlogForm() {
               {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
             </div>
 
-            {/* Image URL */}
+            {/* Image Upload */}
             <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
+              <Label htmlFor="imageFile">Blog Image</Label>
+              {blog.image && (
+                <img
+                  src={blog.image}
+                  alt="Current Blog"
+                  className="w-40 h-28 object-cover rounded mb-2"
+                />
+              )}
               <Input
-                id="image"
-                name="image"
-                type="url"
-                defaultValue={blog.image}
+                id="imageFile"
+                name="imageFile"
+                type="file"
+                accept="image/*"
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
+              {errorFor("imageFile") && <p className="text-sm text-red-500">{errorFor("imageFile")}</p>}
             </div>
 
-            {/* SEO Fields (Meta, Keywords) */}
+            {/* SEO Fields */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
               <Input id="metaTitle" name="metaTitle" defaultValue={blog.metaTitle} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />

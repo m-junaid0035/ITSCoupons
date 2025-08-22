@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, X } from "lucide-react";
 import { format } from "date-fns";
 import LoadingSkeleton from "./loading";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
@@ -46,6 +46,10 @@ export default function EditEventForm() {
   const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
+  // --- Image State
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
   useEffect(() => {
     async function loadEvent() {
       const res = await fetchEventByIdAction(eventId);
@@ -53,6 +57,7 @@ export default function EditEventForm() {
         setEvent(res.data);
         setDescriptionHtml(res.data.description || "");
         if (res.data.date) setEventDate(new Date(res.data.date));
+        if (res.data.image) setImagePreview(res.data.image); // show existing image
       }
       setLoading(false);
     }
@@ -79,6 +84,21 @@ export default function EditEventForm() {
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setImageFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => setImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
   if (loading) return <LoadingSkeleton />;
   if (!event) return <p className="text-red-500">Event not found</p>;
 
@@ -87,6 +107,13 @@ export default function EditEventForm() {
     const formData = new FormData(e.currentTarget);
     if (eventDate) formData.set("date", eventDate.toISOString());
     formData.set("description", descriptionHtml);
+
+    if (imageFile) {
+      formData.set("imageFile", imageFile); // send new file
+    } else if (imagePreview) {
+      formData.set("image", imagePreview); // keep existing url
+    }
+
     startTransition(() => dispatch(formData));
   };
 
@@ -101,29 +128,18 @@ export default function EditEventForm() {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                name="title"
-                defaultValue={event.title}
-                required
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
+              <Input id="title" name="title" defaultValue={event.title} required className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               {errorFor("title") && <p className="text-sm text-red-500">{errorFor("title")}</p>}
             </div>
 
             {/* Slug */}
             <div className="space-y-2">
               <Label htmlFor="slug">Slug</Label>
-              <Input
-                id="slug"
-                name="slug"
-                defaultValue={event.slug}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
+              <Input id="slug" name="slug" defaultValue={event.slug} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               {errorFor("slug") && <p className="text-sm text-red-500">{errorFor("slug")}</p>}
             </div>
 
@@ -159,17 +175,18 @@ export default function EditEventForm() {
               {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
             </div>
 
-            {/* Image URL */}
+            {/* Image Upload */}
             <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
-              <Input
-                id="image"
-                name="image"
-                type="text"
-                defaultValue={event.image}
-                placeholder="https://example.com/image.jpg"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
+              <Label htmlFor="imageFile">Event Image</Label>
+              <Input id="imageFile" name="imageFile" type="file" accept="image/*" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" onChange={handleImageChange} />
+              {imagePreview && (
+                <div className="relative mt-2 max-h-40 w-fit">
+                  <img src={imagePreview} alt="Preview" className="rounded shadow-md max-h-40" />
+                  <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
               {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
             </div>
 

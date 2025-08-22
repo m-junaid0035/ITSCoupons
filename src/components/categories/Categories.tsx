@@ -54,11 +54,10 @@ export default function Categories({
             <button
               key={filter.value}
               onClick={() => setActiveFilter(filter.value)}
-              className={`px-4 py-2 rounded-full text-sm font-medium border transition ${
-                activeFilter === filter.value
+              className={`px-4 py-2 rounded-full text-sm font-medium border transition ${activeFilter === filter.value
                   ? "bg-purple-600 text-white border-purple-600"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300"
-              }`}
+                }`}
             >
               {filter.label}
             </button>
@@ -89,9 +88,10 @@ export default function Categories({
 
               {/* Description */}
               {category.description && (
-                <p className="text-sm text-gray-500 line-clamp-3">
-                  {category.description}
-                </p>
+                <div
+                  className="text-sm text-gray-500 line-clamp-3 prose max-w-none"
+                  dangerouslySetInnerHTML={{ __html: category.description }}
+                />
               )}
             </div>
 

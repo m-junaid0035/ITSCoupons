@@ -43,6 +43,10 @@ export default function BlogCreatePage() {
   const [descriptionHtml, setDescriptionHtml] = useState("");
   const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
 
+  // Image state
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+
   const errorFor = (field: string) => {
     return formState.error &&
       typeof formState.error === "object" &&
@@ -79,6 +83,22 @@ export default function BlogCreatePage() {
     }
   }, [formState]);
 
+  // Handle image change
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setPreview(null);
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -86,6 +106,11 @@ export default function BlogCreatePage() {
     formData.set("category", selectedCategory);
     formData.set("writer", writer);
     formData.set("description", descriptionHtml);
+
+    if (imageFile) {
+      formData.set("imageFile", imageFile); // attach the file
+    }
+
     startTransition(() => dispatch(formData));
   };
 
@@ -189,25 +214,29 @@ export default function BlogCreatePage() {
               <Button type="button" onClick={() => setDescriptionModalOpen(true)}>
                 {descriptionHtml ? "Edit Description" : "Add Description"}
               </Button>
-              {descriptionHtml && (
-                <div
-                  className="mt-2 p-2 border rounded bg-gray-50 dark:bg-gray-700 line-clamp-3"
-                  dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-                />
-              )}
               {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
             </div>
 
-            {/* Image URL */}
+            {/* Image Upload */}
             <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
+              <Label htmlFor="imageFile">Blog Image</Label>
               <Input
-                id="image"
-                name="image"
-                placeholder="https://example.com/image.jpg"
+                id="imageFile"
+                name="imageFile"
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
+              {preview && (
+                <div className="mt-2">
+                  <img src={preview} alt="Preview" className="w-48 h-32 object-cover rounded-md border" />
+                  <Button type="button" variant="outline" size="sm" onClick={removeImage} className="mt-2">
+                    Remove Image
+                  </Button>
+                </div>
+              )}
+              {errorFor("imageFile") && <p className="text-sm text-red-500">{errorFor("imageFile")}</p>}
             </div>
 
             {/* SEO Fields */}

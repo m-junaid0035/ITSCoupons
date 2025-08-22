@@ -38,6 +38,28 @@ export default function EventCreatePage() {
   const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
+  /** ---------------- Image state ---------------- */
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setImageFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => setImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(null);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
+  /** ---------------- Error helper ---------------- */
   const errorFor = (field: string) => {
     return formState.error &&
       typeof formState.error === "object" &&
@@ -60,12 +82,23 @@ export default function EventCreatePage() {
     }
   }, [formState]);
 
+  /** ---------------- Submit handler ---------------- */
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    // Attach date and description
+    if (!imageFile) {
+      toast({
+        title: "Validation Error",
+        description: "Event image is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Attach image, date and description
+    formData.set("imageFile", imageFile);
     if (eventDate) formData.set("date", eventDate.toISOString());
     formData.set("description", descriptionHtml);
 
@@ -83,30 +116,19 @@ export default function EventCreatePage() {
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
 
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                name="title"
-                required
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="Enter event title"
-              />
+              <Input id="title" name="title" required className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="Enter event title" />
               {errorFor("title") && <p className="text-sm text-red-500">{errorFor("title")}</p>}
             </div>
 
             {/* Slug */}
             <div className="space-y-2">
               <Label htmlFor="slug">Slug (optional)</Label>
-              <Input
-                id="slug"
-                name="slug"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="example-event-slug"
-              />
+              <Input id="slug" name="slug" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="example-event-slug" />
               {errorFor("slug") && <p className="text-sm text-red-500">{errorFor("slug")}</p>}
             </div>
 
@@ -127,85 +149,55 @@ export default function EventCreatePage() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={eventDate}
-                    onSelect={setEventDate}
-                    initialFocus
-                  />
+                  <Calendar mode="single" selected={eventDate} onSelect={setEventDate} initialFocus />
                 </PopoverContent>
               </Popover>
               {errorFor("date") && <p className="text-sm text-red-500">{errorFor("date")}</p>}
             </div>
 
-            {/* Description with Modal */}
+            {/* Description */}
             <div className="space-y-2">
               <Label>Description</Label>
               <Button type="button" onClick={() => setDescriptionModalOpen(true)}>
                 {descriptionHtml ? "Edit Description" : "Add Description"}
               </Button>
               {descriptionHtml && (
-                <div
-                  className="mt-2 p-2 border rounded bg-gray-50 dark:bg-gray-700 line-clamp-3"
-                  dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-                />
+                <div className="mt-2 p-2 border rounded bg-gray-50 dark:bg-gray-700 line-clamp-3" dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
               )}
               {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
             </div>
 
-            {/* Image URL */}
+            {/* Image File */}
             <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
-              <Input
-                id="image"
-                name="image"
-                type="text"
-                placeholder="https://example.com/image.jpg"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
+              <Label htmlFor="imageFile">Event Image</Label>
+              <Input id="imageFile" name="imageFile" type="file" accept="image/*" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" onChange={handleImageChange} />
+              {imagePreview && (
+                <div className="relative mt-2 max-h-40 w-fit">
+                  <img src={imagePreview} alt="Preview" className="rounded shadow-md max-h-40" />
+                  <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
               {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
             </div>
 
-            {/* SEO Fields */}
+            {/* SEO */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
-              <Input
-                id="metaTitle"
-                name="metaTitle"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="SEO meta title"
-              />
+              <Input id="metaTitle" name="metaTitle" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="SEO meta title" />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
-              <Textarea
-                id="metaDescription"
-                name="metaDescription"
-                rows={3}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="SEO meta description"
-              />
+              <Textarea id="metaDescription" name="metaDescription" rows={3} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="SEO meta description" />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="metaKeywords">Meta Keywords (comma separated)</Label>
-              <Input
-                id="metaKeywords"
-                name="metaKeywords"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="keyword1, keyword2, keyword3"
-              />
+              <Input id="metaKeywords" name="metaKeywords" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="keyword1, keyword2, keyword3" />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="focusKeywords">Focus Keywords (comma separated)</Label>
-              <Input
-                id="focusKeywords"
-                name="focusKeywords"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="focus1, focus2"
-              />
+              <Input id="focusKeywords" name="focusKeywords" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="focus1, focus2" />
             </div>
 
             {/* General Error */}

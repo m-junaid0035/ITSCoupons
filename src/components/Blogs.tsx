@@ -91,8 +91,8 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
               onClick={() => setActiveCategory(tab)}
               aria-pressed={activeCategory === tab}
               className={`px-4 py-2 border rounded-full transition ${activeCategory === tab
-                  ? "bg-purple-700 text-white"
-                  : "text-purple-700 border-purple-300 hover:bg-purple-100"
+                ? "bg-purple-700 text-white"
+                : "text-purple-700 border-purple-300 hover:bg-purple-100"
                 }`}
             >
               {tab}
@@ -126,8 +126,12 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
                   </p>
                 )}
                 {blog.description && (
-                  <p className="text-sm sm:text-base text-gray-600">{blog.description}</p>
+                  <div
+                    className="prose prose-purple text-sm sm:text-base text-gray-600 max-w-none"
+                    dangerouslySetInnerHTML={{ __html: blog.description }}
+                  />
                 )}
+
                 <Link
                   href={`/blogs/${blog._id}`}
                   className="text-purple-700 font-medium hover:underline"

@@ -1,33 +1,34 @@
 import { Blog } from "@/models/Blog";
 import { Types } from "mongoose";
+import { saveBlogImage } from "@/lib/uploadBlogImage"; // ✅ like saveStoreImage
 
 /**
- * Helper to sanitize and format incoming blog data.
+ * Sanitize and format incoming blog data before saving/updating.
  */
 const sanitizeBlogData = (data: {
   title: string;
   date: string;
   description?: string;
-  image?: string;
+  image: string;
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
   focusKeywords?: string;
   slug?: string;
-  writer?: string; // new
-  category?: string; // new
+  writer?: string;
+  category?: string;
 }) => ({
   title: data.title.trim(),
   date: new Date(data.date),
   description: data.description?.trim(),
-  image: data.image?.trim(),
+  image: data.image.trim(),
   metaTitle: data.metaTitle?.trim(),
   metaDescription: data.metaDescription?.trim(),
   metaKeywords: data.metaKeywords?.trim(),
   focusKeywords: data.focusKeywords?.trim(),
   slug: data.slug?.trim(),
-  writer: data.writer?.trim(), // new
-  category: data.category?.trim(), // new
+  writer: data.writer?.trim(),
+  category: data.category?.trim(),
 });
 
 /**
@@ -44,11 +45,15 @@ const serializeBlog = (blog: any) => ({
   metaKeywords: blog.metaKeywords,
   focusKeywords: blog.focusKeywords,
   slug: blog.slug,
-  writer: blog.writer, // new
-  category: blog.category, // new
+  writer: blog.writer,
+  category: blog.category,
   createdAt: blog.createdAt?.toISOString?.(),
   updatedAt: blog.updatedAt?.toISOString?.(),
 });
+
+/* ------------------------------------------------------------------ */
+/*                               CRUD                                 */
+/* ------------------------------------------------------------------ */
 
 /**
  * Create a new blog.
@@ -57,16 +62,23 @@ export const createBlog = async (data: {
   title: string;
   date: string;
   description?: string;
-  image?: string;
+  imageFile: File; // ✅ new
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
   focusKeywords?: string;
   slug?: string;
-  writer?: string; // new
-  category?: string; // new
+  writer?: string;
+  category?: string;
 }) => {
-  const blogData = sanitizeBlogData(data);
+  // ✅ Save image
+  const imagePath = await saveBlogImage(data.imageFile);
+
+  const blogData = sanitizeBlogData({
+    ...data,
+    image: imagePath,
+  });
+
   const blog = await new Blog(blogData).save();
   return serializeBlog(blog);
 };
@@ -88,7 +100,7 @@ export const getBlogById = async (id: string) => {
 };
 
 /**
- * Update a blog by ID.
+ * Update a blog by ID (optionally with new image).
  */
 export const updateBlog = async (
   id: string,
@@ -96,22 +108,34 @@ export const updateBlog = async (
     title: string;
     date: string;
     description?: string;
+    imageFile?: File; // ✅ optional
     image?: string;
     metaTitle?: string;
     metaDescription?: string;
     metaKeywords?: string;
     focusKeywords?: string;
     slug?: string;
-    writer?: string; // new
-    category?: string; // new
+    writer?: string;
+    category?: string;
   }
 ) => {
-  const updatedData = sanitizeBlogData(data);
+  let imagePath = data.image ?? "";
+
+  if (data.imageFile) {
+    imagePath = await saveBlogImage(data.imageFile);
+  }
+
+  const updatedData = sanitizeBlogData({
+    ...data,
+    image: imagePath,
+  });
+
   const blog = await Blog.findByIdAndUpdate(
     id,
     { $set: updatedData },
     { new: true, runValidators: true }
   ).lean();
+
   return blog ? serializeBlog(blog) : null;
 };
 

@@ -9,15 +9,16 @@ import {
   getEventById,
   updateEvent,
 } from "@/functions/eventFunctions";
+import { saveEventImage } from "@/lib/uploadEventImage";
 
-// ✅ Event Validation Schema
+/* ---------------------------- 📝 Validation Schema ---------------------------- */
 const eventSchema = z.object({
   title: z.string().min(3).max(100, "Title too long"),
   date: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid date format",
   }),
   description: z.string().optional(),
-  image: z.string().optional(), // Store image path or URL
+  image: z.string().min(1, "Image is required"), // only path is saved in DB
   metaTitle: z.string().max(60).optional(),
   metaDescription: z.string().max(160).optional(),
   metaKeywords: z.string().optional(),
@@ -25,51 +26,87 @@ const eventSchema = z.object({
   slug: z.string().optional(),
 });
 
-type EventFormData = z.infer<typeof eventSchema>;
+type EventFormData = z.infer<typeof eventSchema> & {
+  imageFile?: File; // ✅ allow raw File separately
+};
 
+/* ---------------------------- 📦 Form State ---------------------------- */
 export type EventFormState = {
   error?: Record<string, string[]> | { message?: string[] };
   data?: any;
 };
 
-// ✅ Helper: Parse FormData to EventFormData
-function parseEventFormData(formData: FormData): EventFormData {
+/* ---------------------------- 🛠️ Helper Parser ---------------------------- */
+async function parseEventFormData(
+  formData: FormData,
+  requireImage: boolean = true
+): Promise<EventFormData> {
+  const uploadedFile = formData.get("imageFile") as File | null;
+
+  let imagePath: string | undefined = undefined;
+
+  if (uploadedFile && uploadedFile.size > 0) {
+    // save new file
+    imagePath = await saveEventImage(uploadedFile);
+  } else {
+    const existingImage = formData.get("image")?.toString().trim();
+    if (existingImage) {
+      imagePath = existingImage;
+    } else if (requireImage) {
+      throw new Error("Image is required");
+    }
+  }
+
   return {
     title: String(formData.get("title") || ""),
     date: String(formData.get("date") || ""),
-    description: String(formData.get("description") || ""),
-    image: String(formData.get("image") || ""),
-    metaTitle: String(formData.get("metaTitle") || ""),
-    metaDescription: String(formData.get("metaDescription") || ""),
-    metaKeywords: String(formData.get("metaKeywords") || ""),
-    focusKeywords: String(formData.get("focusKeywords") || ""),
-    slug: String(formData.get("slug") || ""),
+    description: formData.get("description")
+      ? String(formData.get("description"))
+      : undefined,
+    image: imagePath || "",
+    metaTitle: formData.get("metaTitle")
+      ? String(formData.get("metaTitle"))
+      : undefined,
+    metaDescription: formData.get("metaDescription")
+      ? String(formData.get("metaDescription"))
+      : undefined,
+    metaKeywords: formData.get("metaKeywords")
+      ? String(formData.get("metaKeywords"))
+      : undefined,
+    focusKeywords: formData.get("focusKeywords")
+      ? String(formData.get("focusKeywords"))
+      : undefined,
+    slug: formData.get("slug") ? String(formData.get("slug")) : undefined,
+    imageFile: uploadedFile || undefined, // ✅ only used in upload step
   };
 }
 
-// ✅ CREATE EVENT
+/* ---------------------------- 🔹 CREATE ---------------------------- */
 export async function createEventAction(
   prevState: EventFormState,
   formData: FormData
 ): Promise<EventFormState> {
   await connectToDatabase();
 
-  const parsed = parseEventFormData(formData);
-  const result = eventSchema.safeParse(parsed);
-
-  if (!result.success) {
-    return { error: result.error.flatten().fieldErrors };
-  }
-
   try {
-    const event = await createEvent(result.data);
+    const parsed = await parseEventFormData(formData, true); // require image
+    const result = eventSchema.safeParse(parsed);
+
+    if (!result.success) return { error: result.error.flatten().fieldErrors };
+
+    // ✅ only pass DB fields
+    const event = await createEvent({
+      ...result.data,
+      image: parsed.image,
+    });
+
     return { data: event };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to create event"] } };
   }
 }
 
-// ✅ UPDATE EVENT
+/* ---------------------------- 🔹 UPDATE ---------------------------- */
 export async function updateEventAction(
   prevState: EventFormState,
   id: string,
@@ -77,51 +114,52 @@ export async function updateEventAction(
 ): Promise<EventFormState> {
   await connectToDatabase();
 
-  const parsed = parseEventFormData(formData);
-  const result = eventSchema.safeParse(parsed);
-
-  if (!result.success) {
-    return { error: result.error.flatten().fieldErrors };
-  }
-
   try {
-    const updated = await updateEvent(id, result.data);
+    const parsed = await parseEventFormData(formData, false); // image optional
+    const result = eventSchema.safeParse(parsed);
+
+    if (!result.success) return { error: result.error.flatten().fieldErrors };
+
+    // ✅ only pass DB fields
+    const updated = await updateEvent(id, {
+      ...result.data,
+      image: parsed.image,
+    });
+
+    if (!updated) return { error: { message: ["Event not found"] } };
     return { data: updated };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to update event"] } };
   }
 }
 
-// ✅ DELETE EVENT
+/* ---------------------------- 🔹 DELETE ---------------------------- */
 export async function deleteEventAction(id: string) {
   await connectToDatabase();
   try {
     const deleted = await deleteEvent(id);
+    if (!deleted) return { error: { message: ["Event not found"] } };
     return { data: deleted };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to delete event"] } };
   }
 }
 
-// ✅ FETCH ALL EVENTS
+/* ---------------------------- 🔹 FETCHES ---------------------------- */
 export async function fetchAllEventsAction() {
   await connectToDatabase();
   try {
-    const events = await getAllEvents();
-    return { data: events };
+    return { data: await getAllEvents() };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch events"] } };
   }
 }
 
-// ✅ FETCH SINGLE EVENT
 export async function fetchEventByIdAction(id: string) {
   await connectToDatabase();
   try {
     const event = await getEventById(id);
-    if (!event) {
-      return { error: { message: ["Event not found"] } };
-    }
+    if (!event) return { error: { message: ["Event not found"] } };
     return { data: event };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch event"] } };

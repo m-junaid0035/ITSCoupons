@@ -68,11 +68,13 @@ export default async function BlogViewPage({
         {blog.description && (
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Description</p>
-            <p className="whitespace-pre-wrap text-gray-700 dark:text-gray-300">
-              {blog.description}
-            </p>
+            <div
+              className="prose prose-purple dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: blog.description }}
+            />
           </div>
         )}
+
 
         {/* Image */}
         {blog.image && (

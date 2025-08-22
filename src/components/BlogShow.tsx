@@ -37,9 +37,13 @@ export default function BlogShow({ blog }: BlogShowProps) {
         </div>
       )}
 
-      <div className="prose prose-purple max-w-full sm:prose-lg md:prose-xl mx-auto">
-        <p>{blog.description || "No description available."}</p>
-      </div>
+      <div
+        className="prose prose-purple max-w-full sm:prose-lg md:prose-xl mx-auto"
+        dangerouslySetInnerHTML={{
+          __html: blog.description || "<p>No description available.</p>",
+        }}
+      />
+
     </section>
   );
 }

@@ -56,7 +56,7 @@ interface StorePageProps {
   initialActiveTab?: "all" | "promo" | "deal";
 }
 
-export default function StorePage({ store,couponId, initialActiveTab = "all" }: StorePageProps) {
+export default function StorePage({ store, couponId, initialActiveTab = "all" }: StorePageProps) {
   const [activeTab, setActiveTab] = useState<"all" | "promo" | "deal">(initialActiveTab);
   const [selectedCoupon, setSelectedCoupon] = useState<CouponData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -103,7 +103,7 @@ export default function StorePage({ store,couponId, initialActiveTab = "all" }: 
   }, [isModalOpen]);
 
   // Open modal automatically if URL has couponId
- useEffect(() => {
+  useEffect(() => {
     if (couponId) {
       const coupon = coupons.find(c => c._id === couponId);
       if (coupon) {
@@ -140,7 +140,11 @@ export default function StorePage({ store,couponId, initialActiveTab = "all" }: 
                 />
               </div>
             )}
-            <p className="text-sm text-gray-600">{store.description}</p>
+            <div
+              className="text-sm text-gray-600 prose max-w-none"
+              dangerouslySetInnerHTML={{ __html: store.description || "" }}
+            />
+
           </div>
 
           <div className="space-y-4">
@@ -170,11 +174,10 @@ export default function StorePage({ store,couponId, initialActiveTab = "all" }: 
             {(["all", "promo", "deal"] as const).map((tab) => (
               <button
                 key={tab}
-                className={`pb-2 ${
-                  activeTab === tab
+                className={`pb-2 ${activeTab === tab
                     ? "border-b-2 border-purple-700 text-purple-700"
                     : "hover:text-purple-600"
-                }`}
+                  }`}
                 onClick={() => setActiveTab(tab)}
               >
                 {tab === "all" && `All Coupons (${coupons.length})`}
@@ -209,13 +212,12 @@ export default function StorePage({ store,couponId, initialActiveTab = "all" }: 
                 </div>
                 <div className="flex flex-col items-end justify-between p-4 w-[180px]">
                   <button
-                    className={`text-sm px-4 py-2 rounded text-white ${
-                      coupon.couponType === "coupon"
+                    className={`text-sm px-4 py-2 rounded text-white ${coupon.couponType === "coupon"
                         ? "bg-green-600 hover:bg-green-700"
                         : coupon.couponType === "deal"
-                        ? "bg-purple-700 hover:bg-purple-800"
-                        : "bg-gray-400"
-                    }`}
+                          ? "bg-purple-700 hover:bg-purple-800"
+                          : "bg-gray-400"
+                      }`}
                     onClick={() => handleGetCouponClick(coupon)} // UPDATED
                   >
                     {coupon.couponType === "coupon" ? "GET CODE" : "GET DEAL"}

@@ -52,11 +52,13 @@ export default async function CategoryViewPage({
         {category.description && (
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Description</p>
-            <p className="text-base text-gray-700 dark:text-gray-300">
-              {category.description}
-            </p>
+            <div
+              className="prose prose-purple dark:prose-invert max-w-none text-base"
+              dangerouslySetInnerHTML={{ __html: category.description }}
+            />
           </div>
         )}
+
 
         {/* Popular / Trending */}
         <div className="flex items-center gap-2">

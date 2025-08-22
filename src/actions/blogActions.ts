@@ -9,8 +9,9 @@ import {
   getBlogById,
   updateBlog,
 } from "@/functions/blogFunctions";
+import { saveBlogImage } from "@/lib/uploadBlogImage";
 
-// ✅ Blog Validation Schema (added writer & category)
+/* ---------------------------- ✅ Blog Validation ---------------------------- */
 const blogSchema = z.object({
   title: z.string().trim().min(3).max(150),
   date: z.string().refine((val) => !isNaN(Date.parse(val)), {
@@ -23,8 +24,8 @@ const blogSchema = z.object({
   metaKeywords: z.string().optional(),
   focusKeywords: z.string().optional(),
   slug: z.string().min(3).max(150).optional(),
-  writer: z.string().trim().min(2).max(100).optional(), // new
-  category: z.string().trim().min(2).max(100).optional(), // new
+  writer: z.string().trim().min(2).max(100).optional(),
+  category: z.string().trim().min(2).max(100).optional(),
 });
 
 type BlogFormData = z.infer<typeof blogSchema>;
@@ -34,46 +35,61 @@ export type BlogFormState = {
   data?: any;
 };
 
-// ✅ Helper: Parse FormData to BlogFormData (added writer & category)
-function parseBlogFormData(formData: FormData): BlogFormData {
+/* ---------------------------- 🛠️ Helper Parser ---------------------------- */
+async function parseBlogFormData(
+  formData: FormData,
+  requireImage = false
+): Promise<BlogFormData & { imageFile?: File }> {
+  const uploadedFile = formData.get("imageFile") as File | null;
+
+  let imagePath = String(formData.get("image") || "");
+  if (uploadedFile && uploadedFile.size > 0) {
+    imagePath = await saveBlogImage(uploadedFile);
+  } else if (requireImage && !imagePath) {
+    throw new Error("Image file is required");
+  }
+
   return {
     title: String(formData.get("title") || ""),
     date: String(formData.get("date") || ""),
     description: String(formData.get("description") || ""),
-    image: String(formData.get("image") || ""),
+    image: imagePath,
     metaTitle: String(formData.get("metaTitle") || ""),
     metaDescription: String(formData.get("metaDescription") || ""),
     metaKeywords: String(formData.get("metaKeywords") || ""),
     focusKeywords: String(formData.get("focusKeywords") || ""),
     slug: String(formData.get("slug") || ""),
-    writer: String(formData.get("writer") || ""), // new
-    category: String(formData.get("category") || ""), // new
+    writer: String(formData.get("writer") || ""),
+    category: String(formData.get("category") || ""),
+    imageFile: uploadedFile || undefined,
   };
 }
 
-// ✅ CREATE BLOG
+/* ---------------------------- ✅ CREATE ---------------------------- */
 export async function createBlogAction(
   prevState: BlogFormState,
   formData: FormData
 ): Promise<BlogFormState> {
   await connectToDatabase();
 
-  const parsed = parseBlogFormData(formData);
-  const result = blogSchema.safeParse(parsed);
-
-  if (!result.success) {
-    return { error: result.error.flatten().fieldErrors };
-  }
-
   try {
-    const blog = await createBlog(result.data);
+    const parsed = await parseBlogFormData(formData, true); // ✅ require image
+    const result = blogSchema.safeParse(parsed);
+
+    if (!result.success) return { error: result.error.flatten().fieldErrors };
+
+    const blog = await createBlog({
+      ...result.data,
+      imageFile: parsed.imageFile!, // ✅ required
+    });
+
     return { data: blog };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to create blog"] } };
   }
 }
 
-// ✅ UPDATE BLOG
+/* ---------------------------- ✅ UPDATE ---------------------------- */
 export async function updateBlogAction(
   prevState: BlogFormState,
   id: string,
@@ -81,22 +97,24 @@ export async function updateBlogAction(
 ): Promise<BlogFormState> {
   await connectToDatabase();
 
-  const parsed = parseBlogFormData(formData);
-  const result = blogSchema.safeParse(parsed);
-
-  if (!result.success) {
-    return { error: result.error.flatten().fieldErrors };
-  }
-
   try {
-    const updated = await updateBlog(id, result.data);
+    const parsed = await parseBlogFormData(formData); // ✅ image optional
+    const result = blogSchema.safeParse(parsed);
+
+    if (!result.success) return { error: result.error.flatten().fieldErrors };
+
+    const updated = await updateBlog(id, {
+      ...result.data,
+      imageFile: parsed.imageFile,
+    });
+
     return { data: updated };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to update blog"] } };
   }
 }
 
-// ✅ DELETE BLOG
+/* ---------------------------- ✅ DELETE ---------------------------- */
 export async function deleteBlogAction(id: string) {
   await connectToDatabase();
   try {
@@ -107,7 +125,7 @@ export async function deleteBlogAction(id: string) {
   }
 }
 
-// ✅ FETCH ALL BLOGS
+/* ---------------------------- ✅ FETCH ALL ---------------------------- */
 export async function fetchAllBlogsAction() {
   await connectToDatabase();
   try {
@@ -118,7 +136,7 @@ export async function fetchAllBlogsAction() {
   }
 }
 
-// ✅ FETCH SINGLE BLOG
+/* ---------------------------- ✅ FETCH BY ID ---------------------------- */
 export async function fetchBlogByIdAction(id: string) {
   await connectToDatabase();
   try {

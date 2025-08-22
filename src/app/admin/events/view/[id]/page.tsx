@@ -38,9 +38,13 @@ export default async function EventViewPage({
         {event.description && (
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Description</p>
-            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-line">{event.description}</p>
+            <div
+              className="text-gray-700 dark:text-gray-300"
+              dangerouslySetInnerHTML={{ __html: event.description }}
+            />
           </div>
         )}
+
 
         {/* Image */}
         {event.image && (

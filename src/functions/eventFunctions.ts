@@ -1,30 +1,42 @@
 import { Types } from "mongoose";
 import { Event } from "@/models/Event"; // adjust path based on your project
+import { saveEventImage } from "@/lib/uploadEventImage"; // 👈 helper for saving event images
 
 /**
  * Helper to sanitize and format incoming event data.
  */
-const sanitizeEventData = (data: {
+const sanitizeEventData = async (data: {
   title: string;
   date: string;
   description?: string;
-  image?: string;
+  image?: File | string; // 👈 allow File or string
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
   focusKeywords?: string;
   slug?: string;
-}) => ({
-  title: data.title.trim(),
-  date: new Date(data.date),
-  description: data.description?.trim(),
-  image: data.image?.trim(),
-  metaTitle: data.metaTitle?.trim(),
-  metaDescription: data.metaDescription?.trim(),
-  metaKeywords: data.metaKeywords?.trim(),
-  focusKeywords: data.focusKeywords?.trim(),
-  slug: data.slug?.trim(),
-});
+}) => {
+  let imagePath: string | undefined = undefined;
+
+  if (data.image instanceof File) {
+    // 👈 Save locally if file
+    imagePath = await saveEventImage(data.image);
+  } else if (typeof data.image === "string") {
+    imagePath = data.image.trim();
+  }
+
+  return {
+    title: data.title.trim(),
+    date: new Date(data.date),
+    description: data.description?.trim(),
+    image: imagePath,
+    metaTitle: data.metaTitle?.trim(),
+    metaDescription: data.metaDescription?.trim(),
+    metaKeywords: data.metaKeywords?.trim(),
+    focusKeywords: data.focusKeywords?.trim(),
+    slug: data.slug?.trim(),
+  };
+};
 
 /**
  * Convert a Mongoose document to a plain object safe for Client Components.
@@ -51,14 +63,14 @@ export const createEvent = async (data: {
   title: string;
   date: string;
   description?: string;
-  image?: string;
+  image?: File | string; // 👈 supports both
   metaTitle?: string;
   metaDescription?: string;
   metaKeywords?: string;
   focusKeywords?: string;
   slug?: string;
 }): Promise<ReturnType<typeof serializeEvent>> => {
-  const eventData = sanitizeEventData(data);
+  const eventData = await sanitizeEventData(data);
   const event = await new Event(eventData).save();
   return serializeEvent(event);
 };
@@ -92,7 +104,7 @@ export const updateEvent = async (
     title: string;
     date: string;
     description?: string;
-    image?: string;
+    image?: File | string; // 👈 can upload new file or keep old string
     metaTitle?: string;
     metaDescription?: string;
     metaKeywords?: string;
@@ -100,7 +112,7 @@ export const updateEvent = async (
     slug?: string;
   }
 ): Promise<ReturnType<typeof serializeEvent> | null> => {
-  const updatedData = sanitizeEventData(data);
+  const updatedData = await sanitizeEventData(data);
   const event = await Event.findByIdAndUpdate(
     id,
     { $set: updatedData },

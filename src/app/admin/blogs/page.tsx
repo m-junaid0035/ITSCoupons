@@ -76,7 +76,17 @@ function BlogsTable({
                 <TableCell>{blog.writer || "-"}</TableCell>
                 <TableCell>{blog.category || "-"}</TableCell>
                 <TableCell>{new Date(blog.date).toLocaleDateString()}</TableCell>
-                <TableCell className="line-clamp-2 max-w-xs">{blog.description || "-"}</TableCell>
+                <TableCell className="line-clamp-2 max-w-xs">
+                  {blog.description ? (
+                    <div
+                      className="line-clamp-2 max-w-xs"
+                      dangerouslySetInnerHTML={{ __html: blog.description }}
+                    />
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
+
                 <TableCell>
                   {blog.image ? (
                     <img src={blog.image} alt="Blog" className="h-10 w-10 object-cover rounded" />

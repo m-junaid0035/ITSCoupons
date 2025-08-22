@@ -108,9 +108,17 @@ function EventsTable({
                 <TableCell>
                   {new Date(event.date).toLocaleDateString()}
                 </TableCell>
-                <TableCell className="max-w-[200px] truncate">
-                  {event.description || "-"}
+                <TableCell className="max-w-[200px]">
+                  {event.description ? (
+                    <div
+                      className="truncate max-w-[200px] overflow-hidden"
+                      dangerouslySetInnerHTML={{ __html: event.description }}
+                    />
+                  ) : (
+                    "-"
+                  )}
                 </TableCell>
+
                 <TableCell>
                   {event.image ? (
                     <Image
@@ -208,27 +216,27 @@ export default function EventsPage() {
     }
     setLoading(false);
   };
-const handleDelete = async (id: string) => {
-  startTransition(() => {
-  deleteOptimistic(id);
-  });
+  const handleDelete = async (id: string) => {
+    startTransition(() => {
+      deleteOptimistic(id);
+    });
 
-  const result = await deleteEventAction(id);
-  if (result?.error) {
-    toast({
-      title: "Error",
-      description: result.error.message || "Failed to delete event",
-      variant: "destructive",
-    });
-    await loadEvents(); // rollback optimistic update
-  } else {
-    setEvents(prev => prev.filter(event => event._id !== id)); // sync state
-    toast({
-      title: "Deleted",
-      description: "Event deleted successfully.",
-    });
-  }
-};
+    const result = await deleteEventAction(id);
+    if (result?.error) {
+      toast({
+        title: "Error",
+        description: result.error.message || "Failed to delete event",
+        variant: "destructive",
+      });
+      await loadEvents(); // rollback optimistic update
+    } else {
+      setEvents(prev => prev.filter(event => event._id !== id)); // sync state
+      toast({
+        title: "Deleted",
+        description: "Event deleted successfully.",
+      });
+    }
+  };
 
 
   useEffect(() => {

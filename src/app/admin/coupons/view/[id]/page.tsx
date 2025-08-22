@@ -69,9 +69,13 @@ export default async function CouponViewPage({
         {coupon.description && (
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Description</p>
-            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{coupon.description}</p>
+            <div
+              className="prose prose-purple dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: coupon.description }}
+            />
           </div>
         )}
+
 
         {/* Coupon URL */}
         {coupon.couponUrl && (
