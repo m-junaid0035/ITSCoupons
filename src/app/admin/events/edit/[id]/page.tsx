@@ -1,41 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useActionState } from "react";
 
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import LoadingSkeleton from "./loading"
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-
+import LoadingSkeleton from "./loading";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 import { fetchEventByIdAction, updateEventAction } from "@/actions/eventActions";
-
 import { toast } from "@/hooks/use-toast";
+import DescriptionEditor from "@/components/DescriptionEditor";
+import { Textarea } from "@/components/ui/textarea";
 
 interface FormState {
   error?: Record<string, string[]> | { message?: string[] };
   data?: any;
 }
 
-const initialState: FormState = {
-  error: {},
-};
+const initialState: FormState = { error: {} };
 
 export default function EditEventForm() {
   const params = useParams();
@@ -51,6 +42,8 @@ export default function EditEventForm() {
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [eventDate, setEventDate] = useState<Date | undefined>(undefined);
+  const [descriptionHtml, setDescriptionHtml] = useState("");
+  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -58,26 +51,22 @@ export default function EditEventForm() {
       const res = await fetchEventByIdAction(eventId);
       if (res?.data) {
         setEvent(res.data);
-        if (res.data.date) {
-          setEventDate(new Date(res.data.date));
-        }
+        setDescriptionHtml(res.data.description || "");
+        if (res.data.date) setEventDate(new Date(res.data.date));
       }
       setLoading(false);
     }
     loadEvent();
   }, [eventId]);
 
-  // Show success dialog or toast errors on formState change
   useEffect(() => {
     if (formState.data && !formState.error) {
       setSuccessDialogOpen(true);
     }
-
     if (formState.error && "message" in formState.error) {
       toast({
         title: "Error",
-        description:
-          (formState.error as any).message?.[0] || "Something went wrong",
+        description: (formState.error as any).message?.[0] || "Something went wrong",
         variant: "destructive",
       });
     }
@@ -90,8 +79,16 @@ export default function EditEventForm() {
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
 
-  if (loading) return <LoadingSkeleton/>;
+  if (loading) return <LoadingSkeleton />;
   if (!event) return <p className="text-red-500">Event not found</p>;
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    if (eventDate) formData.set("date", eventDate.toISOString());
+    formData.set("description", descriptionHtml);
+    startTransition(() => dispatch(formData));
+  };
 
   return (
     <>
@@ -104,15 +101,7 @@ export default function EditEventForm() {
         </CardHeader>
 
         <CardContent>
-          <form
-            action={(formData) => {
-              if (eventDate) {
-                formData.set("date", eventDate.toISOString());
-              }
-              return dispatch(formData);
-            }}
-            className="space-y-6"
-          >
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
@@ -123,9 +112,7 @@ export default function EditEventForm() {
                 required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("title") && (
-                <p className="text-sm text-red-500">{errorFor("title")}</p>
-              )}
+              {errorFor("title") && <p className="text-sm text-red-500">{errorFor("title")}</p>}
             </div>
 
             {/* Slug */}
@@ -137,9 +124,7 @@ export default function EditEventForm() {
                 defaultValue={event.slug}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("slug") && (
-                <p className="text-sm text-red-500">{errorFor("slug")}</p>
-              )}
+              {errorFor("slug") && <p className="text-sm text-red-500">{errorFor("slug")}</p>}
             </div>
 
             {/* Date */}
@@ -159,33 +144,19 @@ export default function EditEventForm() {
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={eventDate}
-                    onSelect={setEventDate}
-                    initialFocus
-                  />
+                  <Calendar mode="single" selected={eventDate} onSelect={setEventDate} initialFocus />
                 </PopoverContent>
               </Popover>
-              {errorFor("date") && (
-                <p className="text-sm text-red-500">{errorFor("date")}</p>
-              )}
+              {errorFor("date") && <p className="text-sm text-red-500">{errorFor("date")}</p>}
             </div>
 
-            {/* Description */}
+            {/* Description Modal */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                rows={6}
-                defaultValue={event.description}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="Write event description here..."
-              />
-              {errorFor("description") && (
-                <p className="text-sm text-red-500">{errorFor("description")}</p>
-              )}
+              <Label>Description</Label>
+              <Button type="button" onClick={() => setDescriptionModalOpen(true)}>
+                {descriptionHtml ? "Edit Description" : "Add Description"}
+              </Button>
+              {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
             </div>
 
             {/* Image URL */}
@@ -199,77 +170,33 @@ export default function EditEventForm() {
                 placeholder="https://example.com/image.jpg"
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("image") && (
-                <p className="text-sm text-red-500">{errorFor("image")}</p>
-              )}
+              {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
             </div>
 
-            {/* Meta Title */}
+            {/* SEO Fields */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
-              <Input
-                id="metaTitle"
-                name="metaTitle"
-                defaultValue={event.metaTitle}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="SEO meta title"
-              />
-              {errorFor("metaTitle") && (
-                <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
-              )}
+              <Input id="metaTitle" name="metaTitle" defaultValue={event.metaTitle} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
 
-            {/* Meta Description */}
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
-              <Textarea
-                id="metaDescription"
-                name="metaDescription"
-                rows={3}
-                defaultValue={event.metaDescription}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="SEO meta description"
-              />
-              {errorFor("metaDescription") && (
-                <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
-              )}
+              <Textarea id="metaDescription" name="metaDescription" rows={3} defaultValue={event.metaDescription} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
 
-            {/* Meta Keywords */}
             <div className="space-y-2">
               <Label htmlFor="metaKeywords">Meta Keywords (comma separated)</Label>
-              <Input
-                id="metaKeywords"
-                name="metaKeywords"
-                defaultValue={event.metaKeywords}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="keyword1, keyword2, keyword3"
-              />
-              {errorFor("metaKeywords") && (
-                <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
-              )}
+              <Input id="metaKeywords" name="metaKeywords" defaultValue={event.metaKeywords} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
 
-            {/* Focus Keywords */}
             <div className="space-y-2">
               <Label htmlFor="focusKeywords">Focus Keywords (comma separated)</Label>
-              <Input
-                id="focusKeywords"
-                name="focusKeywords"
-                defaultValue={event.focusKeywords}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="focus1, focus2"
-              />
-              {errorFor("focusKeywords") && (
-                <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>
-              )}
+              <Input id="focusKeywords" name="focusKeywords" defaultValue={event.focusKeywords} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
 
             {/* General Error */}
             {"message" in (formState.error ?? {}) && (
-              <p className="text-sm text-red-500">
-                {(formState.error as any).message?.[0]}
-              </p>
+              <p className="text-sm text-red-500">{(formState.error as any).message?.[0]}</p>
             )}
 
             <CardFooter className="flex justify-end border-none">
@@ -282,7 +209,21 @@ export default function EditEventForm() {
         </CardContent>
       </Card>
 
-      {/* Success Confirmation Dialog */}
+      {/* Description Editor Modal */}
+      <Dialog open={descriptionModalOpen} onOpenChange={setDescriptionModalOpen}>
+        <DialogContent className="max-w-3xl w-full">
+          <DialogHeader>
+            <DialogTitle>Edit Description</DialogTitle>
+          </DialogHeader>
+          <DescriptionEditor initialContent={descriptionHtml} onChange={setDescriptionHtml} />
+          <DialogFooter className="space-x-2">
+            <Button variant="outline" onClick={() => setDescriptionModalOpen(false)}>Cancel</Button>
+            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -290,12 +231,7 @@ export default function EditEventForm() {
           </DialogHeader>
           <p>Event updated successfully!</p>
           <DialogFooter>
-            <Button
-              onClick={() => {
-                setSuccessDialogOpen(false);
-                router.push("/admin/events");
-              }}
-            >
+            <Button onClick={() => { setSuccessDialogOpen(false); router.push("/admin/events"); }}>
               OK
             </Button>
           </DialogFooter>

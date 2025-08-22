@@ -109,7 +109,7 @@ export default function EditRoleForm() {
 
   return (
     <>
-      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
+      <Card className="max-w-xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex items-center justify-between border-none">
           <CardTitle>Edit Role</CardTitle>
           <Button variant="secondary" onClick={() => router.push("/admin/roles")}>

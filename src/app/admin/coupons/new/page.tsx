@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, startTransition } from "react";
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -26,7 +25,6 @@ import {
 import { createCouponAction } from "@/actions/couponActions";
 import { fetchAllStoresAction } from "@/actions/storeActions";
 import { toast } from "@/hooks/use-toast";
-
 import {
   Dialog,
   DialogContent,
@@ -34,6 +32,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+
+import DescriptionEditor from "@/components/DescriptionEditor"; // Rich text editor component
 
 interface Store {
   _id: string;
@@ -59,17 +59,19 @@ export default function CouponForm() {
   );
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
-  // ---------- Added: Coupon Type State ----------
   const [couponType, setCouponType] = useState("coupon");
-
-  // ---------- Added: Controlled Coupon Code ----------
   const [couponCode, setCouponCode] = useState("");
+
+  // Description HTML state
+  const [descriptionHtml, setDescriptionHtml] = useState("");
+  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
 
   const [formState, dispatch, isPending] = useActionState(
     async (prevState: any, formData: FormData) => {
       if (expirationDate) {
         formData.set("expirationDate", expirationDate.toISOString());
       }
+      formData.set("description", descriptionHtml);
       const result = await createCouponAction(prevState, formData);
       return result;
     },
@@ -106,6 +108,16 @@ export default function CouponForm() {
     }
   }, [formState]);
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    if (expirationDate)
+      formData.set("expirationDate", expirationDate.toISOString());
+    formData.set("description", descriptionHtml);
+
+    startTransition(() => dispatch(formData));
+  };
+
   return (
     <>
       <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
@@ -120,7 +132,7 @@ export default function CouponForm() {
         </CardHeader>
 
         <CardContent>
-          <form action={(formData) => dispatch(formData)} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
@@ -136,16 +148,21 @@ export default function CouponForm() {
               )}
             </div>
 
-            {/* Description */}
+            {/* Description with Rich Editor */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                rows={3}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="Enter coupon description"
-              />
+              <Label>Description</Label>
+              <Button
+                type="button"
+                onClick={() => setDescriptionModalOpen(true)}
+              >
+                {descriptionHtml ? "Edit Description" : "Add Description"}
+              </Button>
+              {descriptionHtml && (
+                <div
+                  className="mt-2 p-2 border rounded bg-gray-50 dark:bg-gray-700 line-clamp-3"
+                  dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+                />
+              )}
               {errorFor("description") && (
                 <p className="text-sm text-red-500">{errorFor("description")}</p>
               )}
@@ -157,33 +174,13 @@ export default function CouponForm() {
               <select
                 id="couponType"
                 name="couponType"
-                value={couponType} // bind state
+                value={couponType}
                 onChange={(e) => setCouponType(e.target.value)}
                 className="w-full rounded px-3 py-2 shadow-sm border-none bg-gray-50 dark:bg-gray-700"
               >
                 <option value="coupon">Coupon</option>
                 <option value="deal">Deal</option>
               </select>
-              {errorFor("couponType") && (
-                <p className="text-sm text-red-500">{errorFor("couponType")}</p>
-              )}
-            </div>
-
-            {/* Status */}
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
-                name="status"
-                defaultValue="active"
-                className="w-full rounded px-3 py-2 shadow-sm border-none bg-gray-50 dark:bg-gray-700"
-              >
-                <option value="active">Active</option>
-                <option value="expired">Expired</option>
-              </select>
-              {errorFor("status") && (
-                <p className="text-sm text-red-500">{errorFor("status")}</p>
-              )}
             </div>
 
             {/* Coupon Code */}
@@ -196,13 +193,8 @@ export default function CouponForm() {
                 onChange={(e) => setCouponCode(e.target.value)}
                 disabled={couponType === "deal"}
               />
-
               {couponType === "deal" && (
                 <input type="hidden" name="couponCode" value="NO_CODE" />
-              )}
-
-              {errorFor("couponCode") && (
-                <p className="text-sm text-red-500">{errorFor("couponCode")}</p>
               )}
             </div>
 
@@ -231,9 +223,6 @@ export default function CouponForm() {
                   />
                 </PopoverContent>
               </Popover>
-              {errorFor("expirationDate") && (
-                <p className="text-sm text-red-500">{errorFor("expirationDate")}</p>
-              )}
             </div>
 
             {/* Coupon URL */}
@@ -246,9 +235,6 @@ export default function CouponForm() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="https://example.com/coupon"
               />
-              {errorFor("couponUrl") && (
-                <p className="text-sm text-red-500">{errorFor("couponUrl")}</p>
-              )}
             </div>
 
             {/* Discount */}
@@ -260,9 +246,6 @@ export default function CouponForm() {
                 placeholder="e.g. 20% off"
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("discount") && (
-                <p className="text-sm text-red-500">{errorFor("discount")}</p>
-              )}
             </div>
 
             {/* Uses */}
@@ -276,9 +259,6 @@ export default function CouponForm() {
                 placeholder="Number of uses"
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("uses") && (
-                <p className="text-sm text-red-500">{errorFor("uses")}</p>
-              )}
             </div>
 
             {/* Verified */}
@@ -309,9 +289,6 @@ export default function CouponForm() {
                   </option>
                 ))}
               </select>
-              {errorFor("storeId") && (
-                <p className="text-sm text-red-500">{errorFor("storeId")}</p>
-              )}
             </div>
 
             {/* Store Name */}
@@ -323,9 +300,6 @@ export default function CouponForm() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Optional store name"
               />
-              {errorFor("storeName") && (
-                <p className="text-sm text-red-500">{errorFor("storeName")}</p>
-              )}
             </div>
 
             {/* Top One */}
@@ -340,14 +314,6 @@ export default function CouponForm() {
               <Label htmlFor="isTopOne">Mark as Top One</Label>
             </div>
 
-            {/* General Error */}
-            {"message" in (formState.error ?? {}) && (
-              <p className="text-sm text-red-500">
-                {(formState.error as any).message?.[0]}
-              </p>
-            )}
-
-            {/* Footer */}
             <CardFooter className="flex justify-end border-none">
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -358,7 +324,32 @@ export default function CouponForm() {
         </CardContent>
       </Card>
 
-      {/* Success Confirmation Dialog */}
+      {/* Description Editor Modal */}
+      <Dialog
+        open={descriptionModalOpen}
+        onOpenChange={setDescriptionModalOpen}
+      >
+        <DialogContent className="max-w-3xl w-full">
+          <DialogHeader>
+            <DialogTitle>Edit Description</DialogTitle>
+          </DialogHeader>
+          <DescriptionEditor
+            initialContent={descriptionHtml}
+            onChange={setDescriptionHtml}
+          />
+          <DialogFooter className="space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => setDescriptionModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent>
           <DialogHeader>

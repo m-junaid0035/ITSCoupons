@@ -1,38 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useActionState } from "react"; // adjust import if needed
+import { useEffect, useState, startTransition } from "react";
+import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, X } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { createEventAction } from "@/actions/eventActions";
 import { toast } from "@/hooks/use-toast";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import DescriptionEditor from "@/components/DescriptionEditor";
 
 interface FieldErrors {
   [key: string]: string[];
@@ -43,17 +28,14 @@ interface FormState {
   data?: any;
 }
 
-const initialState: FormState = {
-  error: {},
-};
+const initialState: FormState = { error: {} };
 
 export default function EventCreatePage() {
   const router = useRouter();
-  const [formState, dispatch, isPending] = useActionState(
-    createEventAction,
-    initialState
-  );
+  const [formState, dispatch, isPending] = useActionState(createEventAction, initialState);
   const [eventDate, setEventDate] = useState<Date | undefined>(undefined);
+  const [descriptionHtml, setDescriptionHtml] = useState("");
+  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
   const errorFor = (field: string) => {
@@ -72,12 +54,23 @@ export default function EventCreatePage() {
     if (formState.error && "message" in formState.error) {
       toast({
         title: "Error",
-        description:
-          (formState.error as any).message?.[0] || "Something went wrong",
+        description: (formState.error as any).message?.[0] || "Something went wrong",
         variant: "destructive",
       });
     }
   }, [formState]);
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    // Attach date and description
+    if (eventDate) formData.set("date", eventDate.toISOString());
+    formData.set("description", descriptionHtml);
+
+    startTransition(() => dispatch(formData));
+  };
 
   return (
     <>
@@ -90,15 +83,8 @@ export default function EventCreatePage() {
         </CardHeader>
 
         <CardContent>
-          <form
-            action={(formData) => {
-              if (eventDate) {
-                formData.set("date", eventDate.toISOString());
-              }
-              return dispatch(formData);
-            }}
-            className="space-y-6"
-          >
+          <form onSubmit={handleSubmit} className="space-y-6">
+
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
@@ -109,9 +95,7 @@ export default function EventCreatePage() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Enter event title"
               />
-              {errorFor("title") && (
-                <p className="text-sm text-red-500">{errorFor("title")}</p>
-              )}
+              {errorFor("title") && <p className="text-sm text-red-500">{errorFor("title")}</p>}
             </div>
 
             {/* Slug */}
@@ -123,9 +107,7 @@ export default function EventCreatePage() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="example-event-slug"
               />
-              {errorFor("slug") && (
-                <p className="text-sm text-red-500">{errorFor("slug")}</p>
-              )}
+              {errorFor("slug") && <p className="text-sm text-red-500">{errorFor("slug")}</p>}
             </div>
 
             {/* Date */}
@@ -153,24 +135,22 @@ export default function EventCreatePage() {
                   />
                 </PopoverContent>
               </Popover>
-              {errorFor("date") && (
-                <p className="text-sm text-red-500">{errorFor("date")}</p>
-              )}
+              {errorFor("date") && <p className="text-sm text-red-500">{errorFor("date")}</p>}
             </div>
 
-            {/* Description */}
+            {/* Description with Modal */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                rows={6}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="Write event description here..."
-              />
-              {errorFor("description") && (
-                <p className="text-sm text-red-500">{errorFor("description")}</p>
+              <Label>Description</Label>
+              <Button type="button" onClick={() => setDescriptionModalOpen(true)}>
+                {descriptionHtml ? "Edit Description" : "Add Description"}
+              </Button>
+              {descriptionHtml && (
+                <div
+                  className="mt-2 p-2 border rounded bg-gray-50 dark:bg-gray-700 line-clamp-3"
+                  dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+                />
               )}
+              {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
             </div>
 
             {/* Image URL */}
@@ -183,12 +163,10 @@ export default function EventCreatePage() {
                 placeholder="https://example.com/image.jpg"
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("image") && (
-                <p className="text-sm text-red-500">{errorFor("image")}</p>
-              )}
+              {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
             </div>
 
-            {/* Meta Title */}
+            {/* SEO Fields */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
               <Input
@@ -197,12 +175,8 @@ export default function EventCreatePage() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="SEO meta title"
               />
-              {errorFor("metaTitle") && (
-                <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
-              )}
             </div>
 
-            {/* Meta Description */}
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
               <Textarea
@@ -212,12 +186,8 @@ export default function EventCreatePage() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="SEO meta description"
               />
-              {errorFor("metaDescription") && (
-                <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
-              )}
             </div>
 
-            {/* Meta Keywords */}
             <div className="space-y-2">
               <Label htmlFor="metaKeywords">Meta Keywords (comma separated)</Label>
               <Input
@@ -226,12 +196,8 @@ export default function EventCreatePage() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="keyword1, keyword2, keyword3"
               />
-              {errorFor("metaKeywords") && (
-                <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
-              )}
             </div>
 
-            {/* Focus Keywords */}
             <div className="space-y-2">
               <Label htmlFor="focusKeywords">Focus Keywords (comma separated)</Label>
               <Input
@@ -240,19 +206,14 @@ export default function EventCreatePage() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="focus1, focus2"
               />
-              {errorFor("focusKeywords") && (
-                <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>
-              )}
             </div>
 
             {/* General Error */}
             {"message" in (formState.error ?? {}) && (
-              <p className="text-sm text-red-500">
-                {(formState.error as any).message?.[0]}
-              </p>
+              <p className="text-sm text-red-500">{(formState.error as any).message?.[0]}</p>
             )}
 
-            {/* Footer */}
+            {/* Submit */}
             <CardFooter className="flex justify-end border-none">
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -263,7 +224,21 @@ export default function EventCreatePage() {
         </CardContent>
       </Card>
 
-      {/* Success Confirmation Dialog */}
+      {/* Description Modal */}
+      <Dialog open={descriptionModalOpen} onOpenChange={setDescriptionModalOpen}>
+        <DialogContent className="max-w-3xl w-full">
+          <DialogHeader>
+            <DialogTitle>Edit Description</DialogTitle>
+          </DialogHeader>
+          <DescriptionEditor initialContent={descriptionHtml} onChange={setDescriptionHtml} />
+          <DialogFooter className="space-x-2">
+            <Button variant="outline" onClick={() => setDescriptionModalOpen(false)}>Cancel</Button>
+            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -271,12 +246,7 @@ export default function EventCreatePage() {
           </DialogHeader>
           <p>Event created successfully!</p>
           <DialogFooter>
-            <Button
-              onClick={() => {
-                setSuccessDialogOpen(false);
-                router.push("/admin/events");
-              }}
-            >
+            <Button onClick={() => { setSuccessDialogOpen(false); router.push("/admin/events"); }}>
               OK
             </Button>
           </DialogFooter>

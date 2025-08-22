@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useActionState } from "react";
 import LoadingSkeleton from "./loading";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
@@ -18,6 +17,8 @@ import { fetchBlogByIdAction, updateBlogAction } from "@/actions/blogActions";
 import { fetchCategoryNamesAction } from "@/actions/categoryActions";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import DescriptionEditor from "@/components/DescriptionEditor";
+import { Textarea } from "@/components/ui/textarea";
 
 interface FieldErrors {
   [key: string]: string[];
@@ -48,7 +49,10 @@ export default function EditBlogForm() {
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [writer, setWriter] = useState("");
+  const [descriptionHtml, setDescriptionHtml] = useState("");
+  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
 
+  // Load blog data
   useEffect(() => {
     async function loadData() {
       const res = await fetchBlogByIdAction(blogId);
@@ -56,6 +60,7 @@ export default function EditBlogForm() {
         setBlog(res.data);
         setWriter(res.data.writer || "");
         setSelectedCategory(res.data.category || "");
+        setDescriptionHtml(res.data.description || "");
         if (res.data.date) setDate(new Date(res.data.date));
       }
       setLoading(false);
@@ -70,6 +75,7 @@ export default function EditBlogForm() {
     });
   }, []);
 
+  // Handle success/error
   useEffect(() => {
     if (formState.data && !formState.error) {
       setSuccessDialogOpen(true);
@@ -78,8 +84,7 @@ export default function EditBlogForm() {
     if (formState.error && "message" in formState.error) {
       toast({
         title: "Error",
-        description:
-          (formState.error as any).message?.[0] || "Something went wrong",
+        description: (formState.error as any).message?.[0] || "Something went wrong",
         variant: "destructive",
       });
     }
@@ -95,6 +100,16 @@ export default function EditBlogForm() {
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    if (date) formData.set("date", date.toISOString());
+    formData.set("category", selectedCategory);
+    formData.set("writer", writer);
+    formData.set("description", descriptionHtml);
+    startTransition(() => dispatch(formData));
+  };
+
   return (
     <>
       <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
@@ -106,15 +121,7 @@ export default function EditBlogForm() {
         </CardHeader>
 
         <CardContent>
-          <form
-            action={(formData) => {
-              if (date) formData.set("date", date.toISOString());
-              formData.set("category", selectedCategory);
-              formData.set("writer", writer);
-              return dispatch(formData);
-            }}
-            className="space-y-6 max-w-2xl mx-auto"
-          >
+          <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
@@ -155,9 +162,7 @@ export default function EditBlogForm() {
               >
                 <option value="">Select a category</option>
                 {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
               {errorFor("category") && <p className="text-sm text-red-500">{errorFor("category")}</p>}
@@ -182,10 +187,7 @@ export default function EditBlogForm() {
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
-                    )}
+                    className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {date ? format(date, "PPP") : "Pick a date"}
@@ -198,16 +200,12 @@ export default function EditBlogForm() {
               {errorFor("date") && <p className="text-sm text-red-500">{errorFor("date")}</p>}
             </div>
 
-            {/* Description */}
+            {/* Description with modal */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                rows={6}
-                defaultValue={blog.description}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
+              <Label>Description</Label>
+              <Button type="button" onClick={() => setDescriptionModalOpen(true)}>
+                {descriptionHtml ? "Edit Description" : "Add Description"}
+              </Button>
               {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
             </div>
 
@@ -224,53 +222,22 @@ export default function EditBlogForm() {
               {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
             </div>
 
-            {/* Meta Title */}
+            {/* SEO Fields (Meta, Keywords) */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
-              <Input
-                id="metaTitle"
-                name="metaTitle"
-                defaultValue={blog.metaTitle}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-              {errorFor("metaTitle") && <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>}
+              <Input id="metaTitle" name="metaTitle" defaultValue={blog.metaTitle} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
-
-            {/* Meta Description */}
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
-              <Textarea
-                id="metaDescription"
-                name="metaDescription"
-                rows={3}
-                defaultValue={blog.metaDescription}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-              {errorFor("metaDescription") && <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>}
+              <Textarea id="metaDescription" name="metaDescription" rows={3} defaultValue={blog.metaDescription} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
-
-            {/* Meta Keywords */}
             <div className="space-y-2">
               <Label htmlFor="metaKeywords">Meta Keywords (comma separated)</Label>
-              <Input
-                id="metaKeywords"
-                name="metaKeywords"
-                defaultValue={blog.metaKeywords?.join(", ") || ""}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-              {errorFor("metaKeywords") && <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>}
+              <Input id="metaKeywords" name="metaKeywords" defaultValue={blog.metaKeywords?.join(", ") || ""} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
-
-            {/* Focus Keywords */}
             <div className="space-y-2">
               <Label htmlFor="focusKeywords">Focus Keywords (comma separated)</Label>
-              <Input
-                id="focusKeywords"
-                name="focusKeywords"
-                defaultValue={blog.focusKeywords?.join(", ") || ""}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-              {errorFor("focusKeywords") && <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>}
+              <Input id="focusKeywords" name="focusKeywords" defaultValue={blog.focusKeywords?.join(", ") || ""} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
 
             {/* General Error */}
@@ -288,6 +255,20 @@ export default function EditBlogForm() {
         </CardContent>
       </Card>
 
+      {/* Description Editor Modal */}
+      <Dialog open={descriptionModalOpen} onOpenChange={setDescriptionModalOpen}>
+        <DialogContent className="max-w-3xl w-full">
+          <DialogHeader>
+            <DialogTitle>Edit Description</DialogTitle>
+          </DialogHeader>
+          <DescriptionEditor initialContent={descriptionHtml} onChange={setDescriptionHtml} />
+          <DialogFooter className="space-x-2">
+            <Button variant="outline" onClick={() => setDescriptionModalOpen(false)}>Cancel</Button>
+            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent>
@@ -296,14 +277,7 @@ export default function EditBlogForm() {
           </DialogHeader>
           <p>Blog updated successfully!</p>
           <DialogFooter>
-            <Button
-              onClick={() => {
-                setSuccessDialogOpen(false);
-                router.push("/admin/blogs");
-              }}
-            >
-              OK
-            </Button>
+            <Button onClick={() => { setSuccessDialogOpen(false); router.push("/admin/blogs"); }}>OK</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

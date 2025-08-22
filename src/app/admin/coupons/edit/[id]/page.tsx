@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, startTransition } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useActionState } from "react";
 
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -35,6 +34,7 @@ import { toast } from "@/hooks/use-toast";
 
 import { updateCouponAction, fetchCouponByIdAction } from "@/actions/couponActions";
 import { fetchAllStoresAction } from "@/actions/storeActions";
+import DescriptionEditor from "@/components/DescriptionEditor"; // Rich text editor
 
 interface FormState {
   error?: Record<string, string[]> | { message?: string[] };
@@ -46,9 +46,7 @@ interface Store {
   name: string;
 }
 
-const initialState: FormState = {
-  error: {},
-};
+const initialState: FormState = { error: {} };
 
 export default function EditCouponForm() {
   const params = useParams();
@@ -66,7 +64,14 @@ export default function EditCouponForm() {
   const [loading, setLoading] = useState(true);
   const [expirationDate, setExpirationDate] = useState<Date | undefined>(undefined);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
-  const [couponType, setCouponType] = useState("coupon"); // Added couponType state
+
+  // Coupon type and code
+  const [couponType, setCouponType] = useState("coupon");
+  const [couponCode, setCouponCode] = useState("");
+
+  // Description editor state
+  const [descriptionHtml, setDescriptionHtml] = useState("");
+  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -78,11 +83,13 @@ export default function EditCouponForm() {
         if (couponRes?.data) {
           setCoupon(couponRes.data);
           setCouponType(couponRes.data.couponType || "coupon");
+          setCouponCode(couponRes.data.couponCode || "");
+          setDescriptionHtml(couponRes.data.description || "");
           if (couponRes.data.expirationDate)
             setExpirationDate(new Date(couponRes.data.expirationDate));
         }
         if (storeRes?.data) setStores(storeRes.data);
-      } catch (error) {
+      } catch {
         toast({
           title: "Error",
           description: "Failed to load data",
@@ -110,11 +117,8 @@ export default function EditCouponForm() {
   }, [formState]);
 
   if (loading) return <LoadingSkeleton />;
-
   if (!coupon)
-    return (
-      <p className="text-red-500 text-center mt-4">Coupon not found</p>
-    );
+    return <p className="text-red-500 text-center mt-4">Coupon not found</p>;
 
   const errorFor = (field: string) =>
     formState.error &&
@@ -122,6 +126,18 @@ export default function EditCouponForm() {
     field in formState.error
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    if (expirationDate)
+      formData.set("expirationDate", expirationDate.toISOString());
+    formData.set("description", descriptionHtml);
+    if (couponType === "deal") formData.set("couponCode", "DEAL_CODE");
+
+    startTransition(() => dispatch(formData));
+  };
 
   return (
     <>
@@ -134,15 +150,7 @@ export default function EditCouponForm() {
         </CardHeader>
 
         <CardContent>
-          <form
-            action={(formData) => {
-              if (expirationDate) {
-                formData.set("expirationDate", expirationDate.toISOString());
-              }
-              return dispatch(formData);
-            }}
-            className="space-y-6 max-w-xl mx-auto"
-          >
+          <form onSubmit={handleSubmit} className="space-y-6 max-w-xl mx-auto">
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
@@ -153,24 +161,16 @@ export default function EditCouponForm() {
                 required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("title") && (
-                <p className="text-sm text-red-500">{errorFor("title")}</p>
-              )}
+              {errorFor("title") && <p className="text-sm text-red-500">{errorFor("title")}</p>}
             </div>
 
-            {/* Description */}
+            {/* Description with Rich Editor */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                rows={3}
-                defaultValue={coupon.description}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-              {errorFor("description") && (
-                <p className="text-sm text-red-500">{errorFor("description")}</p>
-              )}
+              <Label>Description</Label>
+              <Button type="button" onClick={() => setDescriptionModalOpen(true)}>
+                {descriptionHtml ? "Edit Description" : "Add Description"}
+              </Button>
+              {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
             </div>
 
             {/* Coupon Type */}
@@ -179,33 +179,13 @@ export default function EditCouponForm() {
               <select
                 id="couponType"
                 name="couponType"
-                value={couponType} // bind state
+                value={couponType}
                 onChange={(e) => setCouponType(e.target.value)}
                 className="w-full rounded px-3 py-2 shadow-sm border-none bg-gray-50 dark:bg-gray-700"
               >
                 <option value="coupon">Coupon</option>
                 <option value="deal">Deal</option>
               </select>
-              {errorFor("couponType") && (
-                <p className="text-sm text-red-500">{errorFor("couponType")}</p>
-              )}
-            </div>
-
-            {/* Status */}
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <select
-                id="status"
-                name="status"
-                defaultValue={coupon.status}
-                className="w-full rounded px-3 py-2 shadow-sm border-none bg-gray-50 dark:bg-gray-700"
-              >
-                <option value="active">Active</option>
-                <option value="expired">Expired</option>
-              </select>
-              {errorFor("status") && (
-                <p className="text-sm text-red-500">{errorFor("status")}</p>
-              )}
             </div>
 
             {/* Coupon Code */}
@@ -214,15 +194,13 @@ export default function EditCouponForm() {
               <Input
                 id="couponCode"
                 name="couponCode"
-                defaultValue={
-                  couponType === "deal" ? "DEAL_CODE" : coupon.couponCode
-                }
-                required
-                disabled={couponType === "deal"} // disable if deal
+                value={couponType === "deal" ? "DEAL_CODE" : couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                disabled={couponType === "deal"}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("couponCode") && (
-                <p className="text-sm text-red-500">{errorFor("couponCode")}</p>
+              {couponType === "deal" && (
+                <input type="hidden" name="couponCode" value="DEAL_CODE" />
               )}
             </div>
 
@@ -251,9 +229,6 @@ export default function EditCouponForm() {
                   />
                 </PopoverContent>
               </Popover>
-              {errorFor("expirationDate") && (
-                <p className="text-sm text-red-500">{errorFor("expirationDate")}</p>
-              )}
             </div>
 
             {/* Coupon URL */}
@@ -266,9 +241,6 @@ export default function EditCouponForm() {
                 defaultValue={coupon.couponUrl}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("couponUrl") && (
-                <p className="text-sm text-red-500">{errorFor("couponUrl")}</p>
-              )}
             </div>
 
             {/* Discount */}
@@ -281,9 +253,6 @@ export default function EditCouponForm() {
                 defaultValue={coupon.discount || ""}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("discount") && (
-                <p className="text-sm text-red-500">{errorFor("discount")}</p>
-              )}
             </div>
 
             {/* Uses */}
@@ -298,14 +267,11 @@ export default function EditCouponForm() {
                 defaultValue={coupon.uses !== undefined ? String(coupon.uses) : ""}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("uses") && (
-                <p className="text-sm text-red-500">{errorFor("uses")}</p>
-              )}
             </div>
 
             {/* Verified */}
             <div className="flex items-center space-x-2">
-              <input
+              <Input
                 type="checkbox"
                 id="verified"
                 name="verified"
@@ -316,7 +282,7 @@ export default function EditCouponForm() {
               <Label htmlFor="verified">Verified</Label>
             </div>
 
-            {/* Store Dropdown */}
+            {/* Store */}
             <div className="space-y-2">
               <Label htmlFor="storeId">Store</Label>
               <select
@@ -332,9 +298,6 @@ export default function EditCouponForm() {
                   </option>
                 ))}
               </select>
-              {errorFor("storeId") && (
-                <p className="text-sm text-red-500">{errorFor("storeId")}</p>
-              )}
             </div>
 
             {/* Store Name */}
@@ -346,14 +309,11 @@ export default function EditCouponForm() {
                 defaultValue={coupon.storeName || ""}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
-              {errorFor("storeName") && (
-                <p className="text-sm text-red-500">{errorFor("storeName")}</p>
-              )}
             </div>
 
             {/* Is Top One */}
             <div className="flex items-center space-x-2">
-              <input
+              <Input
                 type="checkbox"
                 id="isTopOne"
                 name="isTopOne"
@@ -364,13 +324,6 @@ export default function EditCouponForm() {
               <Label htmlFor="isTopOne">Mark as Top One</Label>
             </div>
 
-            {/* General Error */}
-            {"message" in (formState.error ?? {}) && (
-              <p className="text-sm text-red-500">
-                {(formState.error as any).message?.[0]}
-              </p>
-            )}
-
             <CardFooter className="flex justify-end border-none px-0 pt-0">
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -380,6 +333,25 @@ export default function EditCouponForm() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Description Editor Modal */}
+      <Dialog open={descriptionModalOpen} onOpenChange={setDescriptionModalOpen}>
+        <DialogContent className="max-w-3xl w-full">
+          <DialogHeader>
+            <DialogTitle>Edit Description</DialogTitle>
+          </DialogHeader>
+          <DescriptionEditor
+            initialContent={descriptionHtml}
+            onChange={setDescriptionHtml}
+          />
+          <DialogFooter className="space-x-2">
+            <Button variant="outline" onClick={() => setDescriptionModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>

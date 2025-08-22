@@ -26,7 +26,7 @@ import {
 
 import { createStoreAction } from "@/actions/storeActions";
 import { fetchAllCategoriesAction } from "@/actions/categoryActions";
-import { fetchLatestSEOAction } from "@/actions/seoActions"; // <-- Added for SEO
+import { fetchLatestSEOAction } from "@/actions/seoActions";
 
 import DescriptionEditor from "@/components/DescriptionEditor";
 
@@ -71,12 +71,11 @@ export default function StoreForm() {
     loadCategories();
   }, []);
 
-  const errorFor = (field: string) => {
-    return formState.error &&
-      typeof formState.error === "object" &&
-      field in formState.error
-      ? (formState.error as Record<string, string[]>)[field]?.[0]
-      : null;
+  /** ---------------- Error Helper ---------------- */
+  const errorsForField = (field: string): string[] => {
+    if (!formState.error || typeof formState.error !== "object") return [];
+    const fieldErrors = (formState.error as Record<string, string[]>)[field];
+    return Array.isArray(fieldErrors) ? fieldErrors : [];
   };
 
   useEffect(() => {
@@ -166,8 +165,6 @@ export default function StoreForm() {
     startTransition(() => {
       dispatch(formData);
     });
-
-
   };
 
   return (
@@ -180,13 +177,37 @@ export default function StoreForm() {
 
         <CardContent>
           <form id="store-form" className="space-y-6 max-w-2xl mx-auto" onSubmit={handleSubmit} encType="multipart/form-data">
+
             {/* Store Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Store Name</Label>
               <Input id="name" name="name" required placeholder="Enter store name" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorFor("name") && <p className="text-sm text-red-500">{errorFor("name")}</p>}
+              {errorsForField("name").map((err, idx) => (
+                <p key={idx} className="text-sm text-red-500">{err}</p>
+              ))}
+            </div>
+            {/* Image File */}
+            <div className="space-y-2">
+              <Label htmlFor="imageFile">Store Image</Label>
+              <Input id="imageFile" name="imageFile" type="file" accept="image/*" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" onChange={handleImageChange} />
+              {imagePreview && (
+                <div className="relative mt-2 max-h-40 w-fit">
+                  <img src={imagePreview} alt="Preview" className="rounded shadow-md max-h-40" />
+                  <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
 
+            {/* Direct URL */}
+            <div className="space-y-2">
+              <Label htmlFor="directUrl">Direct URL</Label>
+              <Input id="directUrl" name="directUrl" type="url" placeholder="https://example.com/direct" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              {errorsForField("directUrl").map((err, idx) => (
+                <p key={idx} className="text-sm text-red-500">{err}</p>
+              ))}
+            </div>
             {/* Network Name */}
             <div className="space-y-2">
               <Label htmlFor="networkName">Network Name</Label>
@@ -205,16 +226,11 @@ export default function StoreForm() {
               <div className="space-y-2">
                 <Label htmlFor="storeNetworkUrl">Store Network URL</Label>
                 <Input id="storeNetworkUrl" name="storeNetworkUrl" type="url" placeholder="https://example.com" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-                {errorFor("storeNetworkUrl") && <p className="text-sm text-red-500">{errorFor("storeNetworkUrl")}</p>}
+                {errorsForField("storeNetworkUrl").map((err, idx) => (
+                  <p key={idx} className="text-sm text-red-500">{err}</p>
+                ))}
               </div>
             )}
-
-            {/* Direct URL */}
-            <div className="space-y-2">
-              <Label htmlFor="directUrl">Direct URL</Label>
-              <Input id="directUrl" name="directUrl" type="url" placeholder="https://example.com/direct" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorFor("directUrl") && <p className="text-sm text-red-500">{errorFor("directUrl")}</p>}
-            </div>
 
             {/* Categories */}
             <div className="space-y-2">
@@ -227,29 +243,17 @@ export default function StoreForm() {
                   </label>
                 ))}
               </div>
-              {errorFor("categories") && <p className="text-sm text-red-500">{errorFor("categories")}</p>}
+              {errorsForField("categories").map((err, idx) => (
+                <p key={idx} className="text-sm text-red-500">{err}</p>
+              ))}
             </div>
 
-            {/* Image File */}
-            <div className="space-y-2">
-              <Label htmlFor="imageFile">Store Image</Label>
-              <Input id="imageFile" name="imageFile" type="file" accept="image/*" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" onChange={handleImageChange} />
-              {imagePreview && (
-                <div className="relative mt-2 max-h-40 w-fit">
-                  <img src={imagePreview} alt="Preview" className="rounded shadow-md max-h-40" />
-                  <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Description modal trigger */}
+            {/* Description Modal Trigger */}
             <div>
               <Button type="button" onClick={() => setDescriptionModalOpen(true)}>Edit Description</Button>
             </div>
 
-            {/* SEO modal trigger */}
+            {/* SEO Modal Trigger */}
             <div>
               <Button type="button" onClick={() => setSeoModalOpen(true)}>Edit SEO Fields</Button>
             </div>
@@ -270,12 +274,16 @@ export default function StoreForm() {
             <div className="space-y-2">
               <Label htmlFor="slug">Slug</Label>
               <Input id="slug" name="slug" required placeholder="store-slug" value={seo.slug} onChange={(e) => setSeo(prev => ({ ...prev, slug: e.target.value }))} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              {errorsForField("slug").map((err, idx) => (
+                <p key={idx} className="text-sm text-red-500">{err}</p>
+              ))}
             </div>
 
-            {/* General Error */}
-            {"message" in (formState.error ?? {}) && (
-              <p className="text-sm text-red-500">{(formState.error as any).message?.[0]}</p>
-            )}
+            {/* General Errors */}
+            {Array.isArray((formState.error as any)?.message) &&
+              (formState.error as any).message.map((msg: string, idx: number) => (
+                <p key={idx} className="text-sm text-red-500">{msg}</p>
+              ))}
 
             <CardFooter className="flex justify-end border-none px-0">
               <Button type="submit" disabled={isPending} form="store-form">

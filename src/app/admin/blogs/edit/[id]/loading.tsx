@@ -5,11 +5,13 @@ import React from "react";
 export default function LoadingSkeleton() {
   return (
     <div className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4 animate-pulse space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between border-none px-6 py-4">
         <div className="h-6 w-48 bg-gray-300 dark:bg-gray-700 rounded"></div>
         <div className="h-8 w-24 bg-gray-300 dark:bg-gray-700 rounded"></div>
       </div>
 
+      {/* Form Fields */}
       <div className="space-y-6 max-w-2xl mx-auto px-6 pb-6">
         {/* Title */}
         <div className="space-y-2">
@@ -41,10 +43,10 @@ export default function LoadingSkeleton() {
           <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
         </div>
 
-        {/* Description */}
+        {/* Description (Rich Text Placeholder) */}
         <div className="space-y-2">
           <div className="h-4 w-28 bg-gray-300 dark:bg-gray-700 rounded"></div>
-          <div className="h-24 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
+          <div className="h-32 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
         </div>
 
         {/* Image */}
