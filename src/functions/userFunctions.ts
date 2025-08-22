@@ -1,6 +1,6 @@
 import { Types } from "mongoose"
 import { User } from "@/models/User"
-import { saveImageLocally } from "@/lib/saveImageLocally"
+import { saveUserProfileImage } from "@/lib/saveImageLocally"
 import bcrypt from "bcrypt"
 import { connectToDatabase } from "@/lib/db"
 
@@ -17,7 +17,7 @@ const sanitizeUserData = async (data: {
   let imagePath = ""
 
   if (data.imageFile) {
-    imagePath = await saveImageLocally(data.imageFile)
+    imagePath = await saveUserProfileImage(data.imageFile)
   }
 
   return {
