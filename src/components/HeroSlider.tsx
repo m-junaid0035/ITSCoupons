@@ -26,7 +26,7 @@ const slides = [
     subtitle: "Earn While You Save",
     description:
       "Join our cashback program and earn money back on every purchase. Stack cashback with coupons for maximum savings on all your favorite stores.",
-    bgImage: "/images/img1.jpg",
+    bgImage: "/images/img.webp",
   },
 ];
 
