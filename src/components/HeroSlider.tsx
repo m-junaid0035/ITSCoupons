@@ -12,14 +12,14 @@ const slides = [
     subtitle: "Save Money Every Day",
     description:
       "Discover verified coupons and exclusive deals from thousands of top brands. Start saving today with our curated collection of money-saving offers.",
-    bgImage: "/images/img1.jpg",
+    bgImage: "/images/img.webp",
   },
   {
     title: "Exclusive Brand Partnerships",
     subtitle: "Premium Savings Await",
     description:
       "Access exclusive discounts from premium brands and retailers. Get early access to sales and limited-time offers that you won't find anywhere else.",
-    bgImage: "/images/img2.jpg",
+    bgImage: "/images/img.webp",
   },
   {
     title: "Cashback Rewards Program",
