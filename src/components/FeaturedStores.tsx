@@ -41,21 +41,19 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
         {stores.map((store) => (
           <Link
             key={store._id}
-            href={`/stores/${store._id}`}
+            href={/stores/${store._id}}
             className="flex items-center justify-center bg-white overflow-hidden transition hover:scale-105"
             style={{
               width: "178px",
               height: "178px",
               borderRadius: "100px",
               border: "1px solid #C4C4C4"
-              // Removed boxShadow
             }}
           >
             <img
               src={store.image || "/placeholder-store.png"}
               alt={store.name}
-              className="object-contain"
-              style={{ maxWidth: "70%", maxHeight: "70%" }}
+              className="w-full h-full object-contain rounded-full p-6 transition-transform duration-300 hover:scale-110 hover:brightness-105"
             />
           </Link>
         ))}
