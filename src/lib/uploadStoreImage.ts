@@ -5,7 +5,7 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
 // ✅ Directory to store store images
-const storeDir = "/root/ITSCoupons-uploads/stores";
+const storeDir = "/www/var/ITSCoupons-uploads/stores";
 
 // Ensure folder exists
 if (!fs.existsSync(storeDir)) fs.mkdirSync(storeDir, { recursive: true });
@@ -24,5 +24,5 @@ export async function saveStoreImage(file: File): Promise<string> {
   fs.writeFileSync(filePath, uint8Array);
 
   // Return relative path for frontend/DB
-  return `/stores/${fileName}`;
+  return `/uploads-stores/${fileName}`;
 }
