@@ -5,7 +5,7 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
 // ✅ Directory to store event images
-const eventDir = "/root/ITSCoupons-uploads/events";
+const eventDir = "/www/var/ITSCoupons-uploads/events";
 
 // Ensure folder exists
 if (!fs.existsSync(eventDir)) fs.mkdirSync(eventDir, { recursive: true });
@@ -24,5 +24,5 @@ export async function saveEventImage(file: File): Promise<string> {
   fs.writeFileSync(filePath, uint8Array);
 
   // Return relative path for frontend/DB
-  return `/events/${fileName}`;
+  return `/uploads-events/${fileName}`;
 }
