@@ -6,7 +6,7 @@ import { writeFile } from "fs/promises";
 import { v4 as uuidv4 } from "uuid";
 
 // ✅ Directory to store user profile images
-const uploadsDir = "/root/ITSCoupons-uploads/users";
+const uploadsDir = "www/var/ITSCoupons-uploads/users";
 
 // Ensure folder exists
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
@@ -24,5 +24,5 @@ export async function saveUserProfileImage(file: File): Promise<string> {
   await writeFile(filePath, uint8Array);
 
   // Return public path
-  return `/users/${filename}`;
+  return `/uploads-users/${filename}`;
 }

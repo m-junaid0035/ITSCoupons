@@ -5,7 +5,7 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
 // ✅ Directory to store blog images
-const blogDir = "/root/ITSCoupons-uploads/blogs";
+const blogDir = "www/var/ITSCoupons-uploads/blogs";
 
 if (!fs.existsSync(blogDir)) fs.mkdirSync(blogDir, { recursive: true });
 
@@ -22,5 +22,5 @@ export async function saveBlogImage(file: File): Promise<string> {
 
   fs.writeFileSync(filePath, uint8Array);
 
-  return `/blogs/${fileName}`;
+  return `/uploads-blogs/${fileName}`;
 }
