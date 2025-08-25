@@ -95,7 +95,7 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
                 : "text-purple-700 border-purple-300 hover:bg-purple-100"
                 }`}
             >
-              {tab}
+                {tab}
             </button>
           ))}
         </div>
