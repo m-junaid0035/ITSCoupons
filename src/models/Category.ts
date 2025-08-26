@@ -13,7 +13,7 @@ export interface ICategory extends Document {
 
 // Define Category schema
 const categorySchema = new Schema<ICategory>(
-  {a
+  {
     name: {
       type: String,
       required: [true, "Category name is required"],
