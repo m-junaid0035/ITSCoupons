@@ -1,27 +1,25 @@
 import mongoose, { Schema, Document, Model, Types } from "mongoose";
+import { INetwork } from "./Network"; // adjust the path if needed
 
-// Interface for Store document
 export interface IStore extends Document {
-  name: string;                     // Store name
-  image: string;                    // Logo path (local, e.g., /stores/s1.png)
-  networkName: string;              // Network name (CJ, Rakuten, Awin, N/A)
-  storeNetworkUrl?: string;         // Required if networkName !== "N/A"
-  directUrl?: string;               // New direct URL field
-  categories: Types.ObjectId[];     // Category references
-  totalCouponUsedTimes: number;     // Counter
-  description: string;              // Store description
-  metaTitle: string;                // SEO title
-  metaDescription: string;          // SEO description
-  metaKeywords: string[];           // SEO keywords
-  focusKeywords: string[];          // SEO focus keywords
-  slug: string;                     // Store slug (unique)
-  isPopular: boolean;               // New field
-  isActive: boolean;                // New field
-  createdAt: Date;                  // Auto timestamp
-  updatedAt: Date;                  // Auto timestamp
+  name: string;
+  image: string;
+  network?: Types.ObjectId | INetwork; // optional reference
+  directUrl?: string;
+  categories: Types.ObjectId[];
+  totalCouponUsedTimes: number;
+  description: string;
+  metaTitle: string;
+  metaDescription: string;
+  metaKeywords: string[];
+  focusKeywords: string[];
+  slug: string;
+  isPopular: boolean;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-// Define Store schema
 const storeSchema = new Schema<IStore>(
   {
     name: {
@@ -37,22 +35,12 @@ const storeSchema = new Schema<IStore>(
       required: [true, "Store logo (image) is required"],
     },
 
-    networkName: {
-      type: String,
-      enum: ["CJ", "Rakuten", "Awin", "Impact", "ShareASale", "N/A"],
-      default: "N/A",
-      required: true,
+    network: {
+      type: Schema.Types.ObjectId,
+      ref: "Network",
+      required: false, // optional
     },
 
-    storeNetworkUrl: {
-      type: String,
-      trim: true,
-      required: function (this: IStore) {
-        return this.networkName !== "N/A";
-      },
-    },
-
-    // 🔹 New direct URL field
     directUrl: {
       type: String,
       trim: true,
@@ -118,10 +106,9 @@ const storeSchema = new Schema<IStore>(
     },
   },
   {
-    timestamps: true, // createdAt & updatedAt
+    timestamps: true,
   }
 );
 
-// Prevent model overwrite in dev
 export const Store: Model<IStore> =
   mongoose.models.Store || mongoose.model<IStore>("Store", storeSchema);

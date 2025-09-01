@@ -1,13 +1,13 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useState, useRef } from "react";
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, Search } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -26,6 +26,7 @@ import {
 
 import { createStoreAction } from "@/actions/storeActions";
 import { fetchAllCategoriesAction } from "@/actions/categoryActions";
+import { fetchAllNetworksAction } from "@/actions/networkActions";
 import { fetchLatestSEOAction } from "@/actions/seoActions";
 
 import DescriptionEditor from "@/components/DescriptionEditor";
@@ -35,20 +36,27 @@ interface FormState {
   data?: any;
 }
 
-const initialState: FormState = { error: {} };
 interface Category { _id: string; name: string; }
-const allowedNetworks = ["CJ", "Rakuten", "Awin", "Impact", "ShareASale", "N/A"];
+interface Network { _id: string; networkName: string; storeNetworkUrl: string; }
+
+const initialState: FormState = { error: {} };
 
 export default function StoreForm() {
   const router = useRouter();
   const [formState, dispatch, isPending] = useActionState(createStoreAction, initialState);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [networks, setNetworks] = useState<Network[]>([]);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const [networkName, setNetworkName] = useState<string>("N/A");
+  const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
+  const [networkUrl, setNetworkUrl] = useState("");
+
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [categorySearch, setCategorySearch] = useState("");
+  const [networkSearch, setNetworkSearch] = useState("");
 
   const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
   const [seoModalOpen, setSeoModalOpen] = useState(false);
@@ -62,13 +70,25 @@ export default function StoreForm() {
     slug: "",
   });
 
-  /** ---------------- Load Categories ---------------- */
+  const [networkDropdownOpen, setNetworkDropdownOpen] = useState(false);
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+
+  const networkDropdownRef = useRef<HTMLDivElement>(null);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+
+
+
+
+  /** ---------------- Load Categories & Networks ---------------- */
   useEffect(() => {
-    async function loadCategories() {
-      const result = await fetchAllCategoriesAction();
-      if (result.data && Array.isArray(result.data)) setCategories(result.data);
+    async function loadData() {
+      const catResult = await fetchAllCategoriesAction();
+      if (catResult.data && Array.isArray(catResult.data)) setCategories(catResult.data);
+
+      const netResult = await fetchAllNetworksAction();
+      if (netResult.data && Array.isArray(netResult.data)) setNetworks(netResult.data);
     }
-    loadCategories();
+    loadData();
   }, []);
 
   /** ---------------- Error Helper ---------------- */
@@ -135,6 +155,32 @@ export default function StoreForm() {
     return () => nameInput.removeEventListener("input", listener);
   }, []);
 
+  /** ---------------- Handle Network Selection ---------------- */
+  useEffect(() => {
+    if (selectedNetwork) setNetworkUrl(selectedNetwork.storeNetworkUrl);
+  }, [selectedNetwork]);
+
+  useEffect(() => {
+  function handleClickOutside(event: MouseEvent) {
+    if (
+      networkDropdownRef.current &&
+      !networkDropdownRef.current.contains(event.target as Node)
+    ) {
+      setNetworkDropdownOpen(false);
+    }
+    if (
+      categoryDropdownRef.current &&
+      !categoryDropdownRef.current.contains(event.target as Node)
+    ) {
+      setCategoryDropdownOpen(false);
+    }
+  }
+
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, []);
+
+
   /** ---------------- Submit Handler ---------------- */
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -154,7 +200,7 @@ export default function StoreForm() {
       return;
     }
 
-    // Attach image and SEO/description fields
+    // Attach image, SEO/description, network, and categories
     formData.set("imageFile", imageFile);
     formData.set("description", descriptionHtml);
     formData.set("metaTitle", seo.metaTitle);
@@ -162,10 +208,18 @@ export default function StoreForm() {
     formData.set("metaKeywords", seo.metaKeywords);
     formData.set("focusKeywords", seo.focusKeywords);
     formData.set("slug", seo.slug);
+    formData.set("network", selectedNetwork?._id || "");
+    formData.set("networkUrl", networkUrl);
+    selectedCategories.forEach(catId => formData.append("categories", catId));
+
     startTransition(() => {
       dispatch(formData);
     });
   };
+
+  /** ---------------- Search Helpers ---------------- */
+  const filteredCategories = categories.filter(c => c.name.toLowerCase().includes(categorySearch.toLowerCase()));
+  const filteredNetworks = networks.filter(n => n.networkName.toLowerCase().includes(networkSearch.toLowerCase()));
 
   return (
     <>
@@ -182,14 +236,13 @@ export default function StoreForm() {
             <div className="space-y-2">
               <Label htmlFor="name">Store Name</Label>
               <Input id="name" name="name" required placeholder="Enter store name" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorsForField("name").map((err, idx) => (
-                <p key={idx} className="text-sm text-red-500">{err}</p>
-              ))}
+              {errorsForField("name").map((err, idx) => <p key={idx} className="text-sm text-red-500">{err}</p>)}
             </div>
+
             {/* Image File */}
             <div className="space-y-2">
               <Label htmlFor="imageFile">Store Image</Label>
-              <Input id="imageFile" name="imageFile" type="file" accept="image/*" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" onChange={handleImageChange} />
+              <Input id="imageFile" name="imageFile" type="file" accept="image/*" onChange={handleImageChange} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               {imagePreview && (
                 <div className="relative mt-2 max-h-40 w-fit">
                   <img src={imagePreview} alt="Preview" className="rounded shadow-md max-h-40" />
@@ -204,49 +257,86 @@ export default function StoreForm() {
             <div className="space-y-2">
               <Label htmlFor="directUrl">Direct URL</Label>
               <Input id="directUrl" name="directUrl" type="url" placeholder="https://example.com/direct" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorsForField("directUrl").map((err, idx) => (
-                <p key={idx} className="text-sm text-red-500">{err}</p>
-              ))}
-            </div>
-            {/* Network Name */}
-            <div className="space-y-2">
-              <Label htmlFor="networkName">Network Name</Label>
-              <select
-                id="networkName"
-                name="networkName"
-                className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                value={networkName}
-                onChange={(e) => setNetworkName(e.target.value)}
-              >
-                {allowedNetworks.map((network) => <option key={network} value={network}>{network}</option>)}
-              </select>
+              {errorsForField("directUrl").map((err, idx) => <p key={idx} className="text-sm text-red-500">{err}</p>)}
             </div>
 
-            {networkName !== "N/A" && (
+            {/* Network Searchable Dropdown */}
+            <div className="relative" ref={networkDropdownRef}>
+              <Input
+                placeholder="Search network..."
+                value={networkSearch}
+                onFocus={() => setNetworkDropdownOpen(true)}
+                onChange={(e) => setNetworkSearch(e.target.value)}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
+              {networkDropdownOpen && (
+                <div className="absolute z-10 w-full max-h-40 overflow-y-auto bg-white dark:bg-gray-700 border rounded mt-1">
+                  {filteredNetworks.map((net) => (
+                    <div
+                      key={net._id}
+                      className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                      onClick={() => {
+                        setSelectedNetwork(net);
+                        setNetworkSearch(net.networkName);
+                        setNetworkDropdownOpen(false); // close dropdown
+                      }}
+                    >
+                      {net.networkName}
+                    </div>
+                  ))}
+                  {filteredNetworks.length === 0 && (
+                    <div className="px-3 py-2 text-gray-500">No networks found</div>
+                  )}
+                </div>
+              )}
+            </div>
+            {/* Network URL auto-filled */}
+            {selectedNetwork && (
               <div className="space-y-2">
-                <Label htmlFor="storeNetworkUrl">Store Network URL</Label>
-                <Input id="storeNetworkUrl" name="storeNetworkUrl" type="url" placeholder="https://example.com" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-                {errorsForField("storeNetworkUrl").map((err, idx) => (
-                  <p key={idx} className="text-sm text-red-500">{err}</p>
-                ))}
+                <Label htmlFor="networkUrl">Network URL</Label>
+                <Input
+                  id="networkUrl"
+                  name="networkUrl"
+                  value={networkUrl}
+                  onChange={(e) => setNetworkUrl(e.target.value)}
+                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                />
               </div>
             )}
 
-            {/* Categories */}
-            <div className="space-y-2">
-              <Label>Categories</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {categories.map((cat) => (
-                  <label key={cat._id} className="flex items-center space-x-2">
-                    <input type="checkbox" name="categories" value={cat._id} className="h-4 w-4" />
-                    <span>{cat.name}</span>
-                  </label>
-                ))}
-              </div>
-              {errorsForField("categories").map((err, idx) => (
-                <p key={idx} className="text-sm text-red-500">{err}</p>
-              ))}
+            {/* Categories Searchable Multi-select */}
+            <div className="relative" ref={categoryDropdownRef}>
+              <Input
+                placeholder="Search categories..."
+                value={categorySearch}
+                onFocus={() => setCategoryDropdownOpen(true)}
+                onChange={(e) => setCategorySearch(e.target.value)}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
+              {categoryDropdownOpen && (
+                <div className="absolute z-10 w-full max-h-40 overflow-y-auto bg-white dark:bg-gray-700 border rounded mt-1 p-2 grid grid-cols-2 gap-2">
+                  {filteredCategories.map((cat) => (
+                    <label key={cat._id} className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selectedCategories.includes(cat._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedCategories(prev => [...prev, cat._id]);
+                          } else {
+                            setSelectedCategories(prev => prev.filter(id => id !== cat._id));
+                          }
+                        }}
+                        className="h-4 w-4"
+                      />
+                      <span>{cat.name}</span>
+                    </label>
+                  ))}
+                  {filteredCategories.length === 0 && <div className="col-span-2 text-gray-500">No categories found</div>}
+                </div>
+              )}
             </div>
+
 
             {/* Description Modal Trigger */}
             <div>
@@ -274,16 +364,12 @@ export default function StoreForm() {
             <div className="space-y-2">
               <Label htmlFor="slug">Slug</Label>
               <Input id="slug" name="slug" required placeholder="store-slug" value={seo.slug} onChange={(e) => setSeo(prev => ({ ...prev, slug: e.target.value }))} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorsForField("slug").map((err, idx) => (
-                <p key={idx} className="text-sm text-red-500">{err}</p>
-              ))}
+              {errorsForField("slug").map((err, idx) => <p key={idx} className="text-sm text-red-500">{err}</p>)}
             </div>
 
             {/* General Errors */}
             {Array.isArray((formState.error as any)?.message) &&
-              (formState.error as any).message.map((msg: string, idx: number) => (
-                <p key={idx} className="text-sm text-red-500">{msg}</p>
-              ))}
+              (formState.error as any).message.map((msg: string, idx: number) => <p key={idx} className="text-sm text-red-500">{msg}</p>)}
 
             <CardFooter className="flex justify-end border-none px-0">
               <Button type="submit" disabled={isPending} form="store-form">

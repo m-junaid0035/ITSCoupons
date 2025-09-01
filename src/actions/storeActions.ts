@@ -19,13 +19,9 @@ import {
 import { saveStoreImage } from "@/lib/uploadStoreImage";
 
 /* ---------------------------- 📝 Validation Schema ---------------------------- */
-const allowedNetworks = ["CJ", "Rakuten", "Awin", "Impact", "ShareASale", "N/A"] as const;
-type NetworkName = (typeof allowedNetworks)[number];
-
 const storeSchema = z.object({
   name: z.string().trim().min(3).max(100),
-  networkName: z.enum(allowedNetworks).default("N/A"),
-  storeNetworkUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
+  network: z.string().optional(), // Network ID (ObjectId)
   directUrl: z.string().url("Invalid direct URL").optional().or(z.literal("")),
   categories: z.array(z.string().min(1, "Invalid category ID")),
   totalCouponUsedTimes: z.coerce.number().min(0).optional(),
@@ -38,15 +34,6 @@ const storeSchema = z.object({
   slug: z.string().trim().min(3).max(100),
   isPopular: z.coerce.boolean().optional().default(false),
   isActive: z.coerce.boolean().optional().default(true),
-}).superRefine((data, ctx) => {
-  // Conditional validation: storeNetworkUrl required if networkName != "N/A"
-  if (data.networkName !== "N/A" && !data.storeNetworkUrl?.trim()) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["storeNetworkUrl"],
-      message: "storeNetworkUrl is required if networkName is not 'N/A'",
-    });
-  }
 });
 
 type StoreFormData = z.infer<typeof storeSchema>;
@@ -75,15 +62,11 @@ async function parseStoreFormData(
 
   const imagePath = await saveStoreImage(uploadedFile);
 
-  const rawNetworkName = String(formData.get("networkName") || "N/A");
-  const networkName: NetworkName = allowedNetworks.includes(rawNetworkName as NetworkName)
-    ? (rawNetworkName as NetworkName)
-    : "N/A";
+  const networkId = formData.get("network")?.toString() || undefined;
 
   return {
     name: String(formData.get("name") || ""),
-    networkName,
-    storeNetworkUrl: String(formData.get("storeNetworkUrl") || ""),
+    network: networkId,
     directUrl: String(formData.get("directUrl") || ""),
     categories: categoryIds,
     totalCouponUsedTimes: Number(formData.get("totalCouponUsedTimes") || 0),
@@ -165,14 +148,20 @@ export async function deleteStoreAction(id: string) {
 /* ---------------------------- 🔹 FETCHES ---------------------------- */
 export async function fetchAllStoresAction() {
   await connectToDatabase();
-  try { return { data: await getAllStores() }; } 
-  catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores"] } }; }
+  try {
+    return { data: await getAllStores() };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch stores"] } };
+  }
 }
 
 export async function fetchAllActiveStoresAction() {
   await connectToDatabase();
-  try { return { data: await getAllActiveStores() }; } 
-  catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores"] } }; }
+  try {
+    return { data: await getAllActiveStores() };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch stores"] } };
+  }
 }
 
 export async function fetchStoreByIdAction(id: string) {
@@ -181,19 +170,27 @@ export async function fetchStoreByIdAction(id: string) {
     const store = await getStoreById(id);
     if (!store) return { error: { message: ["Store not found"] } };
     return { data: store };
-  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch store"] } }; }
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch store"] } };
+  }
 }
 
 export async function fetchPopularStoresAction() {
   await connectToDatabase();
-  try { return { data: await getPopularStores() }; } 
-  catch (error: any) { return { error: { message: [error.message || "Failed to fetch popular stores"] } }; }
+  try {
+    return { data: await getPopularStores() };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch popular stores"] } };
+  }
 }
 
 export async function fetchRecentlyUpdatedStoresAction() {
   await connectToDatabase();
-  try { return { data: await getRecentlyUpdatedStores() }; } 
-  catch (error: any) { return { error: { message: [error.message || "Failed to fetch recently updated stores"] } }; }
+  try {
+    return { data: await getRecentlyUpdatedStores() };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch recently updated stores"] } };
+  }
 }
 
 export async function fetchStoresByCategoriesAction(categories: string[]) {
@@ -201,13 +198,18 @@ export async function fetchStoresByCategoriesAction(categories: string[]) {
   try {
     if (!categories.length) return { data: [] };
     return { data: await getStoresByCategories(categories) };
-  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores by categories"] } }; }
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch stores by categories"] } };
+  }
 }
 
 export async function fetchAllStoresWithCouponsAction() {
   await connectToDatabase();
-  try { return { data: await getStoresWithCoupons() }; } 
-  catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores with coupons"] } }; }
+  try {
+    return { data: await getStoresWithCoupons() };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch stores with coupons"] } };
+  }
 }
 
 export async function fetchStoreWithCouponsByIdAction(storeId: string) {
@@ -216,7 +218,9 @@ export async function fetchStoreWithCouponsByIdAction(storeId: string) {
     const store = await getStoreWithCouponsById(storeId);
     if (!store) return { error: { message: ["Store not found"] } };
     return { data: store };
-  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch store"] } }; }
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch store"] } };
+  }
 }
 
 export async function fetchCouponCountByStoreIdAction(storeId: string) {
@@ -224,5 +228,7 @@ export async function fetchCouponCountByStoreIdAction(storeId: string) {
   try {
     const count = await getCouponCountByStoreId(storeId);
     return { data: count };
-  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch coupon count"] } }; }
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch coupon count"] } };
+  }
 }

@@ -13,6 +13,7 @@ import {
   deleteStoreAction,
 } from "@/actions/storeActions";
 import { fetchCouponCountByStoreIdAction } from "@/actions/storeActions";
+import { fetchAllNetworksAction } from "@/actions/networkActions"; // NEW: fetch networks
 
 import {
   Card,
@@ -51,14 +52,20 @@ import { Eye, Pencil, Trash2, Loader2, ExternalLink } from "lucide-react";
 interface IStore {
   _id: string;
   name: string;
-  networkName: string;
+  network?: string | null; // store.network now stores only network ID
   totalCoupons?: number;
   image?: string;
   slug?: string;
 }
 
+interface INetwork {
+  _id: string;
+  name: string;
+}
+
 function StoresTable({
   stores,
+  networks,
   onView,
   onEdit,
   onDelete,
@@ -66,6 +73,7 @@ function StoresTable({
   loading,
 }: {
   stores: IStore[];
+  networks: INetwork[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
@@ -103,7 +111,11 @@ function StoresTable({
                 className="hover:bg-muted/40 transition-colors"
               >
                 <TableCell className="font-medium">{store.name}</TableCell>
-                <TableCell>{store.networkName}</TableCell>
+                <TableCell>
+                  {store.network
+                    ? networks.find((n) => n._id === store.network)?.name || "N/A"
+                    : "N/A"}
+                </TableCell>
                 <TableCell>
                   <button
                     onClick={() => onCouponsClick(store._id)}
@@ -190,6 +202,7 @@ function StoresTable({
 export default function StoresPage() {
   const router = useRouter();
   const [stores, setStores] = useState<IStore[]>([]);
+  const [networks, setNetworks] = useState<INetwork[]>([]); // NEW
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -200,6 +213,19 @@ export default function StoresPage() {
     stores,
     (state, id: string) => state.filter((store) => store._id !== id)
   );
+
+  const loadNetworks = async () => {
+  const res = await fetchAllNetworksAction();
+  if (res?.data && Array.isArray(res.data)) {
+    // Map networkName => name
+    const mappedNetworks = res.data.map((n: any) => ({
+      _id: n._id,
+      name: n.networkName, // <-- rename here
+    }));
+    setNetworks(mappedNetworks);
+  }
+};
+
 
   const loadStores = async () => {
     setLoading(true);
@@ -248,6 +274,7 @@ export default function StoresPage() {
   };
 
   useEffect(() => {
+    loadNetworks();
     loadStores();
   }, []);
 
@@ -291,6 +318,7 @@ export default function StoresPage() {
         >
           <StoresTable
             stores={paginatedStores}
+            networks={networks} // pass networks
             onView={(id) => router.push(`/admin/stores/view/${id}`)}
             onEdit={(id) => router.push(`/admin/stores/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}

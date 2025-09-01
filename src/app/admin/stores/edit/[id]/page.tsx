@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useState } from "react";
+import { startTransition, useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useActionState } from "react";
 import { Label } from "@/components/ui/label";
@@ -8,36 +8,38 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2, X } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 
 import { fetchStoreByIdAction, updateStoreAction } from "@/actions/storeActions";
 import { fetchAllCategoriesAction } from "@/actions/categoryActions";
+import { fetchAllNetworksAction, fetchNetworkByIdAction } from "@/actions/networkActions";
+import { fetchLatestSEOAction } from "@/actions/seoActions";
+
 import DescriptionEditor from "@/components/DescriptionEditor";
 import LoadingSkeleton from "./loading";
 
+interface FormState {
+  error?: Record<string, string[]> | { message?: string[] };
+  data?: any;
+}
+
 interface Category { _id: string; name: string; }
-interface FormState { error?: Record<string, string[]> | { message?: string[] }; data?: any; }
+interface Network { _id: string; networkName: string; storeNetworkUrl: string; }
 
 const initialState: FormState = { error: {} };
-const allowedNetworks = ["N/A", "CJ", "Rakuten", "Awin", "Impact", "ShareASale"];
 
 export default function EditStoreForm() {
   const params = useParams();
   const router = useRouter();
   const storeId = params.id as string;
-
-  const [store, setStore] = useState<any>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [networkName, setNetworkName] = useState<string>("N/A");
-  const [descriptionHtml, setDescriptionHtml] = useState<string>("");
-  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
-  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const [formState, dispatch, isPending] = useActionState(
     async (prevState: FormState, formData: FormData) =>
@@ -45,23 +47,72 @@ export default function EditStoreForm() {
     initialState
   );
 
+  const [store, setStore] = useState<any>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [networks, setNetworks] = useState<Network[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
+  const [networkUrl, setNetworkUrl] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [descriptionHtml, setDescriptionHtml] = useState("");
+  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
+  const [seoModalOpen, setSeoModalOpen] = useState(false);
+  const [seo, setSeo] = useState({ metaTitle: "", metaDescription: "", metaKeywords: "", focusKeywords: "", slug: "" });
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const [networkSearch, setNetworkSearch] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [networkDropdownOpen, setNetworkDropdownOpen] = useState(false);
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+
+  const networkDropdownRef = useRef<HTMLDivElement>(null);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+
+  /** ---------------- Load Store, Categories, Networks ---------------- */
   useEffect(() => {
     async function loadData() {
       try {
-        const [storeRes, categoriesRes] = await Promise.all([
+        const [storeRes, catRes, netRes] = await Promise.all([
           fetchStoreByIdAction(storeId),
           fetchAllCategoriesAction(),
+          fetchAllNetworksAction(),
         ]);
+
         if (storeRes?.data) {
           const s = storeRes.data;
           setStore(s);
           setSelectedCategories(s.categories || []);
           setImagePreview(s.image || null);
-          setNetworkName(s.networkName || "N/A");
           setDescriptionHtml(s.description || "");
+
+          if (s.network) {
+            // Fetch network by id dynamically
+            const netRes = await fetchNetworkByIdAction(s.network);
+            if (netRes?.data) {
+              setSelectedNetwork({
+                _id: netRes.data._id,
+                networkName: netRes.data.networkName,
+                storeNetworkUrl: netRes.data.storeNetworkUrl,
+              });
+              setNetworkSearch(netRes.data.networkName);
+              setNetworkUrl(netRes.data.storeNetworkUrl);
+            }
+          }
+
+          setSeo({
+            metaTitle: s.metaTitle || "",
+            metaDescription: s.metaDescription || "",
+            metaKeywords: s.metaKeywords || "",
+            focusKeywords: s.focusKeywords || "",
+            slug: s.slug || "",
+          });
         }
-        if (categoriesRes?.data) setCategories(categoriesRes.data);
-      } catch (error) {
+
+        if (catRes?.data) setCategories(catRes.data);
+        if (netRes?.data) setNetworks(netRes.data);
+      } catch (err) {
         toast({ title: "Error", description: "Failed to load data", variant: "destructive" });
       } finally {
         setLoading(false);
@@ -70,28 +121,24 @@ export default function EditStoreForm() {
     loadData();
   }, [storeId]);
 
+  /** ---------------- Handle Click Outside Dropdowns ---------------- */
   useEffect(() => {
-    if (formState.data && !formState.error) setSuccessDialogOpen(true);
-    if (formState.error && "message" in formState.error) {
-      toast({
-        title: "Error",
-        description: (formState.error as any).message?.[0] || "Something went wrong",
-        variant: "destructive",
-      });
+    function handleClickOutside(event: MouseEvent) {
+      if (networkDropdownRef.current && !networkDropdownRef.current.contains(event.target as Node)) setNetworkDropdownOpen(false);
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) setCategoryDropdownOpen(false);
     }
-  }, [formState]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  const errorFor = (field: string) =>
-    formState.error && typeof formState.error === "object" && field in formState.error
-      ? (formState.error as Record<string, string[]>)[field]?.[0]
-      : null;
+  /** ---------------- Error Helper ---------------- */
+  const errorsForField = (field: string): string[] => {
+    if (!formState.error || typeof formState.error !== "object") return [];
+    const fieldErrors = (formState.error as Record<string, string[]>)[field];
+    return Array.isArray(fieldErrors) ? fieldErrors : [];
+  };
 
-  if (loading) return <LoadingSkeleton />;
-  if (!store) return <p className="text-red-500 text-center mt-4">Store not found</p>;
-
-  const toggleCategory = (id: string) =>
-    setSelectedCategories((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
-
+  /** ---------------- Image Handling ---------------- */
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setImageFile(file);
@@ -101,47 +148,79 @@ export default function EditStoreForm() {
       reader.readAsDataURL(file);
     } else setImagePreview(null);
   };
+  const removeImage = () => { setImageFile(null); setImagePreview(null); };
 
-  const removeImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
+  /** ---------------- SEO Auto-fill ---------------- */
+  const updateSEO = async (storeName: string) => {
+    const { data: latestSEO } = await fetchLatestSEOAction();
+    if (!latestSEO) return;
+
+    const replaceStoreName = (text: string) => text.replace(/{{storeName}}|s_n/gi, storeName);
+
+    setSeo({
+      metaTitle: replaceStoreName(latestSEO.metaTitle || ""),
+      metaDescription: replaceStoreName(latestSEO.metaDescription || ""),
+      metaKeywords: (latestSEO.metaKeywords || []).map(replaceStoreName).join(", "),
+      focusKeywords: (latestSEO.focusKeywords || []).map(replaceStoreName).join(", "),
+      slug: replaceStoreName(latestSEO.slug || storeName.toLowerCase().replace(/\s+/g, "-")),
+    });
   };
 
+  useEffect(() => {
+    const nameInput = document.getElementById("name") as HTMLInputElement | null;
+    if (!nameInput) return;
+    const listener = () => { const name = nameInput.value.trim(); if (name) updateSEO(name); };
+    nameInput.addEventListener("input", listener);
+    return () => nameInput.removeEventListener("input", listener);
+  }, []);
+
+  /** ---------------- Form Submit ---------------- */
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    formData.delete("categories");
-    selectedCategories.forEach((c) => formData.append("categories", c));
-    formData.set("description", descriptionHtml);
-
-    const requiredFields = ["name", "description", "metaTitle", "metaDescription", "slug"];
+    const requiredFields = ["name", "slug"];
     for (const field of requiredFields) {
       if (!formData.get(field)?.toString().trim()) {
         toast({ title: "Validation Error", description: `${field} is required`, variant: "destructive" });
         return;
       }
     }
-
     if (!imageFile && !imagePreview) {
       toast({ title: "Validation Error", description: "Store image is required", variant: "destructive" });
       return;
     }
 
     if (imageFile) formData.set("imageFile", imageFile);
-
-    const networkValue = formData.get("networkName")?.toString() || "N/A";
-    if (networkValue !== "N/A") {
-      const url = formData.get("storeNetworkUrl")?.toString() || "";
-      if (!url.trim()) {
-        toast({ title: "Validation Error", description: "Store Network URL is required", variant: "destructive" });
-        return;
-      }
-    } else formData.delete("storeNetworkUrl");
+    formData.set("description", descriptionHtml);
+    formData.set("metaTitle", seo.metaTitle);
+    formData.set("metaDescription", seo.metaDescription);
+    formData.set("metaKeywords", seo.metaKeywords);
+    formData.set("focusKeywords", seo.focusKeywords);
+    formData.set("slug", seo.slug);
+    formData.set("network", selectedNetwork?._id || "");
+    formData.set("networkUrl", networkUrl);
+    selectedCategories.forEach(catId => formData.append("categories", catId));
 
     startTransition(() => dispatch(formData));
   };
+
+  /** ---------------- Filtered Lists ---------------- */
+  const filteredCategories = categories.filter(c => c.name.toLowerCase().includes(categorySearch.toLowerCase()));
+  const filteredNetworks = networks.filter(n => n.networkName.toLowerCase().includes(networkSearch.toLowerCase()));
+
+  /** ---------------- Success / Error Handling ---------------- */
+  useEffect(() => {
+    if (formState.data && !formState.error) setSuccessDialogOpen(true);
+    if (formState.error && "message" in formState.error) {
+      toast({ title: "Error", description: (formState.error as any).message?.[0] || "Something went wrong", variant: "destructive" });
+    }
+  }, [formState]);
+
+  if (loading) return <LoadingSkeleton />;
+  if (!store) return <p className="text-red-500 text-center mt-4">Store not found</p>;
+
 
   return (
     <>
@@ -152,97 +231,107 @@ export default function EditStoreForm() {
         </CardHeader>
 
         <CardContent>
-          <form id="edit-store-form" className="space-y-6 max-w-2xl mx-auto" onSubmit={handleSubmit} encType="multipart/form-data">
+          <form id="store-form" className="space-y-6 max-w-2xl mx-auto" onSubmit={handleSubmit} encType="multipart/form-data">
 
             {/* Store Name */}
             <div className="space-y-2">
               <Label htmlFor="name">Store Name</Label>
               <Input id="name" name="name" defaultValue={store.name} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorFor("name") && <p className="text-sm text-red-500">{errorFor("name")}</p>}
+              {errorsForField("name").map((err, idx) => <p key={idx} className="text-sm text-red-500">{err}</p>)}
             </div>
 
-            {/* Network */}
-            <div className="space-y-2">
-              <Label htmlFor="networkName">Network Name</Label>
-              <select id="networkName" name="networkName" value={networkName} onChange={e => setNetworkName(e.target.value)} className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700">
-                {allowedNetworks.map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-            </div>
-
-            {/* Conditional Network URL */}
-            {networkName !== "N/A" && (
-              <div className="space-y-2">
-                <Label htmlFor="storeNetworkUrl">Store Network URL</Label>
-                <Input id="storeNetworkUrl" name="storeNetworkUrl" type="url" defaultValue={store.storeNetworkUrl} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-                {errorFor("storeNetworkUrl") && <p className="text-sm text-red-500">{errorFor("storeNetworkUrl")}</p>}
-              </div>
-            )}
-
-            {/* Direct URL */}
-            <div className="space-y-2">
-              <Label htmlFor="directUrl">Direct URL</Label>
-              <Input id="directUrl" name="directUrl" type="url" defaultValue={store.directUrl} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
-              {errorFor("directUrl") && <p className="text-sm text-red-500">{errorFor("directUrl")}</p>}
-            </div>
-
-            {/* Categories */}
-            <div className="space-y-2">
-              <Label>Categories</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {categories.map(cat => (
-                  <label key={cat._id} className="flex items-center space-x-2">
-                    <input type="checkbox" value={cat._id} checked={selectedCategories.includes(cat._id)} onChange={() => toggleCategory(cat._id)} className="h-4 w-4" />
-                    <span>{cat.name}</span>
-                  </label>
-                ))}
-              </div>
-              {errorFor("categories") && <p className="text-sm text-red-500">{errorFor("categories")}</p>}
-            </div>
-
-            {/* Image Upload */}
+            {/* Image */}
             <div className="space-y-2">
               <Label htmlFor="imageFile">Store Image</Label>
               <Input id="imageFile" name="imageFile" type="file" accept="image/*" onChange={handleImageChange} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               {imagePreview && (
                 <div className="relative mt-2 max-h-40 w-fit">
                   <img src={imagePreview} alt="Preview" className="rounded shadow-md max-h-40" />
-                  <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"><X className="h-4 w-4" /></button>
+                  <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full">
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               )}
             </div>
 
-            {/* Description */}
+            {/* Direct URL */}
             <div className="space-y-2">
-              <Label>Description</Label>
-              <Button variant="outline" onClick={() => setDescriptionModalOpen(true)}>Edit Description</Button>
+              <Label htmlFor="directUrl">Direct URL</Label>
+              <Input id="directUrl" name="directUrl" defaultValue={store.directUrl} type="url" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
 
-            {/* Meta Fields */}
-            <div className="space-y-2">
-              <Label htmlFor="metaTitle">Meta Title</Label>
-              <Input id="metaTitle" name="metaTitle" defaultValue={store.metaTitle} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+            {/* Network Dropdown */}
+            <div className="relative" ref={networkDropdownRef}>
+              <Input
+                placeholder="Search network..."
+                value={networkSearch}
+                onFocus={() => setNetworkDropdownOpen(true)}
+                onChange={e => setNetworkSearch(e.target.value)}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
+              {networkDropdownOpen && (
+                <div className="absolute z-10 w-full max-h-40 overflow-y-auto bg-white dark:bg-gray-700 border rounded mt-1">
+                  {filteredNetworks.map(net => (
+                    <div key={net._id} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                      onClick={() => { setSelectedNetwork(net); setNetworkSearch(net.networkName); setNetworkUrl(net.storeNetworkUrl); setNetworkDropdownOpen(false); }}>
+                      {net.networkName}
+                    </div>
+                  ))}
+                  {filteredNetworks.length === 0 && <div className="px-3 py-2 text-gray-500">No networks found</div>}
+                </div>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="metaDescription">Meta Description</Label>
-              <Textarea id="metaDescription" name="metaDescription" rows={3} defaultValue={store.metaDescription} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+
+            {/* Network URL */}
+            {selectedNetwork && (
+              <div className="space-y-2">
+                <Label htmlFor="networkUrl">Network URL</Label>
+                <Input id="networkUrl" name="networkUrl" value={networkUrl} onChange={e => setNetworkUrl(e.target.value)} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              </div>
+            )}
+
+            {/* Categories */}
+            <div className="relative" ref={categoryDropdownRef}>
+              <Input
+                placeholder="Search categories..."
+                value={categorySearch}
+                onFocus={() => setCategoryDropdownOpen(true)}
+                onChange={e => setCategorySearch(e.target.value)}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
+              {categoryDropdownOpen && (
+                <div className="absolute z-10 w-full max-h-40 overflow-y-auto bg-white dark:bg-gray-700 border rounded mt-1 p-2 grid grid-cols-2 gap-2">
+                  {filteredCategories.map(cat => (
+                    <label key={cat._id} className="flex items-center space-x-2 cursor-pointer">
+                      <input type="checkbox" checked={selectedCategories.includes(cat._id)}
+                        onChange={e => { if (e.target.checked) setSelectedCategories(prev => [...prev, cat._id]); else setSelectedCategories(prev => prev.filter(id => id !== cat._id)); }}
+                        className="h-4 w-4" />
+                      <span>{cat.name}</span>
+                    </label>
+                  ))}
+                  {filteredCategories.length === 0 && <div className="col-span-2 text-gray-500">No categories found</div>}
+                </div>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="metaKeywords">Meta Keywords</Label>
-              <Input id="metaKeywords" name="metaKeywords" defaultValue={store.metaKeywords} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+
+            {/* Description Modal Trigger */}
+            <div>
+            <Button type="button" onClick={() => setDescriptionModalOpen(true)}>Edit Description</Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="focusKeywords">Focus Keywords</Label>
-              <Input id="focusKeywords" name="focusKeywords" defaultValue={store.focusKeywords} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+
+            {/* SEO Modal Trigger */}
+            <div>
+            <Button type="button" onClick={() => setSeoModalOpen(true)}>Edit SEO Fields</Button>
             </div>
 
             {/* Popular & Active */}
-            <div className="flex items-center space-x-4">
+            <div className="flex space-x-4">
               <label className="flex items-center space-x-2">
-                <input type="checkbox" id="isPopular" name="isPopular" value="true" defaultChecked={store.isPopular} className="w-4 h-4" />
+                <input type="checkbox" name="isPopular" value="true" defaultChecked={store.isPopular} className="w-4 h-4" />
                 <span>Popular</span>
               </label>
               <label className="flex items-center space-x-2">
-                <input type="checkbox" id="isActive" name="isActive" value="true" defaultChecked={store.isActive} className="w-4 h-4" />
+                <input type="checkbox" name="isActive" value="true" defaultChecked={store.isActive} className="w-4 h-4" />
                 <span>Active</span>
               </label>
             </div>
@@ -250,21 +339,20 @@ export default function EditStoreForm() {
             {/* Slug */}
             <div className="space-y-2">
               <Label htmlFor="slug">Slug</Label>
-              <Input id="slug" name="slug" defaultValue={store.slug} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input id="slug" name="slug" value={seo.slug} onChange={e => setSeo(prev => ({ ...prev, slug: e.target.value }))} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
 
-            {/* General Error */}
-            {"message" in (formState.error ?? {}) && <p className="text-sm text-red-500">{(formState.error as any).message?.[0]}</p>}
+            {/* General Errors */}
+            {Array.isArray((formState.error as any)?.message) && (formState.error as any).message.map((msg: string, idx: number) => <p key={idx} className="text-sm text-red-500">{msg}</p>)}
 
+            <CardFooter className="flex justify-end border-none px-0">
+              <Button type="submit" disabled={isPending} form="store-form">
+                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isPending ? "Updating..." : "Update Store"}
+              </Button>
+            </CardFooter>
           </form>
         </CardContent>
-
-        <CardFooter className="flex justify-end border-none mr-10 px-0">
-          <Button type="submit" disabled={isPending} form="edit-store-form">
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isPending ? "Updating..." : "Update Store"}
-          </Button>
-        </CardFooter>
       </Card>
 
       {/* Description Modal */}
@@ -281,12 +369,30 @@ export default function EditStoreForm() {
         </DialogContent>
       </Dialog>
 
+      {/* SEO Modal */}
+      <Dialog open={seoModalOpen} onOpenChange={setSeoModalOpen}>
+        <DialogContent className="max-w-3xl w-full">
+          <DialogHeader>
+            <DialogTitle>Edit SEO Fields</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div><Label>Meta Title</Label><Input value={seo.metaTitle} onChange={e => setSeo(prev => ({ ...prev, metaTitle: e.target.value }))} className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700" /></div>
+            <div><Label>Meta Description</Label><Textarea rows={3} value={seo.metaDescription} onChange={e => setSeo(prev => ({ ...prev, metaDescription: e.target.value }))} className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700" /></div>
+            <div><Label>Meta Keywords</Label><Input value={seo.metaKeywords} onChange={e => setSeo(prev => ({ ...prev, metaKeywords: e.target.value }))} className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700" /></div>
+            <div><Label>Focus Keywords</Label><Input value={seo.focusKeywords} onChange={e => setSeo(prev => ({ ...prev, focusKeywords: e.target.value }))} className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700" /></div>
+            <div><Label>Slug</Label><Input value={seo.slug} onChange={e => setSeo(prev => ({ ...prev, slug: e.target.value }))} className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700" /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSeoModalOpen(false)}>Cancel</Button>
+            <Button onClick={() => setSeoModalOpen(false)}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Success</DialogTitle>
-          </DialogHeader>
+          <DialogHeader><DialogTitle>Success</DialogTitle></DialogHeader>
           <p>Store updated successfully!</p>
           <DialogFooter>
             <Button onClick={() => { setSuccessDialogOpen(false); router.push("/admin/stores"); }}>OK</Button>

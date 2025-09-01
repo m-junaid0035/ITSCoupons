@@ -1,9 +1,9 @@
-// types/store.ts
+import { Types } from "mongoose";
 
 export interface StoreInput {
   name: string;
-  storeNetworkUrl: string;
-  categories: string[]; // category IDs
+  storeNetworkUrl?: string; // optional, maps to `network` in schema
+  categories: string[]; // array of category IDs
   totalCouponUsedTimes?: number;
   image: string;
   description: string;
@@ -19,7 +19,7 @@ export interface StoreInput {
 export interface StoreData {
   _id: string;
   name: string;
-  storeNetworkUrl: string;
+  storeNetworkUrl?: string; // optional, matches network ref
   categories: string[]; // category IDs
   totalCouponUsedTimes: number;
   image: string;
@@ -35,6 +35,6 @@ export interface StoreData {
   updatedAt?: string | null;
 }
 
+// Response types
 export type StoreListResponse = StoreData[];
-
 export type StoreSingleResponse = StoreData | null;

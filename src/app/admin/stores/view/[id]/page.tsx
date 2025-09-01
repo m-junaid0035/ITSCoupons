@@ -1,4 +1,7 @@
+"use client";
+
 import { getStoreById } from "@/functions/storeFunctions";
+import { getNetworkById } from "@/functions/networkFunctions";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 
@@ -12,9 +15,22 @@ export default async function StoreViewPage({
 
   if (!store) return notFound();
 
+  // Fetch network name using network ID if available
+  let networkName = "N/A";
+  let storeNetworkUrl = "N/A";
+  if (store.network) {
+    const network = await getNetworkById(store.network);
+    if (network) {
+      networkName = network.networkName;
+      storeNetworkUrl = network.storeNetworkUrl || "N/A";
+    }
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg dark:bg-gray-800 space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">View Store</h2>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        View Store
+      </h2>
 
       {/* Store Image */}
       <div>
@@ -40,14 +56,14 @@ export default async function StoreViewPage({
         {/* Network Name */}
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400">Network Name</p>
-          <p className="text-lg font-medium text-gray-900 dark:text-gray-100">{store.networkName || "N/A"}</p>
+          <p className="text-lg font-medium text-gray-900 dark:text-gray-100">{networkName}</p>
         </div>
 
-        {/* Store Network URL (only show if Network Name is not N/A) */}
-        {store.networkName && store.networkName !== "N/A" && (
+        {/* Store Network URL */}
+        {networkName !== "N/A" && (
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Store Network URL</p>
-            <p className="text-lg font-medium text-gray-900 dark:text-gray-100">{store.storeNetworkUrl || "N/A"}</p>
+            <p className="text-lg font-medium text-gray-900 dark:text-gray-100">{storeNetworkUrl}</p>
           </div>
         )}
 

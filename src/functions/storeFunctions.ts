@@ -8,9 +8,8 @@ import { Coupon } from "@/models/Coupon";
  */
 const sanitizeStoreData = (data: {
   name: string;
-  networkName: string;
-  storeNetworkUrl?: string;
-  directUrl?: string; // ✅ added
+  network?: string; // optional network ID
+  directUrl?: string;
   categories: string[];
   totalCouponUsedTimes?: number;
   image: string;
@@ -24,12 +23,8 @@ const sanitizeStoreData = (data: {
   isActive?: boolean;
 }) => ({
   name: data.name.trim(),
-  networkName: data.networkName,
-  storeNetworkUrl:
-    data.networkName !== "N/A" && data.storeNetworkUrl
-      ? data.storeNetworkUrl.trim()
-      : undefined,
-  directUrl: data.directUrl?.trim() ?? "", // ✅ added
+  network: data.network ? new Types.ObjectId(data.network) : undefined,
+  directUrl: data.directUrl?.trim() ?? "",
   categories: data.categories.map((id) => new Types.ObjectId(id)),
   totalCouponUsedTimes: data.totalCouponUsedTimes ?? 0,
   image: data.image.trim(),
@@ -71,9 +66,8 @@ const serializeCoupon = (coupon: any) => ({
 const serializeStore = (store: any) => ({
   _id: store._id.toString(),
   name: store.name,
-  networkName: store.networkName,
-  storeNetworkUrl: store.storeNetworkUrl,
-  directUrl: store.directUrl, // ✅ added
+  network: store.network?._id?.toString() ?? store.network?.toString(), // network ID if populated
+  directUrl: store.directUrl,
   categories: (store.categories || []).map((cat: any) =>
     typeof cat === "object" && cat._id ? cat._id.toString() : cat.toString()
   ),
@@ -97,9 +91,8 @@ const serializeStore = (store: any) => ({
  */
 export const createStore = async (data: {
   name: string;
-  networkName: string;
-  storeNetworkUrl?: string;
-  directUrl?: string; // ✅ added
+  network?: string;
+  directUrl?: string;
   categories: string[];
   totalCouponUsedTimes?: number;
   imageFile: File;
@@ -130,6 +123,7 @@ export const getAllActiveStores = async () => {
   const stores = await Store.find({ isActive: true })
     .sort({ createdAt: -1 })
     .limit(12)
+    .populate("network")
     .lean();
   return stores.map(serializeStore);
 };
@@ -138,7 +132,7 @@ export const getAllActiveStores = async () => {
  * Get all stores.
  */
 export const getAllStores = async () => {
-  const stores = await Store.find().sort({ createdAt: -1 }).lean();
+  const stores = await Store.find().sort({ createdAt: -1 }).populate("network").lean();
   return stores.map(serializeStore);
 };
 
@@ -146,7 +140,7 @@ export const getAllStores = async () => {
  * Get a store by ID.
  */
 export const getStoreById = async (id: string) => {
-  const store = await Store.findById(id).lean();
+  const store = await Store.findById(id).populate("network").lean();
   return store ? serializeStore(store) : null;
 };
 
@@ -157,9 +151,8 @@ export const updateStore = async (
   id: string,
   data: {
     name: string;
-    networkName: string;
-    storeNetworkUrl?: string;
-    directUrl?: string; // ✅ added
+    network?: string;
+    directUrl?: string;
     categories: string[];
     totalCouponUsedTimes?: number;
     imageFile?: File;
@@ -189,7 +182,9 @@ export const updateStore = async (
     id,
     { $set: updatedData },
     { new: true, runValidators: true }
-  ).lean();
+  )
+    .populate("network")
+    .lean();
 
   return store ? serializeStore(store) : null;
 };
@@ -198,7 +193,7 @@ export const updateStore = async (
  * Delete a store by ID.
  */
 export const deleteStore = async (id: string) => {
-  const store = await Store.findByIdAndDelete(id).lean();
+  const store = await Store.findByIdAndDelete(id).populate("network").lean();
   return store ? serializeStore(store) : null;
 };
 
@@ -208,6 +203,7 @@ export const deleteStore = async (id: string) => {
 export const getPopularStores = async () => {
   const stores = await Store.find({ isPopular: true, isActive: true })
     .sort({ createdAt: -1 })
+    .populate("network")
     .lean();
   return stores.map(serializeStore);
 };
@@ -218,6 +214,7 @@ export const getPopularStores = async () => {
 export const getRecentlyUpdatedStores = async () => {
   const stores = await Store.find({ isActive: true })
     .sort({ updatedAt: -1 })
+    .populate("network")
     .lean();
   return stores.map(serializeStore);
 };
@@ -229,7 +226,9 @@ export const getStoresByCategories = async (categories: string[]) => {
   const stores = await Store.find({
     categories: { $in: categories.map((id) => new Types.ObjectId(id)) },
     isActive: true,
-  }).lean();
+  })
+    .populate("network")
+    .lean();
   return stores.map(serializeStore);
 };
 
