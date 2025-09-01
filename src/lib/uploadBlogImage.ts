@@ -2,25 +2,36 @@
 
 import fs from "fs";
 import path from "path";
-import { v4 as uuidv4 } from "uuid";
 
-// ✅ Directory to store blog images
-const blogDir = "www/var/ITSCoupons-uploads/blogs";
+// ✅ Directory where blog images will be stored
+const blogDir = path.join(process.cwd(), "public", "blogs");
 
-if (!fs.existsSync(blogDir)) fs.mkdirSync(blogDir, { recursive: true });
+// Ensure the folder exists
+if (!fs.existsSync(blogDir)) {
+  fs.mkdirSync(blogDir, { recursive: true });
+}
 
 export async function saveBlogImage(file: File): Promise<string> {
   if (!file) throw new Error("No file provided");
 
-  const ext = path.extname(file.name) || ".jpg";
-  const fileName = `b-${uuidv4()}${ext}`;
+  const ext = path.extname(file.name) || ".jpg"; // default to jpg if missing
+
+  // ✅ Determine next incremental filename (b1, b2, b3…)
+  const existingFiles = fs.readdirSync(blogDir).filter((f) => f.startsWith("b"));
+  const numbers = existingFiles
+    .map((f) => parseInt(f.replace(/\D/g, ""), 10))
+    .filter((n) => !isNaN(n));
+
+  const nextNumber = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
+  const fileName = `b${nextNumber}${ext}`;
   const filePath = path.join(blogDir, fileName);
 
   // Convert File → ArrayBuffer → Uint8Array
   const arrayBuffer = await file.arrayBuffer();
-  const uint8Array = new Uint8Array(arrayBuffer); // ✅ Correct type
+  const buffer = new Uint8Array(arrayBuffer);
 
-  fs.writeFileSync(filePath, uint8Array);
+  fs.writeFileSync(filePath, buffer);
 
-  return `/uploads-blogs/${fileName}`;
+  // ✅ Return relative path for DB/frontend
+  return `/blogs/${fileName}`;
 }
