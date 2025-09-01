@@ -1,19 +1,12 @@
 "use client";
 
-import {
-  Suspense,
-  useEffect,
-  useState,
-  useOptimistic,
-  startTransition,
-} from "react";
+import { Suspense, useEffect, useState, useOptimistic } from "react";
 import { useRouter } from "next/navigation";
 import {
-  fetchAllStoresAction,
-  deleteStoreAction,
-} from "@/actions/storeActions";
-import { fetchCouponCountByStoreIdAction } from "@/actions/storeActions";
-
+  fetchAllNetworksAction,
+  deleteNetworkAction,
+} from "@/actions/networkActions";
+import { startTransition } from "react";
 import {
   Card,
   CardHeader,
@@ -46,37 +39,32 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Eye, Pencil, Trash2, Loader2, ExternalLink } from "lucide-react";
+import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 
-interface IStore {
+interface INetwork {
   _id: string;
-  name: string;
   networkName: string;
-  totalCoupons?: number;
-  image?: string;
-  slug?: string;
+  storeNetworkUrl: string;
 }
 
-function StoresTable({
-  stores,
+function NetworksTable({
+  networks,
   onView,
   onEdit,
   onDelete,
-  onCouponsClick,
   loading,
 }: {
-  stores: IStore[];
+  networks: INetwork[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  onCouponsClick: (id: string) => void;
   loading: boolean;
 }) {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        Loading stores...
+        Loading networks...
       </div>
     );
   }
@@ -86,65 +74,27 @@ function StoresTable({
       <Table>
         <TableHeader>
           <TableRow className="border-b border-muted">
-            <TableHead>Name</TableHead>
-            <TableHead>Network</TableHead>
-            <TableHead>Total Coupons</TableHead>
-            <TableHead>Image</TableHead>
-            <TableHead>Slug</TableHead>
-            <TableHead>Live View</TableHead>
-            <TableHead className="w-[140px] text-right">Actions</TableHead>
+            <TableHead>Network Name</TableHead>
+            <TableHead>Network URL</TableHead>
+            <TableHead className="w-[160px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {stores.length > 0 ? (
-            stores.map((store) => (
+          {networks.length > 0 ? (
+            networks.map((network) => (
               <TableRow
-                key={store._id}
+                key={network._id}
                 className="hover:bg-muted/40 transition-colors"
               >
-                <TableCell className="font-medium">{store.name}</TableCell>
-                <TableCell>{store.networkName}</TableCell>
-                <TableCell>
-                  <button
-                    onClick={() => onCouponsClick(store._id)}
-                    className="text-blue-600 hover:underline"
-                  >
-                    {store.totalCoupons ?? 0}
-                  </button>
-                </TableCell>
-                <TableCell>
-                  {store.image ? (
-                    <img
-                      src={store.image}
-                      alt={store.name}
-                      className="h-10 w-10 object-cover rounded"
-                    />
-                  ) : (
-                    "-"
-                  )}
-                </TableCell>
-                <TableCell>{store.slug ?? "-"}</TableCell>
-                <TableCell>
-                  {store.slug ? (
-                    <a
-                      href={`/stores/${store._id}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline flex items-center gap-1"
-                    >
-                      Live View <ExternalLink className="h-4 w-4" />
-                    </a>
-                  ) : (
-                    "-"
-                  )}
-                </TableCell>
+                <TableCell className="font-medium">{network.networkName}</TableCell>
+                <TableCell>{network.storeNetworkUrl}</TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-1.5">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onView(store._id)}
+                      onClick={() => onView(network._id)}
                       title="View"
                     >
                       <Eye className="h-4 w-4" />
@@ -153,7 +103,7 @@ function StoresTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onEdit(store._id)}
+                      onClick={() => onEdit(network._id)}
                       title="Edit"
                     >
                       <Pencil className="h-4 w-4" />
@@ -162,7 +112,7 @@ function StoresTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => onDelete(store._id)}
+                      onClick={() => onDelete(network._id)}
                       title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -173,11 +123,8 @@ function StoresTable({
             ))
           ) : (
             <TableRow>
-              <TableCell
-                colSpan={7}
-                className="text-center text-muted-foreground py-6"
-              >
-                No stores found.
+              <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
+                No networks found.
               </TableCell>
             </TableRow>
           )}
@@ -187,38 +134,29 @@ function StoresTable({
   );
 }
 
-export default function StoresPage() {
+export default function NetworksPage() {
   const router = useRouter();
-  const [stores, setStores] = useState<IStore[]>([]);
+  const [networks, setNetworks] = useState<INetwork[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const pageSize = 8;
 
-  const [optimisticStores, deleteOptimistic] = useOptimistic(
-    stores,
-    (state, id: string) => state.filter((store) => store._id !== id)
+  const [optimisticNetworks, deleteOptimistic] = useOptimistic(
+    networks,
+    (state, id: string) => state.filter((net) => net._id !== id)
   );
 
-  const loadStores = async () => {
+  const loadNetworks = async () => {
     setLoading(true);
-    const result = await fetchAllStoresAction();
+    const result = await fetchAllNetworksAction();
     if (result?.data && Array.isArray(result.data)) {
-      const storesWithCounts = await Promise.all(
-        result.data.map(async (store: IStore) => {
-          const countRes = await fetchCouponCountByStoreIdAction(store._id);
-          return {
-            ...store,
-            totalCoupons: countRes?.data ?? 0,
-          };
-        })
-      );
-      setStores(storesWithCounts);
+      setNetworks(result.data);
     } else {
       toast({
         title: "Error",
-        description: result?.error?.message || "Failed to fetch stores",
+        description: result?.error?.message || "Failed to fetch networks",
         variant: "destructive",
       });
     }
@@ -230,32 +168,32 @@ export default function StoresPage() {
       deleteOptimistic(id);
     });
 
-    const result = await deleteStoreAction(id);
+    const result = await deleteNetworkAction(id);
     if (result?.error) {
       toast({
         title: "Error",
-        description: result.error.message || "Failed to delete store",
+        description: result.error.message || "Failed to delete network",
         variant: "destructive",
       });
-      await loadStores(); // rollback optimistic update
+      await loadNetworks(); // revert if failed
     } else {
-      setStores((prev) => prev.filter((store) => store._id !== id));
+      setNetworks((prev) => prev.filter((net) => net._id !== id)); // keep in sync
       toast({
         title: "Deleted",
-        description: "Store deleted successfully.",
+        description: "Network deleted successfully.",
       });
     }
   };
 
   useEffect(() => {
-    loadStores();
+    loadNetworks();
   }, []);
 
-  const filteredStores = optimisticStores.filter((store) =>
-    store.name.toLowerCase().includes(search.toLowerCase())
+  const filteredNetworks = optimisticNetworks.filter((n) =>
+    n.networkName.toLowerCase().includes(search.toLowerCase())
   );
-  const totalPages = Math.ceil(filteredStores.length / pageSize);
-  const paginatedStores = filteredStores.slice(
+  const totalPages = Math.ceil(filteredNetworks.length / pageSize);
+  const paginatedNetworks = filteredNetworks.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
@@ -263,10 +201,10 @@ export default function StoresPage() {
   return (
     <Card className="w-full border-none shadow-none">
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <CardTitle className="text-lg font-semibold">Stores</CardTitle>
+        <CardTitle className="text-lg font-semibold">Networks</CardTitle>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <Input
-            placeholder="Search stores..."
+            placeholder="Search networks..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -274,8 +212,8 @@ export default function StoresPage() {
             }}
             className="sm:w-64"
           />
-          <Button onClick={() => router.push("/admin/stores/new")}>
-            Create Store
+          <Button onClick={() => router.push("/admin/networks/new")}>
+            Create Network
           </Button>
         </div>
       </CardHeader>
@@ -285,18 +223,15 @@ export default function StoresPage() {
           fallback={
             <div className="flex justify-center items-center py-8 text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              Loading stores...
+              Loading networks...
             </div>
           }
         >
-          <StoresTable
-            stores={paginatedStores}
-            onView={(id) => router.push(`/admin/stores/view/${id}`)}
-            onEdit={(id) => router.push(`/admin/stores/edit/${id}`)}
+          <NetworksTable
+            networks={paginatedNetworks}
+            onView={(id) => router.push(`/admin/networks/view/${id}`)}
+            onEdit={(id) => router.push(`/admin/networks/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
-            onCouponsClick={(id) =>
-              router.push(`/admin/coupons?storeId=${id}`)
-            }
             loading={loading}
           />
         </Suspense>
@@ -307,7 +242,9 @@ export default function StoresPage() {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.max(1, p - 1))
+                    }
                   />
                 </PaginationItem>
                 {Array.from({ length: totalPages }, (_, i) => (
@@ -342,7 +279,7 @@ export default function StoresPage() {
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
           <p>
-            Are you sure you want to delete this store? This action cannot be
+            Are you sure you want to delete this network? This action cannot be
             undone.
           </p>
           <DialogFooter>

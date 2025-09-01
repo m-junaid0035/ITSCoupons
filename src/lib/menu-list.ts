@@ -11,6 +11,7 @@ import {
   Key,
   Shield,
   Tag,
+  Link,
 } from "lucide-react";
 
 type Submenu = {
@@ -52,6 +53,11 @@ export function getMenuList(pathname: string): Group[] {
           href: "/admin/categories",
           label: "Categories",
           icon: Layers,
+        },
+        {
+          href: "/admin/networks",
+          label: "Networks",
+          icon: Link,
         },
         {
           href: "/admin/stores",
