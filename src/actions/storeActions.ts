@@ -19,9 +19,13 @@ import {
 import { saveStoreImage } from "@/lib/uploadStoreImage";
 
 /* ---------------------------- 📝 Validation Schema ---------------------------- */
+const allowedNetworks = ["CJ", "Rakuten", "Awin", "Impact", "ShareASale", "N/A"] as const;
+type NetworkName = (typeof allowedNetworks)[number];
+
 const storeSchema = z.object({
   name: z.string().trim().min(3).max(100),
-  network: z.string().optional(), // Network ID (ObjectId)
+  networkName: z.enum(allowedNetworks).default("N/A"),
+  storeNetworkUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
   directUrl: z.string().url("Invalid direct URL").optional().or(z.literal("")),
   categories: z.array(z.string().min(1, "Invalid category ID")),
   totalCouponUsedTimes: z.coerce.number().min(0).optional(),
@@ -34,6 +38,15 @@ const storeSchema = z.object({
   slug: z.string().trim().min(3).max(100),
   isPopular: z.coerce.boolean().optional().default(false),
   isActive: z.coerce.boolean().optional().default(true),
+}).superRefine((data, ctx) => {
+  // Conditional validation: storeNetworkUrl required if networkName != "N/A"
+  if (data.networkName !== "N/A" && !data.storeNetworkUrl?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["storeNetworkUrl"],
+      message: "storeNetworkUrl is required if networkName is not 'N/A'",
+    });
+  }
 });
 
 type StoreFormData = z.infer<typeof storeSchema>;
@@ -62,11 +75,15 @@ async function parseStoreFormData(
 
   const imagePath = await saveStoreImage(uploadedFile);
 
-  const networkId = formData.get("network")?.toString() || undefined;
+  const rawNetworkName = String(formData.get("networkName") || "N/A");
+  const networkName: NetworkName = allowedNetworks.includes(rawNetworkName as NetworkName)
+    ? (rawNetworkName as NetworkName)
+    : "N/A";
 
   return {
     name: String(formData.get("name") || ""),
-    network: networkId,
+    networkName,
+    storeNetworkUrl: String(formData.get("storeNetworkUrl") || ""),
     directUrl: String(formData.get("directUrl") || ""),
     categories: categoryIds,
     totalCouponUsedTimes: Number(formData.get("totalCouponUsedTimes") || 0),
@@ -148,20 +165,14 @@ export async function deleteStoreAction(id: string) {
 /* ---------------------------- 🔹 FETCHES ---------------------------- */
 export async function fetchAllStoresAction() {
   await connectToDatabase();
-  try {
-    return { data: await getAllStores() };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch stores"] } };
-  }
+  try { return { data: await getAllStores() }; } 
+  catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores"] } }; }
 }
 
 export async function fetchAllActiveStoresAction() {
   await connectToDatabase();
-  try {
-    return { data: await getAllActiveStores() };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch stores"] } };
-  }
+  try { return { data: await getAllActiveStores() }; } 
+  catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores"] } }; }
 }
 
 export async function fetchStoreByIdAction(id: string) {
@@ -170,27 +181,19 @@ export async function fetchStoreByIdAction(id: string) {
     const store = await getStoreById(id);
     if (!store) return { error: { message: ["Store not found"] } };
     return { data: store };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch store"] } };
-  }
+  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch store"] } }; }
 }
 
 export async function fetchPopularStoresAction() {
   await connectToDatabase();
-  try {
-    return { data: await getPopularStores() };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch popular stores"] } };
-  }
+  try { return { data: await getPopularStores() }; } 
+  catch (error: any) { return { error: { message: [error.message || "Failed to fetch popular stores"] } }; }
 }
 
 export async function fetchRecentlyUpdatedStoresAction() {
   await connectToDatabase();
-  try {
-    return { data: await getRecentlyUpdatedStores() };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch recently updated stores"] } };
-  }
+  try { return { data: await getRecentlyUpdatedStores() }; } 
+  catch (error: any) { return { error: { message: [error.message || "Failed to fetch recently updated stores"] } }; }
 }
 
 export async function fetchStoresByCategoriesAction(categories: string[]) {
@@ -198,18 +201,13 @@ export async function fetchStoresByCategoriesAction(categories: string[]) {
   try {
     if (!categories.length) return { data: [] };
     return { data: await getStoresByCategories(categories) };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch stores by categories"] } };
-  }
+  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores by categories"] } }; }
 }
 
 export async function fetchAllStoresWithCouponsAction() {
   await connectToDatabase();
-  try {
-    return { data: await getStoresWithCoupons() };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch stores with coupons"] } };
-  }
+  try { return { data: await getStoresWithCoupons() }; } 
+  catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores with coupons"] } }; }
 }
 
 export async function fetchStoreWithCouponsByIdAction(storeId: string) {
@@ -218,9 +216,7 @@ export async function fetchStoreWithCouponsByIdAction(storeId: string) {
     const store = await getStoreWithCouponsById(storeId);
     if (!store) return { error: { message: ["Store not found"] } };
     return { data: store };
-  } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch store"] } };
-  }
+  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch store"] } }; }
 }
 
 export async function fetchCouponCountByStoreIdAction(storeId: string) {
@@ -228,7 +224,74 @@ export async function fetchCouponCountByStoreIdAction(storeId: string) {
   try {
     const count = await getCouponCountByStoreId(storeId);
     return { data: count };
+  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch coupon count"] } }; }
+}
+
+
+export type InlineStoreUpdate = Partial<{
+  name: string;
+  network: string;
+  directUrl: string;
+  categories: string[];
+  totalCouponUsedTimes: number;
+  imageFile: File;
+  image: string;
+  description: string;
+  metaTitle: string;
+  metaDescription: string;
+  metaKeywords: string[];
+  focusKeywords: string[];
+  slug: string;
+  isPopular: boolean;
+  isActive: boolean;
+}>;
+
+export async function updateStoreInline(id: string, updates: InlineStoreUpdate & Partial<{ categories: string[]; directUrl: string; imageFile: File }>) {
+  await connectToDatabase();
+
+  const store = await getStoreById(id);
+  if (!store) return { error: { message: ["Store not found"] } };
+
+  // Auto-generate slug if name is updated
+  if (updates.name && !updates.slug) {
+    updates.slug = updates.name
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "_")
+      .replace(/[^\w_]/g, "");
+  }
+
+  // Auto-update meta fields if name changed
+  if (updates.name) {
+    updates.metaTitle = `${updates.name} - Your Store`;
+    updates.metaDescription = `Buy ${updates.name} products online`;
+    updates.focusKeywords = [updates.name.toLowerCase()];
+  }
+
+  // Fill missing required fields from existing store
+  const finalUpdates = {
+    name: updates.name ?? store.name,
+    categories: updates.categories ?? store.categories,
+    directUrl: updates.directUrl ?? store.directUrl,
+    imageFile: updates.imageFile,
+    network: updates.network ?? store.network,
+    totalCouponUsedTimes: updates.totalCouponUsedTimes ?? store.totalCouponUsedTimes,
+    image: updates.image ?? store.image,
+    description: updates.description ?? store.description,
+    metaTitle: updates.metaTitle ?? store.metaTitle,
+    metaDescription: updates.metaDescription ?? store.metaDescription,
+    metaKeywords: updates.metaKeywords ?? store.metaKeywords,
+    focusKeywords: updates.focusKeywords ?? store.focusKeywords,
+    isPopular: updates.isPopular ?? store.isPopular,
+    isActive: updates.isActive ?? store.isActive,
+    slug: updates.slug ?? store.slug,
+  };
+
+  try {
+    const updated = await updateStore(id, finalUpdates);
+    if (!updated) return { error: { message: ["Failed to update store"] } };
+    return { data: updated };
   } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch coupon count"] } };
+    return { error: { message: [error.message || "Failed to update store"] } };
   }
 }

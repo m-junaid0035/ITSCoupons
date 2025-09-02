@@ -11,9 +11,10 @@ import { useRouter } from "next/navigation";
 import {
   fetchAllStoresAction,
   deleteStoreAction,
+  updateStoreInline,
 } from "@/actions/storeActions";
 import { fetchCouponCountByStoreIdAction } from "@/actions/storeActions";
-import { fetchAllNetworksAction } from "@/actions/networkActions"; // NEW: fetch networks
+import { fetchAllNetworksAction } from "@/actions/networkActions";
 
 import {
   Card,
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -52,7 +54,7 @@ import { Eye, Pencil, Trash2, Loader2, ExternalLink } from "lucide-react";
 interface IStore {
   _id: string;
   name: string;
-  network?: string | null; // store.network now stores only network ID
+  network?: { _id: string; name: string } | null;
   totalCoupons?: number;
   image?: string;
   slug?: string;
@@ -71,6 +73,7 @@ function StoresTable({
   onDelete,
   onCouponsClick,
   loading,
+  onInlineUpdate,
 }: {
   stores: IStore[];
   networks: INetwork[];
@@ -79,7 +82,12 @@ function StoresTable({
   onDelete: (id: string) => void;
   onCouponsClick: (id: string) => void;
   loading: boolean;
+  onInlineUpdate: (id: string, field: string, value: string) => void;
 }) {
+  const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [tempName, setTempName] = useState("");
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8 text-muted-foreground">
@@ -110,12 +118,70 @@ function StoresTable({
                 key={store._id}
                 className="hover:bg-muted/40 transition-colors"
               >
-                <TableCell className="font-medium">{store.name}</TableCell>
-                <TableCell>
-                  {store.network
-                    ? networks.find((n) => n._id === store.network)?.name || "N/A"
-                    : "N/A"}
+                <TableCell
+                  className="font-medium cursor-pointer"
+                  onDoubleClick={() => {
+                    setEditingNameId(store._id);
+                    setTempName(store.name);
+                  }}
+                >
+                  {editingNameId === store._id ? (
+                    <Input
+                      value={tempName}
+                      autoFocus
+                      onChange={(e) => setTempName(e.target.value)}
+                      onBlur={() => {
+                        onInlineUpdate(store._id, "name", tempName);
+                        setEditingNameId(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          onInlineUpdate(store._id, "name", tempName);
+                          setEditingNameId(null);
+                        }
+                      }}
+                    />
+                  ) : (
+                    store.name
+                  )}
                 </TableCell>
+
+                <TableCell
+                  onDoubleClick={() => setEditingNetworkId(store._id)}
+                  className="cursor-pointer"
+                >
+                  {editingNetworkId === store._id ? (
+                    <Select
+                      value={store.network?._id || ""}
+                      onValueChange={(value) => {
+                        onInlineUpdate(store._id, "network", value);
+                        setEditingNetworkId(null);
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            store.network?.name ||
+                            networks.find((n) => n._id === store.network?._id)
+                              ?.name ||
+                            "Select network"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {networks.map((network) => (
+                          <SelectItem key={network._id} value={network._id}>
+                            {network.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    networks.find((n) => n._id === String(store.network))?.name ||
+                    "N/A"
+                  )}
+                </TableCell>
+
                 <TableCell>
                   <button
                     onClick={() => onCouponsClick(store._id)}
@@ -124,6 +190,7 @@ function StoresTable({
                     {store.totalCoupons ?? 0}
                   </button>
                 </TableCell>
+
                 <TableCell>
                   {store.image ? (
                     <img
@@ -135,7 +202,9 @@ function StoresTable({
                     "-"
                   )}
                 </TableCell>
+
                 <TableCell>{store.slug ?? "-"}</TableCell>
+
                 <TableCell>
                   {store.slug ? (
                     <a
@@ -150,6 +219,7 @@ function StoresTable({
                     "-"
                   )}
                 </TableCell>
+
                 <TableCell>
                   <div className="flex justify-end items-center gap-1.5">
                     <Button
@@ -185,10 +255,7 @@ function StoresTable({
             ))
           ) : (
             <TableRow>
-              <TableCell
-                colSpan={7}
-                className="text-center text-muted-foreground py-6"
-              >
+              <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
                 No stores found.
               </TableCell>
             </TableRow>
@@ -199,14 +266,18 @@ function StoresTable({
   );
 }
 
+
 export default function StoresPage() {
   const router = useRouter();
   const [stores, setStores] = useState<IStore[]>([]);
-  const [networks, setNetworks] = useState<INetwork[]>([]); // NEW
+  const [networks, setNetworks] = useState<INetwork[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [searchType, setSearchType] = useState<"store" | "network">("store");
+
+
   const pageSize = 8;
 
   const [optimisticStores, deleteOptimistic] = useOptimistic(
@@ -214,25 +285,15 @@ export default function StoresPage() {
     (state, id: string) => state.filter((store) => store._id !== id)
   );
 
-  const loadNetworks = async () => {
-  const res = await fetchAllNetworksAction();
-  if (res?.data && Array.isArray(res.data)) {
-    // Map networkName => name
-    const mappedNetworks = res.data.map((n: any) => ({
-      _id: n._id,
-      name: n.networkName, // <-- rename here
-    }));
-    setNetworks(mappedNetworks);
-  }
-};
-
-
-  const loadStores = async () => {
+  const loadStoresAndNetworks = async () => {
     setLoading(true);
-    const result = await fetchAllStoresAction();
-    if (result?.data && Array.isArray(result.data)) {
+
+    const storesResult = await fetchAllStoresAction();
+    const networksResult = await fetchAllNetworksAction();
+
+    if (storesResult?.data && Array.isArray(storesResult.data)) {
       const storesWithCounts = await Promise.all(
-        result.data.map(async (store: IStore) => {
+        storesResult.data.map(async (store: IStore) => {
           const countRes = await fetchCouponCountByStoreIdAction(store._id);
           return {
             ...store,
@@ -244,10 +305,25 @@ export default function StoresPage() {
     } else {
       toast({
         title: "Error",
-        description: result?.error?.message || "Failed to fetch stores",
+        description: storesResult?.error?.message || "Failed to fetch stores",
         variant: "destructive",
       });
     }
+
+    if (networksResult?.data && Array.isArray(networksResult.data)) {
+      const formattedNetworks = networksResult.data.map((n) => ({
+        _id: n._id,
+        name: n.networkName, // map networkName to name
+      }));
+      setNetworks(formattedNetworks);
+    } else {
+      toast({
+        title: "Error",
+        description: networksResult?.error?.message || "Failed to fetch networks",
+        variant: "destructive",
+      });
+    }
+
     setLoading(false);
   };
 
@@ -263,25 +339,50 @@ export default function StoresPage() {
         description: result.error.message || "Failed to delete store",
         variant: "destructive",
       });
-      await loadStores(); // rollback optimistic update
+      await loadStoresAndNetworks();
     } else {
       setStores((prev) => prev.filter((store) => store._id !== id));
+      toast({ title: "Deleted", description: "Store deleted successfully." });
+    }
+  };
+
+  const handleInlineUpdate = async (id: string, field: string, value: string) => {
+    const updateData = field === "network" ? { network: value } : { [field]: value };
+    const result = await updateStoreInline(id, updateData);
+    if (result?.data) {
+      setStores((prev) =>
+        prev.map((store) => (store._id === id ? { ...store, ...result.data } : store))
+      );
+      toast({ title: "Updated", description: "Store updated successfully." });
+    } else if (result?.error) {
       toast({
-        title: "Deleted",
-        description: "Store deleted successfully.",
+        title: "Error",
+        description: result.error.message?.[0] || "Failed to update store",
+        variant: "destructive",
       });
     }
   };
 
   useEffect(() => {
-    loadNetworks();
-    loadStores();
+    loadStoresAndNetworks();
   }, []);
 
-  const filteredStores = optimisticStores.filter((store) =>
-    store.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredStores = optimisticStores.filter((store) => {
+    if (!search) return true; // If search is empty, include all
+
+    const searchLower = search.toLowerCase();
+
+    if (searchType === "store") {
+      return store.name.toLowerCase().includes(searchLower);
+    } else if (searchType === "network") {
+      return networks.find((n) => n._id === String(store.network))?.name.includes(searchLower);
+    }
+
+    return true; // fallback
+  });
+
   const totalPages = Math.ceil(filteredStores.length / pageSize);
+
   const paginatedStores = filteredStores.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
@@ -292,8 +393,18 @@ export default function StoresPage() {
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <CardTitle className="text-lg font-semibold">Stores</CardTitle>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <Select value={searchType} onValueChange={(value: "store" | "network") => setSearchType(value)}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="Search by..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="store">Store Name</SelectItem>
+              <SelectItem value="network">Network</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Input
-            placeholder="Search stores..."
+            placeholder={`Search ${searchType === "store" ? "stores" : "networks"}...`}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -305,6 +416,7 @@ export default function StoresPage() {
             Create Store
           </Button>
         </div>
+
       </CardHeader>
 
       <CardContent>
@@ -318,14 +430,13 @@ export default function StoresPage() {
         >
           <StoresTable
             stores={paginatedStores}
-            networks={networks} // pass networks
+            networks={networks}
             onView={(id) => router.push(`/admin/stores/view/${id}`)}
             onEdit={(id) => router.push(`/admin/stores/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
-            onCouponsClick={(id) =>
-              router.push(`/admin/coupons?storeId=${id}`)
-            }
+            onCouponsClick={(id) => router.push(`/admin/coupons?storeId=${id}`)}
             loading={loading}
+            onInlineUpdate={handleInlineUpdate}
           />
         </Suspense>
 
@@ -369,15 +480,9 @@ export default function StoresPage() {
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
-          <p>
-            Are you sure you want to delete this store? This action cannot be
-            undone.
-          </p>
+          <p>Are you sure you want to delete this store? This action cannot be undone.</p>
           <DialogFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setConfirmDeleteId(null)}
-            >
+            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
               Cancel
             </Button>
             <Button
