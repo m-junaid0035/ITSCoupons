@@ -8,21 +8,12 @@ import { fetchLatestSettingAction } from "@/actions/settingActions";
 import type { StoreData } from "@/types/store";
 import type { SettingData } from "@/types/setting";
 
-export default async function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-
-  const storesResult = await fetchAllStoresAction();
-  const stores: StoreData[] = Array.isArray(storesResult?.data)
-    ? storesResult.data
-    : [];
-
+// Generate metadata dynamically
+export async function generateMetadata(): Promise<Metadata> {
   const settingResult = await fetchLatestSettingAction();
   const latestSetting: SettingData | null = settingResult?.data || null;
 
-  const metadata: Metadata = {
+  return {
     title: latestSetting?.metaTitle || "ITSCoupons",
     description:
       latestSetting?.metaDescription ||
@@ -45,10 +36,33 @@ export default async function RootLayout({
         latestSetting?.metaDescription ||
         "A stunning and functional retractable sidebar for Next.js built on top of shadcn/ui complete with desktop and mobile responsiveness.",
     },
+    icons: {
+      icon: "/logos/ITS-Coupons-FV-Icon-2.png",
+      // You can also add multiple sizes for better compatibility
+      apple: "/logos/ITS-Coupons-FV-Icon-2.png",
+      shortcut: "/logos/ITS-Coupons-FV-Icon-2.png",
+    },
   };
+}
+
+export default async function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  const storesResult = await fetchAllStoresAction();
+  const stores: StoreData[] = Array.isArray(storesResult?.data)
+    ? storesResult.data
+    : [];
+
+  const settingResult = await fetchLatestSettingAction();
+  const latestSetting: SettingData | null = settingResult?.data || null;
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Additional head tags can be added here if needed */}
+      </head>
       <body className={GeistSans.className}>
         {/* Pass stores into Header */}
         <Header allStores={stores} />
