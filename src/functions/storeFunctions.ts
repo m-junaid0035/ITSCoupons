@@ -284,3 +284,19 @@ export const getCouponCountByStoreId = async (storeId: string) => {
   });
   return count;
 };
+
+/**
+ * Get all stores for a specific network.
+ */
+export const getStoresByNetwork = async (
+  networkId: string
+): Promise<ReturnType<typeof serializeStore>[]> => {
+  if (!Types.ObjectId.isValid(networkId)) return [];
+
+  const stores = await Store.find({ network: new Types.ObjectId(networkId), isActive: true })
+    .sort({ createdAt: -1 })
+    .populate("network")
+    .lean();
+
+  return stores.map(serializeStore);
+};

@@ -6,12 +6,14 @@ import {
   useState,
   useOptimistic,
   startTransition,
+  use,
 } from "react";
 import { useRouter } from "next/navigation";
 import {
   fetchAllStoresAction,
   deleteStoreAction,
   updateStoreInline,
+  fetchStoresByNetworkAction,
 } from "@/actions/storeActions";
 import { fetchCouponCountByStoreIdAction } from "@/actions/storeActions";
 import { fetchAllNetworksAction } from "@/actions/networkActions";
@@ -294,7 +296,12 @@ function StoresTable({
 
 
 
-export default function StoresPage() {
+export default function StoresPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ networkId?: string }>;
+}) {
+  const { networkId = "" } = use(searchParams);
   const router = useRouter();
   const [stores, setStores] = useState<IStore[]>([]);
   const [networks, setNetworks] = useState<INetwork[]>([]);
@@ -314,8 +321,13 @@ export default function StoresPage() {
 
   const loadStoresAndNetworks = async () => {
     setLoading(true);
-
-    const storesResult = await fetchAllStoresAction();
+    let storesResult;
+    if (networkId) {
+      storesResult = await fetchStoresByNetworkAction(networkId);
+    }
+    else {
+      storesResult = await fetchAllStoresAction();
+    }
     const networksResult = await fetchAllNetworksAction();
 
     if (storesResult?.data && Array.isArray(storesResult.data)) {

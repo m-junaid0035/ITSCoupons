@@ -32,6 +32,7 @@ import {
   fetchCategoryByIdAction,
   updateCategoryAction,
 } from "@/actions/categoryActions";
+import RichTextEditor from "@/components/RichTextEditor";
 
 interface FormState {
   error?: Record<string, string[]> | { message?: string[] };
@@ -95,22 +96,17 @@ export default function EditCategoryForm() {
 
   const errorFor = (field: string) =>
     formState.error &&
-    typeof formState.error === "object" &&
-    field in formState.error
+      typeof formState.error === "object" &&
+      field in formState.error
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
 
   return (
     <>
-      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
-        <CardHeader className="flex items-center justify-between border-none">
-          <CardTitle>Edit Category</CardTitle>
-          <Button
-            variant="secondary"
-            onClick={() => router.push("/admin/categories")}
-          >
-            Back to Categories
-          </Button>
+      <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Edit Category</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/categories")}>Back to Categories</Button>
         </CardHeader>
 
         <CardContent>
@@ -155,13 +151,10 @@ export default function EditCategoryForm() {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label>Description</Label>
-              <Button
-                type="button"
-                onClick={() => setDescriptionModalOpen(true)}
-              >
-                Edit Description
-              </Button>
+              <Label>
+                Description
+              </Label>
+              <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
             </div>
 
             {/* Is Popular */}
@@ -206,32 +199,6 @@ export default function EditCategoryForm() {
           </form>
         </CardContent>
       </Card>
-
-      {/* Description Modal */}
-      <Dialog
-        open={descriptionModalOpen}
-        onOpenChange={setDescriptionModalOpen}
-      >
-        <DialogContent className="max-w-3xl w-full">
-          <DialogHeader>
-            <DialogTitle>Edit Description</DialogTitle>
-          </DialogHeader>
-          <DescriptionEditor
-            initialContent={descriptionHtml}
-            onChange={setDescriptionHtml}
-          />
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDescriptionModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Success Confirmation Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent>

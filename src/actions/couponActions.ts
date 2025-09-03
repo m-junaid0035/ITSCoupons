@@ -26,11 +26,12 @@ const couponSchema = z.object({
 
   // ✅ expirationDate optional
   expirationDate: z
-    .string()
-    .optional()
-    .refine((val) => !val || !isNaN(Date.parse(val)), {
-      message: "Invalid date format",
-    }),
+  .string()
+  .transform((val) => (val === "" ? undefined : val))
+  .optional()
+  .refine((val) => !val || !isNaN(Date.parse(val)), {
+    message: "Invalid date format",
+  }),
 
   couponUrl: z.string().url("Invalid URL").optional(),
   storeName: z.string().optional(),

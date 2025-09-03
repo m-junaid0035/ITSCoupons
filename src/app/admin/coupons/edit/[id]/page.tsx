@@ -178,7 +178,7 @@ export default function EditCouponForm() {
     <>
       <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
-          <CardTitle className="text-lg sm:text-xl font-semibold">Create Coupon</CardTitle>
+          <CardTitle className="text-lg sm:text-xl font-semibold">Edit Coupon</CardTitle>
           <Button variant="secondary" onClick={() => router.push("/admin/coupons")}>Back to Coupons</Button>
         </CardHeader>
 

@@ -14,7 +14,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import { createNetworkAction } from "@/actions/networkActions";
+import { createStaticPageAction } from "@/actions/staticPagesActions";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import RichTextEditor from "@/components/RichTextEditor";
 
 interface FormState {
   error?: Record<string, string[]> & { message?: string[] };
@@ -32,18 +33,19 @@ const initialState: FormState = {
   error: {},
 };
 
-export default function NetworkForm() {
+export default function StaticPageForm() {
   const router = useRouter();
 
   const [formState, dispatch, isPending] = useActionState(
     async (prevState: FormState, formData: FormData) => {
-      const result = await createNetworkAction(prevState, formData);
+      const result = await createStaticPageAction(prevState, formData);
       return result;
     },
     initialState
   );
 
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [contentHtml, setContentHtml] = useState("");
 
   useEffect(() => {
     if (formState.data && !formState.error) {
@@ -52,7 +54,8 @@ export default function NetworkForm() {
 
     if (formState.error && "message" in formState.error) {
       alert(
-        formState.error.message?.[0] || "An error occurred while saving network"
+        formState.error.message?.[0] ||
+          "An error occurred while saving the page"
       );
     }
   }, [formState]);
@@ -61,44 +64,79 @@ export default function NetworkForm() {
     <>
       <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
-          <CardTitle className="text-lg sm:text-xl font-semibold">Create Network</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/networks")}>Back to Netoworks</Button>
+          <CardTitle className="text-lg sm:text-xl font-semibold">
+            Create Static Page
+          </CardTitle>
+          <Button
+            variant="secondary"
+            onClick={() => router.push("/admin/staticpages")}
+          >
+            Back to Pages
+          </Button>
         </CardHeader>
 
         <CardContent>
           <form
-            action={(formData: FormData) => dispatch(formData)}
+            action={(formData: FormData) => {
+              // attach content HTML before submitting
+              formData.set("content", contentHtml);
+              return dispatch(formData);
+            }}
             className="space-y-6"
           >
-            {/* Network Name */}
+            {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="networkName">Network Name <span className="text-red-500">*</span></Label>
+              <Label htmlFor="title">
+                Page Title <span className="text-red-500">*</span>
+              </Label>
               <Input
-                id="networkName"
-                name="networkName"
+                id="title"
+                name="title"
                 required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="Enter network name"
+                placeholder="Enter page title"
               />
             </div>
 
-            {/* Network URL */}
+            {/* Slug */}
             <div className="space-y-2">
-              <Label htmlFor="storeNetworkUrl">Network URL <span className="text-red-500">*</span></Label>
+              <Label htmlFor="slug">
+                Slug <span className="text-red-500">*</span>
+              </Label>
               <Input
-                id="storeNetworkUrl"
-                name="storeNetworkUrl"
+                id="slug"
+                name="slug"
                 required
-                type="url"
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="https://example.com"
+                placeholder="about-us"
               />
+            </div>
+
+            {/* Content */}
+            <div className="space-y-2">
+              <Label>
+                Content <span className="text-red-500">*</span>
+              </Label>
+              <RichTextEditor value={contentHtml} onChange={setContentHtml} />
+            </div>
+
+            {/* Published toggle */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isPublished"
+                name="isPublished"
+                value="true"
+                defaultChecked
+                className="w-4 h-4"
+              />
+              <Label htmlFor="isPublished">Published</Label>
             </div>
 
             <CardFooter className="flex justify-end border-none">
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isPending ? "Saving..." : "Save Network"}
+                {isPending ? "Saving..." : "Save Page"}
               </Button>
             </CardFooter>
           </form>
@@ -111,12 +149,12 @@ export default function NetworkForm() {
           <DialogHeader>
             <DialogTitle>Success</DialogTitle>
           </DialogHeader>
-          <p>Network created successfully!</p>
+          <p>Static page created successfully!</p>
           <DialogFooter>
             <Button
               onClick={() => {
                 setSuccessDialogOpen(false);
-                router.push("/admin/networks");
+                router.push("/admin/staticpages");
               }}
             >
               OK

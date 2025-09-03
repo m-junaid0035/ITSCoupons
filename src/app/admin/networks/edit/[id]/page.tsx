@@ -95,16 +95,11 @@ export default function EditNetworkForm() {
       : null;
 
   return (
-    <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
-      <CardHeader className="flex items-center justify-between border-none">
-        <CardTitle>Edit Network</CardTitle>
-        <Button
-          variant="secondary"
-          onClick={() => router.push("/admin/networks")}
-        >
-          Back to Networks
-        </Button>
-      </CardHeader>
+    <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Edit Network</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/networks")}>Back to Netoworks</Button>
+        </CardHeader>
 
       <CardContent>
         <form
@@ -113,7 +108,7 @@ export default function EditNetworkForm() {
         >
           {/* Network Name */}
           <div className="space-y-2">
-            <Label htmlFor="networkName">Network Name</Label>
+            <Label htmlFor="networkName">Network Name <span className="text-red-500">*</span></Label>
             <Input
               id="networkName"
               name="networkName"
@@ -129,7 +124,7 @@ export default function EditNetworkForm() {
 
           {/* Network URL */}
           <div className="space-y-2">
-            <Label htmlFor="storeNetworkUrl">Network URL</Label>
+            <Label htmlFor="storeNetworkUrl">Network URL <span className="text-red-500">*</span></Label>
             <Input
               id="storeNetworkUrl"
               name="storeNetworkUrl"

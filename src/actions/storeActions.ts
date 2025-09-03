@@ -15,6 +15,7 @@ import {
   getStoresWithCoupons,
   getStoreWithCouponsById,
   getCouponCountByStoreId,
+  getStoresByNetwork,
 } from "@/functions/storeFunctions";
 import { saveStoreImage } from "@/lib/uploadStoreImage";
 
@@ -257,5 +258,25 @@ export async function updateStoreInline(id: string, updates: InlineStoreUpdate) 
     return { data: updated };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to update store"] } };
+  }
+}
+
+/**
+ * ✅ FETCH STORES BY NETWORK
+ */
+export async function fetchStoresByNetworkAction(networkId: string) {
+  await connectToDatabase();
+
+  if (!networkId) {
+    return { error: { message: ["Network ID is required"] } };
+  }
+
+  try {
+    const stores = await getStoresByNetwork(networkId);
+    return { data: stores };
+  } catch (error: any) {
+    return {
+      error: { message: [error.message || "Failed to fetch stores for network"] },
+    };
   }
 }

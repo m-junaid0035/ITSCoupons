@@ -6,6 +6,7 @@ import { fetchStoreWithCouponsByIdAction } from "@/actions/storeActions";
 import { fetchStoresByCategoriesAction } from "@/actions/storeActions";
 
 import type { StoreData as StoreType } from "@/types/store";
+import { StoreWithCouponsData } from "@/types/storesWithCouponsData";
 
 export default async function StorePage({
   params,
@@ -19,7 +20,7 @@ export default async function StorePage({
   const { couponId = "" } = await searchParams;
   // Fetch the store with coupons
   const storeResult = await fetchStoreWithCouponsByIdAction(storeId);
-  const store: StoreType | null = storeResult?.data ?? null;
+  const store: StoreWithCouponsData | null = storeResult?.data ?? null;
 
   if (!store) {
     return (

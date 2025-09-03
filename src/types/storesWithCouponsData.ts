@@ -3,7 +3,7 @@ import type { CouponData } from "./coupon";
 
 export type StoreInput = {
   name: string;
-  storeNetworkUrl: string;
+  network: string;
   categories: string[]; // category IDs
   totalCouponUsedTimes?: number;
   image: string;
@@ -20,7 +20,7 @@ export type StoreInput = {
 export interface StoreData {
   _id: string;
   name: string;
-  storeNetworkUrl: string;
+  network: string;
   categories: string[]; // category IDs as strings
   totalCouponUsedTimes: number;
   image: string;

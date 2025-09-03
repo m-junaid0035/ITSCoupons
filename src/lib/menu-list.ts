@@ -12,6 +12,7 @@ import {
   Shield,
   Tag,
   Link,
+  FileText,
 } from "lucide-react";
 
 type Submenu = {
@@ -83,6 +84,16 @@ export function getMenuList(pathname: string): Group[] {
           href: "/admin/blogs",
           label: "Blogs",
           icon: SquarePen,
+        },
+      ]
+    },
+    {
+      groupLabel: "Static Pages",
+      menus: [
+        {
+          href: "/admin/staticpages",
+          label: "Pages",
+          icon: FileText,
         },
       ]
     },
