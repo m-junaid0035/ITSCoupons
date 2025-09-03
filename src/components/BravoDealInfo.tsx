@@ -14,8 +14,7 @@ const BravoDealInfo: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
-      
+    <div className="max-w-5xl mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
       {/* Introduction Section */}
       <section className="mb-10">
         <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-4 text-blue-800">
@@ -28,7 +27,7 @@ const BravoDealInfo: React.FC = () => {
 
       {/* Redeem Section */}
       <section className="mb-10">
-        <h3 className="text-base sm:text-lg md:text-xl font-semibold border-l-4 border-blue-400 pl-2 mb-3">
+        <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-3">
           How Can You Redeem Our Coupons & Offers
         </h3>
         <p className="text-sm sm:text-base md:text-base lg:text-base leading-relaxed">
@@ -51,7 +50,7 @@ const BravoDealInfo: React.FC = () => {
 
       {/* How We Work Section */}
       <section className="mb-10">
-        <h3 className="text-base sm:text-lg md:text-xl font-semibold border-l-4 border-blue-400 pl-2 mb-3">
+        <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-3">
           How Do We Work
         </h3>
         <p className="text-sm sm:text-base md:text-base lg:text-base leading-relaxed">
@@ -72,11 +71,18 @@ const BravoDealInfo: React.FC = () => {
 
       {/* Top Brands Section */}
       <section>
-        <h4 className="text-base sm:text-lg md:text-xl font-semibold mb-4 underline">Top Brands to Check Out:</h4>
+        <h4 className="text-base sm:text-lg md:text-xl font-semibold mb-4 underline">
+          Top Brands to Check Out:
+        </h4>
         <ul className="list-disc list-inside space-y-1 text-sm sm:text-base md:text-base lg:text-base">
           {brands.map((brand) => (
             <li key={brand}>
-              <a href="#" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">
+              <a
+                href="#"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline hover:text-blue-800"
+              >
                 {brand}
               </a>
             </li>
