@@ -2,7 +2,7 @@
 
 export default function EditUserFormLoadingSkeleton() {
   return (
-    <div className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 p-6 animate-pulse rounded-md">
+    <div className="w-full shadow-lg bg-white dark:bg-gray-800 p-6 animate-pulse rounded-md">
       {/* Title placeholder */}
       <div className="h-8 w-40 bg-gray-300 dark:bg-gray-600 rounded mb-8"></div>
 

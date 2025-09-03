@@ -1,6 +1,6 @@
 export default function SEOLoadingSkeleton() {
   return (
-    <div className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 p-6 space-y-6 animate-pulse">
+    <div className="w-full shadow-lg bg-white dark:bg-gray-800 p-6 space-y-6 animate-pulse">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div className="h-6 w-48 bg-gray-300 rounded dark:bg-gray-600"></div>

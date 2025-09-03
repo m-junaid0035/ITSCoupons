@@ -1,7 +1,7 @@
 // loading.tsx
 export default function LoadingSkeleton() {
   return (
-    <div className="max-w-3xl mx-auto p-6 bg-white dark:bg-gray-800 rounded shadow animate-pulse space-y-6">
+    <div className="w-full p-6 bg-white dark:bg-gray-800 rounded shadow animate-pulse space-y-6">
       {/* Header */}
       <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-4"></div>
 

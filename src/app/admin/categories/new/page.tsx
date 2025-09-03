@@ -47,6 +47,11 @@ export default function StaticPageForm() {
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [contentHtml, setContentHtml] = useState("");
 
+  // State for title and slug
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+  const [isSlugEdited, setIsSlugEdited] = useState(false); // to detect manual editing
+
   useEffect(() => {
     if (formState.data && !formState.error) {
       setSuccessDialogOpen(true);
@@ -59,6 +64,17 @@ export default function StaticPageForm() {
       );
     }
   }, [formState]);
+
+  // Auto-update slug when title changes (only if slug was not manually edited)
+  useEffect(() => {
+    if (!isSlugEdited) {
+      const generatedSlug = title
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "_"); // spaces → underscores
+      setSlug(generatedSlug);
+    }
+  }, [title, isSlugEdited]);
 
   return (
     <>
@@ -93,6 +109,8 @@ export default function StaticPageForm() {
                 id="title"
                 name="title"
                 required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Enter page title"
               />
@@ -107,8 +125,13 @@ export default function StaticPageForm() {
                 id="slug"
                 name="slug"
                 required
+                value={slug}
+                onChange={(e) => {
+                  setSlug(e.target.value);
+                  setIsSlugEdited(true); // user manually edited slug
+                }}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="about-us"
+                placeholder="about_us"
               />
             </div>
 

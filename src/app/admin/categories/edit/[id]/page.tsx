@@ -26,8 +26,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-import DescriptionEditor from "@/components/DescriptionEditor";
-
 import {
   fetchCategoryByIdAction,
   updateCategoryAction,
@@ -52,7 +50,6 @@ export default function EditCategoryForm() {
   const [loading, setLoading] = useState(true);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
-  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
   const [descriptionHtml, setDescriptionHtml] = useState("");
 
   const [formState, dispatch, isPending] = useActionState(
@@ -61,12 +58,19 @@ export default function EditCategoryForm() {
     initialState
   );
 
+  // --- New States for name & slug auto-sync ---
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [isSlugEdited, setIsSlugEdited] = useState(false);
+
   useEffect(() => {
     async function loadCategory() {
       const res = await fetchCategoryByIdAction(categoryId);
       if (res?.data) {
         setCategory(res.data);
         setDescriptionHtml(res.data.description ?? "");
+        setName(res.data.name ?? "");
+        setSlug(res.data.slug ?? "");
       }
       setLoading(false);
     }
@@ -88,6 +92,17 @@ export default function EditCategoryForm() {
     }
   }, [formState]);
 
+  // Auto-update slug when name changes (unless manually edited)
+  useEffect(() => {
+    if (!isSlugEdited) {
+      const generatedSlug = name
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "_");
+      setSlug(generatedSlug);
+    }
+  }, [name, isSlugEdited]);
+
   if (loading) return <LoadingSkeleton />;
   if (!category)
     return (
@@ -96,8 +111,8 @@ export default function EditCategoryForm() {
 
   const errorFor = (field: string) =>
     formState.error &&
-      typeof formState.error === "object" &&
-      field in formState.error
+    typeof formState.error === "object" &&
+    field in formState.error
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
 
@@ -123,7 +138,8 @@ export default function EditCategoryForm() {
               <Input
                 id="name"
                 name="name"
-                defaultValue={category.name}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Enter category name"
@@ -139,7 +155,11 @@ export default function EditCategoryForm() {
               <Input
                 id="slug"
                 name="slug"
-                defaultValue={category.slug}
+                value={slug}
+                onChange={(e) => {
+                  setSlug(e.target.value);
+                  setIsSlugEdited(true); // user manually edited slug
+                }}
                 required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="category-slug"
@@ -151,9 +171,7 @@ export default function EditCategoryForm() {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label>
-                Description
-              </Label>
+              <Label>Description</Label>
               <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
             </div>
 

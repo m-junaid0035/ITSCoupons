@@ -11,6 +11,7 @@ import {
   updateStaticPage,
   getPublishedStaticPages,
   getStaticPageTitles,
+  getLatestStaticPageTitlesAndSlugs,
 } from "@/functions/staticPagesFunctions";
 
 // ✅ Static Page Validation Schema
@@ -157,5 +158,15 @@ export async function fetchStaticPageTitlesAction() {
     return { data: titles };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch page titles"] } };
+  }
+}
+// ✅ FETCH LATEST 4 STATIC PAGE TITLES & SLUGS
+export async function fetchLatestStaticPageTitlesAndSlugsAction() {
+  await connectToDatabase();
+  try {
+    const pages = await getLatestStaticPageTitlesAndSlugs();
+    return { data: pages };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch latest page titles & slugs"] } };
   }
 }

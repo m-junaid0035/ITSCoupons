@@ -4,7 +4,7 @@ import React from "react";
 
 export default function LoadingSkeleton() {
   return (
-    <div className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4 animate-pulse space-y-6 rounded-2xl">
+    <div className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4 animate-pulse space-y-6 rounded-2xl">
       {/* Header */}
       <div className="flex items-center justify-between border-none px-6 py-4">
         <div className="h-6 w-48 bg-gray-300 dark:bg-gray-700 rounded"></div>

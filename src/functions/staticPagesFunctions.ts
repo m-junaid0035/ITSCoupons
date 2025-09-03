@@ -135,3 +135,18 @@ export const getStaticPageTitles = async (): Promise<string[]> => {
     .lean<{ title: string }[]>();
   return pages.map((p) => p.title);
 };
+
+/**
+ * Get the latest 4 static page titles and slugs only.
+ */
+export const getLatestStaticPageTitlesAndSlugs = async (): Promise<
+  { title: string; slug: string }[]
+> => {
+  const pages = await StaticPage.find()
+    .sort({ createdAt: -1 })
+    .limit(4)
+    .select("title slug")
+    .lean<{ title: string; slug: string }[]>();
+
+  return pages.map((p) => ({ title: p.title, slug: p.slug }));
+};

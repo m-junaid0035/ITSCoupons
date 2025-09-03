@@ -18,8 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 
 import { fetchEventByIdAction, updateEventAction } from "@/actions/eventActions";
 import { toast } from "@/hooks/use-toast";
-import DescriptionEditor from "@/components/DescriptionEditor";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/RichTextEditor";
 
 interface FormState {
   error?: Record<string, string[]> | { message?: string[] };
@@ -43,7 +43,6 @@ export default function EditEventForm() {
   const [loading, setLoading] = useState(true);
   const [eventDate, setEventDate] = useState<Date | undefined>(undefined);
   const [descriptionHtml, setDescriptionHtml] = useState("");
-  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
   // --- Image State
@@ -79,8 +78,8 @@ export default function EditEventForm() {
 
   const errorFor = (field: string) =>
     formState.error &&
-    typeof formState.error === "object" &&
-    field in formState.error
+      typeof formState.error === "object" &&
+      field in formState.error
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
 
@@ -164,13 +163,12 @@ export default function EditEventForm() {
               {errorFor("date") && <p className="text-sm text-red-500">{errorFor("date")}</p>}
             </div>
 
-            {/* Description Modal */}
+            {/* Description */}
             <div className="space-y-2">
-              <Label>Description</Label>
-              <Button type="button" onClick={() => setDescriptionModalOpen(true)}>
-                {descriptionHtml ? "Edit Description" : "Add Description"}
-              </Button>
-              {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
+              <Label>
+                Description
+              </Label>
+              <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
             </div>
 
             {/* Image Upload */}
@@ -223,20 +221,6 @@ export default function EditEventForm() {
           </form>
         </CardContent>
       </Card>
-
-      {/* Description Editor Modal */}
-      <Dialog open={descriptionModalOpen} onOpenChange={setDescriptionModalOpen}>
-        <DialogContent className="max-w-3xl w-full">
-          <DialogHeader>
-            <DialogTitle>Edit Description</DialogTitle>
-          </DialogHeader>
-          <DescriptionEditor initialContent={descriptionHtml} onChange={setDescriptionHtml} />
-          <DialogFooter className="space-x-2">
-            <Button variant="outline" onClick={() => setDescriptionModalOpen(false)}>Cancel</Button>
-            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
