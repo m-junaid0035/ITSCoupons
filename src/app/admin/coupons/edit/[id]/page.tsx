@@ -82,6 +82,13 @@ export default function EditCouponForm() {
   // Coupon URL state (auto update on store change)
   const [couponUrl, setCouponUrl] = useState("");
 
+
+
+  const [storeSearch, setStoreSearch] = useState("");
+  const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<Store | null>(null);
+
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -98,6 +105,11 @@ export default function EditCouponForm() {
           setDiscount(c.discount || "");
           setCouponUrl(c.couponUrl || "");
           if (c.expirationDate) setExpirationDate(new Date(c.expirationDate));
+          const matchedStore = storeRes?.data?.find((s) => s._id === c.storeId);
+          if (matchedStore) {
+            setSelectedStore(matchedStore);
+            setStoreSearch(matchedStore.name); // show store name in input
+          }
         }
         if (storeRes?.data) setStores(storeRes.data);
       } catch {
@@ -325,24 +337,55 @@ export default function EditCouponForm() {
               <Label htmlFor="verified">Verified</Label>
             </div>
 
-            {/* Store */}
+            {/* Store with Search */}
             <div className="space-y-2">
               <Label htmlFor="storeId">Store <span className="text-red-500">*</span></Label>
-              <select
-                id="storeId"
-                name="storeId"
-                defaultValue={coupon.storeId}
-                onChange={(e) => handleStoreChange(e.target.value)}
-                className="w-full rounded px-3 py-2 shadow-sm border-none bg-gray-50 dark:bg-gray-700"
-              >
-                <option value="">Select a store</option>
-                {stores.map((store) => (
-                  <option key={store._id} value={store._id}>
-                    {store.name}
-                  </option>
-                ))}
-              </select>
+
+              <div className="relative">
+                {/* Search Input */}
+                <Input
+                  placeholder="Search store..."
+                  value={storeSearch}
+                  onFocus={() => setStoreDropdownOpen(true)}
+                  onChange={(e) => setStoreSearch(e.target.value)}
+                  required
+                />
+
+                {/* Dropdown List */}
+                {storeDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border rounded shadow max-h-60 overflow-y-auto">
+                    {stores
+                      .filter((s) =>
+                        s.name.toLowerCase().includes(storeSearch.toLowerCase())
+                      )
+                      .map((store) => (
+                        <div
+                          key={store._id}
+                          className="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                          onClick={() => {
+                            setSelectedStore(store);
+                            setStoreSearch(store.name);
+                            setStoreDropdownOpen(false);
+                            handleStoreChange(store._id); // keep your old logic
+                          }}
+                        >
+                          {store.name}
+                        </div>
+                      ))}
+
+                    {stores.filter((s) =>
+                      s.name.toLowerCase().includes(storeSearch.toLowerCase())
+                    ).length === 0 && (
+                        <div className="px-4 py-2 text-gray-500">No stores found</div>
+                      )}
+                  </div>
+                )}
+              </div>
+
+              {/* Hidden field to submit selected storeId */}
+              <input type="hidden" name="storeId" value={selectedStore?._id || ""} required />
             </div>
+
 
             {/* Store Name */}
             <div className="space-y-2">

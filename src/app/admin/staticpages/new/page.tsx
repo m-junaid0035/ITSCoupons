@@ -46,6 +46,17 @@ export default function StaticPageForm() {
 
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [contentHtml, setContentHtml] = useState("");
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+
+  // Auto-update slug when title changes
+  useEffect(() => {
+    if (title) {
+      setSlug(title.trim().toLowerCase().replace(/\s+/g, "_"));
+    } else {
+      setSlug("");
+    }
+  }, [title]);
 
   useEffect(() => {
     if (formState.data && !formState.error) {
@@ -93,6 +104,8 @@ export default function StaticPageForm() {
                 id="title"
                 name="title"
                 required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Enter page title"
               />
@@ -101,12 +114,14 @@ export default function StaticPageForm() {
             {/* Slug */}
             <div className="space-y-2">
               <Label htmlFor="slug">
-                Slug <span className="text-red-500">*</span>
+                Slug (auto filled)
               </Label>
               <Input
                 id="slug"
                 name="slug"
                 required
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="about-us"
               />

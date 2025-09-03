@@ -63,6 +63,11 @@ export default function CouponForm() {
   const [couponType, setCouponType] = useState("coupon");
   const [couponCode, setCouponCode] = useState("");
 
+  const [storeSearch, setStoreSearch] = useState("");
+  const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
+  const [selectedStore, setSelectedStore] = useState<any>(null);
+
+
   // Description HTML state
   const [descriptionHtml, setDescriptionHtml] = useState("");
 
@@ -162,7 +167,7 @@ export default function CouponForm() {
   return (
     <>
       <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
-       <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
           <CardTitle className="text-lg sm:text-xl font-semibold">Create Coupon</CardTitle>
           <Button variant="secondary" onClick={() => router.push("/admin/coupons")}>Back to Coupons</Button>
         </CardHeader>
@@ -310,24 +315,56 @@ export default function CouponForm() {
               <Label htmlFor="verified">Verified</Label>
             </div>
 
-            {/* Store */}
+            {/* Store with Search */}
             <div className="space-y-2">
               <Label htmlFor="storeId">Store <span className="text-red-500">*</span></Label>
-              <select
-                id="storeId"
-                name="storeId"
-                required
-                className="w-full rounded px-3 py-2 shadow-sm border-none bg-gray-50 dark:bg-gray-700"
-                onChange={(e) => handleStoreChange(e.target.value)}
-              >
-                <option value="">Select a store</option>
-                {stores.map((store) => (
-                  <option key={store._id} value={store._id}>
-                    {store.name}
-                  </option>
-                ))}
-              </select>
+
+              <div className="relative">
+                {/* Search Input */}
+                <Input
+                  placeholder="Search store..."
+                  value={storeSearch}
+                  onFocus={() => setStoreDropdownOpen(true)}
+                  onChange={(e) => setStoreSearch(e.target.value)}
+                  required
+                />
+
+                {/* Dropdown List */}
+                {storeDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border rounded shadow max-h-60 overflow-y-auto">
+                    {stores
+                      .filter((s) =>
+                        s.name.toLowerCase().includes(storeSearch.toLowerCase())
+                      )
+                      .map((store) => (
+                        <div
+                          key={store._id}
+                          className="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                          onClick={() => {
+                            setSelectedStore(store);       // save selected store
+                            setStoreSearch(store.name);    // show name in input
+                            setStoreDropdownOpen(false);   // close dropdown
+                            handleStoreChange(store._id);  // keep your old logic (auto-fill couponUrl, etc.)
+                          }}
+                        >
+                          {store.name}
+                        </div>
+                      ))}
+
+                    {/* No results */}
+                    {stores.filter((s) =>
+                      s.name.toLowerCase().includes(storeSearch.toLowerCase())
+                    ).length === 0 && (
+                        <div className="px-4 py-2 text-gray-500">No stores found</div>
+                      )}
+                  </div>
+                )}
+              </div>
+
+              {/* Hidden field to submit selected storeId */}
+              <input type="hidden" name="storeId" value={selectedStore?._id || ""} required />
             </div>
+
             {/* Store Name */}
             <div className="space-y-2">
               <Label htmlFor="storeName">Store Name (optional)</Label>

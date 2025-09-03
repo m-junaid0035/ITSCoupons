@@ -17,8 +17,8 @@ import { fetchBlogByIdAction, updateBlogAction } from "@/actions/blogActions";
 import { fetchCategoryNamesAction } from "@/actions/categoryActions";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import DescriptionEditor from "@/components/DescriptionEditor";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/RichTextEditor";
 
 interface FieldErrors {
   [key: string]: string[];
@@ -50,7 +50,6 @@ export default function EditBlogForm() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [writer, setWriter] = useState("");
   const [descriptionHtml, setDescriptionHtml] = useState("");
-  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
 
   // Load blog data
   useEffect(() => {
@@ -198,13 +197,12 @@ export default function EditBlogForm() {
               {errorFor("date") && <p className="text-sm text-red-500">{errorFor("date")}</p>}
             </div>
 
-            {/* Description with modal */}
+            {/* Description */}
             <div className="space-y-2">
-              <Label>Description <span className="text-red-500">*</span></Label>
-              <Button type="button" onClick={() => setDescriptionModalOpen(true)}>
-                {descriptionHtml ? "Edit Description" : "Add Description"}
-              </Button>
-              {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
+              <Label>
+                Description <span className="text-red-500">*</span>
+              </Label>
+              <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
             </div>
 
             {/* Image Upload */}
@@ -260,19 +258,6 @@ export default function EditBlogForm() {
         </CardContent>
       </Card>
 
-      {/* Description Editor Modal */}
-      <Dialog open={descriptionModalOpen} onOpenChange={setDescriptionModalOpen}>
-        <DialogContent className="max-w-3xl w-full">
-          <DialogHeader>
-            <DialogTitle>Edit Description</DialogTitle>
-          </DialogHeader>
-          <DescriptionEditor initialContent={descriptionHtml} onChange={setDescriptionHtml} />
-          <DialogFooter className="space-x-2">
-            <Button variant="outline" onClick={() => setDescriptionModalOpen(false)}>Cancel</Button>
-            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>

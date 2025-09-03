@@ -52,6 +52,9 @@ export default function EditStaticPageForm() {
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [contentHtml, setContentHtml] = useState("");
 
+  const [title, setTitle] = useState("");
+  const [slug, setSlug] = useState("");
+
   const [formState, dispatch, isPending] = useActionState(
     async (prevState: FormState, formData: FormData) =>
       await updateStaticPageAction(prevState, pageId, formData),
@@ -64,11 +67,22 @@ export default function EditStaticPageForm() {
       if (res?.data) {
         setPage(res.data);
         setContentHtml(res.data.content ?? "");
+        setTitle(res.data.title ?? "");
+        setSlug(res.data.slug ?? "");
       }
       setLoading(false);
     }
     loadPage();
   }, [pageId]);
+
+  // Auto-update slug when title changes
+  useEffect(() => {
+    if (title) {
+      setSlug(title.trim().toLowerCase().replace(/\s+/g, "_"));
+    } else {
+      setSlug("");
+    }
+  }, [title]);
 
   useEffect(() => {
     if (formState.data && !formState.error) {
@@ -127,7 +141,8 @@ export default function EditStaticPageForm() {
               <Input
                 id="title"
                 name="title"
-                defaultValue={page.title}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Enter page title"
@@ -143,7 +158,8 @@ export default function EditStaticPageForm() {
               <Input
                 id="slug"
                 name="slug"
-                defaultValue={page.slug}
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
                 required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="page-slug"

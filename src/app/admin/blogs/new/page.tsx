@@ -17,8 +17,8 @@ import { toast } from "@/hooks/use-toast";
 
 import { createBlogAction } from "@/actions/blogActions";
 import { fetchCategoryNamesAction } from "@/actions/categoryActions";
-import DescriptionEditor from "@/components/DescriptionEditor";
 import { Textarea } from "@/components/ui/textarea";
+import RichTextEditor from "@/components/RichTextEditor";
 
 interface FieldErrors {
   [key: string]: string[];
@@ -41,7 +41,6 @@ export default function BlogCreatePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [writer, setWriter] = useState("");
   const [descriptionHtml, setDescriptionHtml] = useState("");
-  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
 
   // Image state
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -206,13 +205,12 @@ export default function BlogCreatePage() {
               {errorFor("date") && <p className="text-sm text-red-500">{errorFor("date")}</p>}
             </div>
 
-            {/* Description (with modal) */}
+            {/* Description */}
             <div className="space-y-2">
-              <Label>Description <span className="text-red-500">*</span></Label>
-              <Button type="button" onClick={() => setDescriptionModalOpen(true)}>
-                {descriptionHtml ? "Edit Description" : "Add Description"}
-              </Button>
-              {errorFor("description") && <p className="text-sm text-red-500">{errorFor("description")}</p>}
+              <Label>
+                Description <span className="text-red-500">*</span>
+              </Label>
+              <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
             </div>
 
             {/* Image Upload */}
@@ -273,19 +271,7 @@ export default function BlogCreatePage() {
         </CardContent>
       </Card>
 
-      {/* Description Editor Modal */}
-      <Dialog open={descriptionModalOpen} onOpenChange={setDescriptionModalOpen}>
-        <DialogContent className="max-w-3xl w-full">
-          <DialogHeader>
-            <DialogTitle>Edit Description</DialogTitle>
-          </DialogHeader>
-          <DescriptionEditor initialContent={descriptionHtml} onChange={setDescriptionHtml} />
-          <DialogFooter className="space-x-2">
-            <Button variant="outline" onClick={() => setDescriptionModalOpen(false)}>Cancel</Button>
-            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
 
       {/* Success Confirmation Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
