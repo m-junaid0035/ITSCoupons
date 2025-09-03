@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   fetchAllNetworksAction,
   deleteNetworkAction,
+  fetchStoreCountByNetworkIdAction, // new action
 } from "@/actions/networkActions";
 import { startTransition } from "react";
 import {
@@ -45,6 +46,7 @@ interface INetwork {
   _id: string;
   networkName: string;
   storeNetworkUrl: string;
+  totalStores?: number;
 }
 
 function NetworksTable({
@@ -52,12 +54,14 @@ function NetworksTable({
   onView,
   onEdit,
   onDelete,
+  onStoresClick,
   loading,
 }: {
   networks: INetwork[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onStoresClick: (id: string) => void; // new
   loading: boolean;
 }) {
   if (loading) {
@@ -76,6 +80,7 @@ function NetworksTable({
           <TableRow className="border-b border-muted">
             <TableHead>Network Name</TableHead>
             <TableHead>Network URL</TableHead>
+            <TableHead>Total Stores</TableHead>
             <TableHead className="w-[160px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -88,6 +93,17 @@ function NetworksTable({
               >
                 <TableCell className="font-medium">{network.networkName}</TableCell>
                 <TableCell>{network.storeNetworkUrl}</TableCell>
+
+                {/* Total Stores clickable */}
+                <TableCell>
+                  <button
+                    onClick={() => onStoresClick(network._id)}
+                    className="text-blue-600 hover:underline"
+                  >
+                    {network.totalStores ?? 0}
+                  </button>
+                </TableCell>
+
                 <TableCell>
                   <div className="flex justify-end items-center gap-1.5">
                     <Button
@@ -123,7 +139,7 @@ function NetworksTable({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
+              <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
                 No networks found.
               </TableCell>
             </TableRow>
@@ -152,7 +168,17 @@ export default function NetworksPage() {
     setLoading(true);
     const result = await fetchAllNetworksAction();
     if (result?.data && Array.isArray(result.data)) {
-      setNetworks(result.data);
+      // fetch store counts
+      const networksWithCounts = await Promise.all(
+        result.data.map(async (network: INetwork) => {
+          const countRes = await fetchStoreCountByNetworkIdAction(network._id);
+          return {
+            ...network,
+            totalStores: countRes?.data ?? 0,
+          };
+        })
+      );
+      setNetworks(networksWithCounts);
     } else {
       toast({
         title: "Error",
@@ -175,14 +201,15 @@ export default function NetworksPage() {
         description: result.error.message || "Failed to delete network",
         variant: "destructive",
       });
-      await loadNetworks(); // revert if failed
+      await loadNetworks();
     } else {
-      setNetworks((prev) => prev.filter((net) => net._id !== id)); // keep in sync
-      toast({
-        title: "Deleted",
-        description: "Network deleted successfully.",
-      });
+      setNetworks((prev) => prev.filter((net) => net._id !== id));
+      toast({ title: "Deleted", description: "Network deleted successfully." });
     }
+  };
+
+  const handleStoresClick = (networkId: string) => {
+    router.push(`/admin/stores?networkId=${networkId}`);
   };
 
   useEffect(() => {
@@ -192,6 +219,7 @@ export default function NetworksPage() {
   const filteredNetworks = optimisticNetworks.filter((n) =>
     n.networkName.toLowerCase().includes(search.toLowerCase())
   );
+
   const totalPages = Math.ceil(filteredNetworks.length / pageSize);
   const paginatedNetworks = filteredNetworks.slice(
     (currentPage - 1) * pageSize,
@@ -232,6 +260,7 @@ export default function NetworksPage() {
             onView={(id) => router.push(`/admin/networks/view/${id}`)}
             onEdit={(id) => router.push(`/admin/networks/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
+            onStoresClick={handleStoresClick} // pass the handler
             loading={loading}
           />
         </Suspense>
@@ -242,9 +271,7 @@ export default function NetworksPage() {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() =>
-                      setCurrentPage((p) => Math.max(1, p - 1))
-                    }
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   />
                 </PaginationItem>
                 {Array.from({ length: totalPages }, (_, i) => (

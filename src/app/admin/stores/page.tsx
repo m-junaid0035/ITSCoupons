@@ -87,6 +87,7 @@ function StoresTable({
   const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const [tempName, setTempName] = useState("");
+  const [networkSearch, setNetworkSearch] = useState(""); // 🔍 added state
 
   if (loading) {
     return (
@@ -118,6 +119,7 @@ function StoresTable({
                 key={store._id}
                 className="hover:bg-muted/40 transition-colors"
               >
+                {/* Store Name Editing */}
                 <TableCell
                   className="font-medium cursor-pointer"
                   onDoubleClick={() => {
@@ -146,6 +148,7 @@ function StoresTable({
                   )}
                 </TableCell>
 
+                {/* Network Editing with Search */}
                 <TableCell
                   onDoubleClick={() => setEditingNetworkId(store._id)}
                   className="cursor-pointer"
@@ -156,32 +159,50 @@ function StoresTable({
                       onValueChange={(value) => {
                         onInlineUpdate(store._id, "network", value);
                         setEditingNetworkId(null);
+                        setNetworkSearch(""); // reset search after selection
                       }}
                     >
                       <SelectTrigger>
                         <SelectValue
                           placeholder={
-                            store.network?.name ||
-                            networks.find((n) => n._id === store.network?._id)
-                              ?.name ||
-                            "Select network"
+                            networks.find(
+                              (n) => n._id === String(store.network)
+                            )?.name || "Select network"
                           }
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {networks.map((network) => (
-                          <SelectItem key={network._id} value={network._id}>
-                            {network.name}
-                          </SelectItem>
-                        ))}
+                        {/* 🔍 Search input */}
+                        <div className="p-2">
+                          <Input
+                            placeholder="Search network..."
+                            value={networkSearch}
+                            onChange={(e) => setNetworkSearch(e.target.value)}
+                            className="h-8"
+                          />
+                        </div>
+
+                        {/* Filtered list */}
+                        {networks
+                          .filter((network) =>
+                            network.name
+                              .toLowerCase()
+                              .includes(networkSearch.toLowerCase())
+                          )
+                          .map((network) => (
+                            <SelectItem key={network._id} value={network._id}>
+                              {network.name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   ) : (
-                    networks.find((n) => n._id === String(store.network))?.name ||
-                    "N/A"
+                    networks.find((n) => n._id === String(store.network))
+                      ?.name || "N/A"
                   )}
                 </TableCell>
 
+                {/* Coupons Count */}
                 <TableCell>
                   <button
                     onClick={() => onCouponsClick(store._id)}
@@ -191,6 +212,7 @@ function StoresTable({
                   </button>
                 </TableCell>
 
+                {/* Image */}
                 <TableCell>
                   {store.image ? (
                     <img
@@ -220,6 +242,7 @@ function StoresTable({
                   )}
                 </TableCell>
 
+                {/* Actions */}
                 <TableCell>
                   <div className="flex justify-end items-center gap-1.5">
                     <Button
@@ -255,7 +278,10 @@ function StoresTable({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
+              <TableCell
+                colSpan={7}
+                className="text-center text-muted-foreground py-6"
+              >
                 No stores found.
               </TableCell>
             </TableRow>
@@ -265,6 +291,7 @@ function StoresTable({
     </div>
   );
 }
+
 
 
 export default function StoresPage() {

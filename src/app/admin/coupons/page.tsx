@@ -48,11 +48,13 @@ import {
 } from "@/components/ui/pagination";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { fetchAllStoresAction } from "@/actions/storeActions";
 
 interface ICoupon {
   _id: string;
   title: string;
   couponCode: string;
+  storeId: string;
   couponType: "deal" | "coupon";
   status: "active" | "expired";
   expirationDate: string;
@@ -186,6 +188,29 @@ export default function CouponsPage({
     coupons,
     (state, id: string) => state.filter((c) => c._id !== id)
   );
+  const [storesMap, setStoresMap] = useState<Record<string, string>>({});
+
+  // Fetch all stores and map IDs to names
+  const loadStores = async () => {
+    const result = await fetchAllStoresAction();
+    if (result?.data) {
+      const map: Record<string, string> = {};
+      result.data.forEach((store: any) => {
+        map[store._id] = store.name;
+      });
+      setStoresMap(map);
+    } else {
+      toast({
+        title: "Error",
+        description: result?.error?.message || "Failed to load stores",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadStores();
+  }, []);
 
   const loadCoupons = async () => {
     setLoading(true);
@@ -273,7 +298,10 @@ export default function CouponsPage({
           }
         >
           <CouponsTable
-            coupons={paginatedCoupons}
+            coupons={paginatedCoupons.map((c) => ({
+              ...c,
+              storeName: storesMap[c.storeId] || "-", // map ID to name
+            }))}
             onView={(id) => router.push(`/admin/coupons/view/${id}`)}
             onEdit={(id) => router.push(`/admin/coupons/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}

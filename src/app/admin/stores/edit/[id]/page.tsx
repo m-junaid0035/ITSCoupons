@@ -25,6 +25,7 @@ import { fetchLatestSEOAction } from "@/actions/seoActions";
 
 import DescriptionEditor from "@/components/DescriptionEditor";
 import LoadingSkeleton from "./loading";
+import RichTextEditor from "@/components/RichTextEditor";
 
 interface FormState {
   error?: Record<string, string[]> | { message?: string[] };
@@ -70,6 +71,9 @@ export default function EditStoreForm() {
   const networkDropdownRef = useRef<HTMLDivElement>(null);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
 
+  const [storeName, setStoreName] = useState("");
+
+
   /** ---------------- Load Store, Categories, Networks ---------------- */
   useEffect(() => {
     async function loadData() {
@@ -83,6 +87,7 @@ export default function EditStoreForm() {
         if (storeRes?.data) {
           const s = storeRes.data;
           setStore(s);
+          setStoreName(s.name);
           setSelectedCategories(s.categories || []);
           setImagePreview(s.image || null);
           setDescriptionHtml(s.description || "");
@@ -155,31 +160,37 @@ export default function EditStoreForm() {
     const { data: latestSEO } = await fetchLatestSEOAction();
     if (!latestSEO) return;
 
-    const replaceStoreName = (text: string) => text.replace(/{{storeName}}|s_n/gi, storeName);
+    const replaceStoreName = (text: string) =>
+      text.replace(/{{storeName}}|s_n/gi, storeName);
+
+    // Process slug: either latestSEO.slug or storeName, then replace spaces with _
+    const slugSource = latestSEO.slug || storeName;
+    const processedSlug = replaceStoreName(slugSource).toLowerCase().replace(/\s+/g, "_");
 
     setSeo({
       metaTitle: replaceStoreName(latestSEO.metaTitle || ""),
       metaDescription: replaceStoreName(latestSEO.metaDescription || ""),
       metaKeywords: (latestSEO.metaKeywords || []).map(replaceStoreName).join(", "),
       focusKeywords: (latestSEO.focusKeywords || []).map(replaceStoreName).join(", "),
-      slug: replaceStoreName(latestSEO.slug || storeName.toLowerCase().replace(/\s+/g, "-")),
+      slug: processedSlug,
     });
   };
 
   useEffect(() => {
-    const nameInput = document.getElementById("name") as HTMLInputElement | null;
-    if (!nameInput) return;
-    const listener = () => { const name = nameInput.value.trim(); if (name) updateSEO(name); };
-    nameInput.addEventListener("input", listener);
-    return () => nameInput.removeEventListener("input", listener);
-  }, []);
+    if (storeName.trim()) {
+      updateSEO(storeName.trim());
+    }
+  }, [storeName]);
+
 
   /** ---------------- Form Submit ---------------- */
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  /** ---------------- Form Submit ---------------- */
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
     const formData = new FormData(form);
 
+    // Required fields
     const requiredFields = ["name", "slug"];
     for (const field of requiredFields) {
       if (!formData.get(field)?.toString().trim()) {
@@ -187,12 +198,26 @@ export default function EditStoreForm() {
         return;
       }
     }
-    if (!imageFile && !imagePreview) {
+
+    // Image handling
+    async function urlToFile(url: string, filename: string, mimeType: string) {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      return new File([blob], filename, { type: mimeType });
+    }
+
+    if (!imageFile && imagePreview) {
+      // Convert existing image URL to File
+      const existingFile = await urlToFile(imagePreview, "existing.jpg", "image/jpeg");
+      formData.set("imageFile", existingFile);
+    } else if (imageFile) {
+      formData.set("imageFile", imageFile);
+    } else {
       toast({ title: "Validation Error", description: "Store image is required", variant: "destructive" });
       return;
     }
 
-    if (imageFile) formData.set("imageFile", imageFile);
+    // Set other fields
     formData.set("description", descriptionHtml);
     formData.set("metaTitle", seo.metaTitle);
     formData.set("metaDescription", seo.metaDescription);
@@ -203,8 +228,11 @@ export default function EditStoreForm() {
     formData.set("networkUrl", networkUrl);
     selectedCategories.forEach(catId => formData.append("categories", catId));
 
+    // Dispatch the action
     startTransition(() => dispatch(formData));
   };
+
+
 
   /** ---------------- Filtered Lists ---------------- */
   const filteredCategories = categories.filter(c => c.name.toLowerCase().includes(categorySearch.toLowerCase()));
@@ -224,25 +252,43 @@ export default function EditStoreForm() {
 
   return (
     <>
-      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
-        <CardHeader className="flex items-center justify-between border-none">
-          <CardTitle>Edit Store</CardTitle>
+      <Card className="w-full min-h-screen shadow-lg bg-white dark:bg-gray-800 p-4 sm:p-6 lg:p-8">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Edit Store</CardTitle>
           <Button variant="secondary" onClick={() => router.push("/admin/stores")}>Back to Stores</Button>
         </CardHeader>
 
         <CardContent>
-          <form id="store-form" className="space-y-6 max-w-2xl mx-auto" onSubmit={handleSubmit} encType="multipart/form-data">
+          <form id="store-form" className="space-y-6 w-full" onSubmit={handleSubmit} encType="multipart/form-data">
 
             {/* Store Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Store Name</Label>
-              <Input id="name" name="name" defaultValue={store.name} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Label htmlFor="name">
+                Store Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                required
+                placeholder="Enter store name"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                value={storeName}
+                onChange={(e) => setStoreName(e.target.value)}
+              />
               {errorsForField("name").map((err, idx) => <p key={idx} className="text-sm text-red-500">{err}</p>)}
             </div>
 
+            {/* Hidden field for existing image */}
+            {!imageFile && store?.image && (
+              <input type="hidden" name="existingImage" value={store.image} />
+            )}
+
+
             {/* Image */}
             <div className="space-y-2">
-              <Label htmlFor="imageFile">Store Image</Label>
+              <Label htmlFor="imageFile">
+                Store Image <span className="text-red-500">*</span>
+              </Label>
               <Input id="imageFile" name="imageFile" type="file" accept="image/*" onChange={handleImageChange} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               {imagePreview && (
                 <div className="relative mt-2 max-h-40 w-fit">
@@ -261,7 +307,10 @@ export default function EditStoreForm() {
             </div>
 
             {/* Network Dropdown */}
-            <div className="relative" ref={networkDropdownRef}>
+            <div className="relative space-y-2" ref={networkDropdownRef}>
+              <Label>
+                Network
+              </Label>
               <Input
                 placeholder="Search network..."
                 value={networkSearch}
@@ -286,12 +335,15 @@ export default function EditStoreForm() {
             {selectedNetwork && (
               <div className="space-y-2">
                 <Label htmlFor="networkUrl">Network URL</Label>
-                <Input id="networkUrl" name="networkUrl" value={networkUrl} onChange={e => setNetworkUrl(e.target.value)} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+                <Input id="networkUrl" name="networkUrl" value={networkUrl}  onChange={e => setNetworkUrl(e.target.value)} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               </div>
             )}
 
             {/* Categories */}
-            <div className="relative" ref={categoryDropdownRef}>
+            <div className="relative space-y-2" ref={categoryDropdownRef}>
+              <Label>
+                Categories <span className="text-red-500">*</span>
+              </Label>
               <Input
                 placeholder="Search categories..."
                 value={categorySearch}
@@ -314,14 +366,18 @@ export default function EditStoreForm() {
               )}
             </div>
 
-            {/* Description Modal Trigger */}
-            <div>
-            <Button type="button" onClick={() => setDescriptionModalOpen(true)}>Edit Description</Button>
+            {/* Description */}
+            <div className="space-y-2">
+              <Label>
+                Description <span className="text-red-500">*</span>
+              </Label>
+              <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
             </div>
+
 
             {/* SEO Modal Trigger */}
             <div>
-            <Button type="button" onClick={() => setSeoModalOpen(true)}>Edit SEO Fields</Button>
+              <Button type="button" onClick={() => setSeoModalOpen(true)}>Edit SEO Fields</Button>
             </div>
 
             {/* Popular & Active */}
@@ -338,7 +394,9 @@ export default function EditStoreForm() {
 
             {/* Slug */}
             <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
+              <Label htmlFor="slug">
+                Slug <span className="text-red-500">*</span>
+              </Label>
               <Input id="slug" name="slug" value={seo.slug} onChange={e => setSeo(prev => ({ ...prev, slug: e.target.value }))} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
             </div>
 

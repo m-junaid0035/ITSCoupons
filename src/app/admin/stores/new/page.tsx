@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Loader2, X, Search } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -29,7 +29,7 @@ import { fetchAllCategoriesAction } from "@/actions/categoryActions";
 import { fetchAllNetworksAction } from "@/actions/networkActions";
 import { fetchLatestSEOAction } from "@/actions/seoActions";
 
-import DescriptionEditor from "@/components/DescriptionEditor";
+import RichTextEditor from "@/components/RichTextEditor";
 
 interface FormState {
   error?: Record<string, string[]> | { message?: string[] };
@@ -57,9 +57,8 @@ export default function StoreForm() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [categorySearch, setCategorySearch] = useState("");
   const [networkSearch, setNetworkSearch] = useState("");
-
-  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
   const [seoModalOpen, setSeoModalOpen] = useState(false);
+  
 
   const [descriptionHtml, setDescriptionHtml] = useState("");
   const [seo, setSeo] = useState({
@@ -75,9 +74,6 @@ export default function StoreForm() {
 
   const networkDropdownRef = useRef<HTMLDivElement>(null);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
-
-
-
 
   /** ---------------- Load Categories & Networks ---------------- */
   useEffect(() => {
@@ -126,21 +122,26 @@ export default function StoreForm() {
   };
 
   /** ---------------- Auto SEO Update ---------------- */
-  const updateSEO = async (storeName: string) => {
-    const { data: latestSEO } = await fetchLatestSEOAction();
-    if (!latestSEO) return;
+const updateSEO = async (storeName: string) => {
+  const { data: latestSEO } = await fetchLatestSEOAction();
+  if (!latestSEO) return;
 
-    const replaceStoreName = (text: string) =>
-      text.replace(/{{storeName}}|s_n/gi, storeName);
+  const replaceStoreName = (text: string) =>
+    text.replace(/{{storeName}}|s_n/gi, storeName);
 
-    setSeo({
-      metaTitle: replaceStoreName(latestSEO.metaTitle || ""),
-      metaDescription: replaceStoreName(latestSEO.metaDescription || ""),
-      metaKeywords: (latestSEO.metaKeywords || []).map(replaceStoreName).join(", "),
-      focusKeywords: (latestSEO.focusKeywords || []).map(replaceStoreName).join(", "),
-      slug: replaceStoreName(latestSEO.slug || storeName.toLowerCase().replace(/\s+/g, "-")),
-    });
-  };
+  // Process slug: either latestSEO.slug or storeName, then replace spaces with _
+  const slugSource = latestSEO.slug || storeName;
+  const processedSlug = replaceStoreName(slugSource).toLowerCase().replace(/\s+/g, "_");
+
+  setSeo({
+    metaTitle: replaceStoreName(latestSEO.metaTitle || ""),
+    metaDescription: replaceStoreName(latestSEO.metaDescription || ""),
+    metaKeywords: (latestSEO.metaKeywords || []).map(replaceStoreName).join(", "),
+    focusKeywords: (latestSEO.focusKeywords || []).map(replaceStoreName).join(", "),
+    slug: processedSlug,
+  });
+};
+
 
   /** ---------------- Listen Store Name Changes ---------------- */
   useEffect(() => {
@@ -161,25 +162,24 @@ export default function StoreForm() {
   }, [selectedNetwork]);
 
   useEffect(() => {
-  function handleClickOutside(event: MouseEvent) {
-    if (
-      networkDropdownRef.current &&
-      !networkDropdownRef.current.contains(event.target as Node)
-    ) {
-      setNetworkDropdownOpen(false);
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        networkDropdownRef.current &&
+        !networkDropdownRef.current.contains(event.target as Node)
+      ) {
+        setNetworkDropdownOpen(false);
+      }
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(event.target as Node)
+      ) {
+        setCategoryDropdownOpen(false);
+      }
     }
-    if (
-      categoryDropdownRef.current &&
-      !categoryDropdownRef.current.contains(event.target as Node)
-    ) {
-      setCategoryDropdownOpen(false);
-    }
-  }
 
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => document.removeEventListener("mousedown", handleClickOutside);
-}, []);
-
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   /** ---------------- Submit Handler ---------------- */
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -223,25 +223,29 @@ export default function StoreForm() {
 
   return (
     <>
-      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
-        <CardHeader className="flex items-center justify-between border-none">
-          <CardTitle>Create Store</CardTitle>
+      <Card className="w-full min-h-screen shadow-lg bg-white dark:bg-gray-800 p-4 sm:p-6 lg:p-8">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Create Store</CardTitle>
           <Button variant="secondary" onClick={() => router.push("/admin/stores")}>Back to Stores</Button>
         </CardHeader>
 
         <CardContent>
-          <form id="store-form" className="space-y-6 max-w-2xl mx-auto" onSubmit={handleSubmit} encType="multipart/form-data">
+          <form id="store-form" className="space-y-6 w-full" onSubmit={handleSubmit} encType="multipart/form-data">
 
             {/* Store Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Store Name</Label>
+              <Label htmlFor="name">
+                Store Name <span className="text-red-500">*</span>
+              </Label>
               <Input id="name" name="name" required placeholder="Enter store name" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               {errorsForField("name").map((err, idx) => <p key={idx} className="text-sm text-red-500">{err}</p>)}
             </div>
 
             {/* Image File */}
             <div className="space-y-2">
-              <Label htmlFor="imageFile">Store Image</Label>
+              <Label htmlFor="imageFile">
+                Store Image <span className="text-red-500">*</span>
+              </Label>
               <Input id="imageFile" name="imageFile" type="file" accept="image/*" onChange={handleImageChange} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               {imagePreview && (
                 <div className="relative mt-2 max-h-40 w-fit">
@@ -261,7 +265,10 @@ export default function StoreForm() {
             </div>
 
             {/* Network Searchable Dropdown */}
-            <div className="relative" ref={networkDropdownRef}>
+            <div className="relative space-y-2" ref={networkDropdownRef}>
+              <Label>
+                Network
+              </Label>
               <Input
                 placeholder="Search network..."
                 value={networkSearch}
@@ -278,7 +285,7 @@ export default function StoreForm() {
                       onClick={() => {
                         setSelectedNetwork(net);
                         setNetworkSearch(net.networkName);
-                        setNetworkDropdownOpen(false); // close dropdown
+                        setNetworkDropdownOpen(false);
                       }}
                     >
                       {net.networkName}
@@ -290,6 +297,7 @@ export default function StoreForm() {
                 </div>
               )}
             </div>
+
             {/* Network URL auto-filled */}
             {selectedNetwork && (
               <div className="space-y-2">
@@ -298,14 +306,18 @@ export default function StoreForm() {
                   id="networkUrl"
                   name="networkUrl"
                   value={networkUrl}
+                  readOnly
                   onChange={(e) => setNetworkUrl(e.target.value)}
-                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                  className="border-none shadow-sm bg-gray-100 dark:bg-gray-700 cursor-not-allowed"
                 />
               </div>
             )}
 
             {/* Categories Searchable Multi-select */}
-            <div className="relative" ref={categoryDropdownRef}>
+            <div className="relative space-y-2" ref={categoryDropdownRef}>
+              <Label>
+                Categories <span className="text-red-500">*</span>
+              </Label>
               <Input
                 placeholder="Search categories..."
                 value={categorySearch}
@@ -337,10 +349,12 @@ export default function StoreForm() {
               )}
             </div>
 
-
-            {/* Description Modal Trigger */}
-            <div>
-              <Button type="button" onClick={() => setDescriptionModalOpen(true)}>Edit Description</Button>
+            {/* Description */}
+            <div className="space-y-2">
+              <Label>
+                Description <span className="text-red-500">*</span>
+              </Label>
+              <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} height="400px" />
             </div>
 
             {/* SEO Modal Trigger */}
@@ -362,7 +376,9 @@ export default function StoreForm() {
 
             {/* Slug */}
             <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
+              <Label htmlFor="slug">
+                Slug <span className="text-red-500">*</span>
+              </Label>
               <Input id="slug" name="slug" required placeholder="store-slug" value={seo.slug} onChange={(e) => setSeo(prev => ({ ...prev, slug: e.target.value }))} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               {errorsForField("slug").map((err, idx) => <p key={idx} className="text-sm text-red-500">{err}</p>)}
             </div>
@@ -380,21 +396,6 @@ export default function StoreForm() {
           </form>
         </CardContent>
       </Card>
-
-      {/* Description Modal */}
-      <Dialog open={descriptionModalOpen} onOpenChange={setDescriptionModalOpen}>
-        <DialogContent className="max-w-3xl w-full">
-          <DialogHeader>
-            <DialogTitle>Edit Description</DialogTitle>
-          </DialogHeader>
-          <DescriptionEditor initialContent={descriptionHtml} onChange={setDescriptionHtml} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDescriptionModalOpen(false)}>Cancel</Button>
-            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* SEO Modal */}
       <Dialog open={seoModalOpen} onOpenChange={setSeoModalOpen}>
         <DialogContent className="max-w-3xl w-full">

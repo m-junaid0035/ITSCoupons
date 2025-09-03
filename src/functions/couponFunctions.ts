@@ -11,7 +11,7 @@ const sanitizeCouponData = (data: {
   couponType: "deal" | "coupon";
   status: "active" | "expired";
   couponCode: string;
-  expirationDate: string;
+  expirationDate?: string;  // ✅ Made optional
   couponUrl?: string;
   storeName?: string;
   storeId: string;
@@ -25,7 +25,7 @@ const sanitizeCouponData = (data: {
   couponType: data.couponType,
   status: data.status,
   couponCode: data.couponCode.trim(),
-  expirationDate: new Date(data.expirationDate),
+  expirationDate: data.expirationDate ? new Date(data.expirationDate) : undefined, // ✅ Only set if provided
   couponUrl: data.couponUrl?.trim(),
   storeName: data.storeName?.trim(),
   storeId: new Types.ObjectId(data.storeId),
@@ -45,7 +45,7 @@ const serializeCouponWithStore = (coupon: any) => ({
   couponType: coupon.couponType,
   status: coupon.status,
   couponCode: coupon.couponCode,
-  expirationDate: coupon.expirationDate?.toISOString?.(),
+  expirationDate: coupon.expirationDate?.toISOString?.(), // ✅ Already optional
   couponUrl: coupon.couponUrl,
   storeName: coupon.storeName,
   storeId: coupon.storeId?.toString(),
@@ -90,7 +90,7 @@ const serializeCoupon = (coupon: any) => ({
   couponType: coupon.couponType,
   status: coupon.status,
   couponCode: coupon.couponCode,
-  expirationDate: coupon.expirationDate?.toISOString?.(),
+  expirationDate: coupon.expirationDate?.toISOString?.(), // ✅ Safe optional
   couponUrl: coupon.couponUrl,
   storeName: coupon.storeName,
   storeId: coupon.storeId?.toString(),
@@ -111,7 +111,7 @@ export const createCoupon = async (data: {
   couponType: "deal" | "coupon";
   status: "active" | "expired";
   couponCode: string;
-  expirationDate: string;
+  expirationDate?: string;  // ✅ Optional now
   couponUrl?: string;
   storeName?: string;
   storeId: string;
@@ -156,7 +156,7 @@ export const updateCoupon = async (
     couponType: "deal" | "coupon";
     status: "active" | "expired";
     couponCode: string;
-    expirationDate: string;
+    expirationDate?: string;  // ✅ Optional now
     couponUrl?: string;
     storeName?: string;
     storeId: string;
@@ -167,7 +167,11 @@ export const updateCoupon = async (
   }
 ): Promise<ReturnType<typeof serializeCoupon> | null> => {
   const updatedData = sanitizeCouponData(data);
-  const coupon = await Coupon.findByIdAndUpdate(id, { $set: updatedData }, { new: true, runValidators: true }).lean();
+  const coupon = await Coupon.findByIdAndUpdate(
+    id,
+    { $set: updatedData },
+    { new: true, runValidators: true }
+  ).lean();
   return coupon ? serializeCoupon(coupon) : null;
 };
 
@@ -184,7 +188,9 @@ export const deleteCoupon = async (
 /**
  * Get top coupons (couponType === "coupon" && isTopOne).
  */
-export const getTopCoupons = async (): Promise<ReturnType<typeof serializeCoupon>[]> => {
+export const getTopCoupons = async (): Promise<
+  ReturnType<typeof serializeCoupon>[]
+> => {
   const coupons = await Coupon.find({ couponType: "coupon", isTopOne: true })
     .sort({ createdAt: -1 })
     .lean();
@@ -194,7 +200,9 @@ export const getTopCoupons = async (): Promise<ReturnType<typeof serializeCoupon
 /**
  * Get top deals (couponType === "deal" && isTopOne).
  */
-export const getTopDeals = async (): Promise<ReturnType<typeof serializeCoupon>[]> => {
+export const getTopDeals = async (): Promise<
+  ReturnType<typeof serializeCoupon>[]
+> => {
   const deals = await Coupon.find({ couponType: "deal", isTopOne: true })
     .sort({ createdAt: -1 })
     .lean();

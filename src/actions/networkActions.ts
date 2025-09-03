@@ -9,6 +9,7 @@ import {
   getNetworkById,
   updateNetwork,
   getNetworkNames,
+  getStoreCountByNetworkId,
 } from "@/functions/networkFunctions";
 
 // ✅ Network Validation Schema
@@ -144,5 +145,14 @@ export async function fetchNetworkNamesAction() {
     return {
       error: { message: [error.message || "Failed to fetch network names"] },
     };
+  }
+}
+export async function fetchStoreCountByNetworkIdAction(networkId: string) {
+  await connectToDatabase();
+  try {
+    const count = await getStoreCountByNetworkId(networkId);
+    return { data: count };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch store count"] } };
   }
 }

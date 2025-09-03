@@ -20,7 +20,7 @@ export interface StoreData {
   _id: string;
   name: string;
   storeNetworkUrl?: string; // optional, matches network ref
-  categories: string[]; // category IDs
+  categories: string[]; // category IDsA
   totalCouponUsedTimes: number;
   image: string;
   description: string;

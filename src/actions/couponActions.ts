@@ -23,9 +23,15 @@ const couponSchema = z.object({
   couponType: z.enum(["deal", "coupon"]),
   status: z.enum(["active", "expired"]),
   couponCode: z.string().trim().min(2),
-  expirationDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: "Invalid date format",
-  }),
+
+  // ✅ expirationDate optional
+  expirationDate: z
+    .string()
+    .optional()
+    .refine((val) => !val || !isNaN(Date.parse(val)), {
+      message: "Invalid date format",
+    }),
+
   couponUrl: z.string().url("Invalid URL").optional(),
   storeName: z.string().optional(),
   storeId: z.string().min(1, "Invalid Store ID"),
@@ -48,18 +54,35 @@ export type CouponFormState = {
 function parseCouponFormData(formData: FormData): CouponFormData {
   return {
     title: String(formData.get("title") || ""),
-    description: String(formData.get("description") || ""),
-    couponType: String(formData.get("couponType") || "coupon") as "deal" | "coupon",
+    description: formData.get("description")
+      ? String(formData.get("description"))
+      : undefined,
+    couponType: String(formData.get("couponType") || "coupon") as
+      | "deal"
+      | "coupon",
     status: String(formData.get("status") || "active") as "active" | "expired",
     couponCode: String(formData.get("couponCode") || ""),
-    expirationDate: String(formData.get("expirationDate") || ""),
-    couponUrl: String(formData.get("couponUrl") || ""),
-    storeName: String(formData.get("storeName") || ""),
+
+    // ✅ expirationDate only if provided
+    expirationDate: formData.get("expirationDate")
+      ? String(formData.get("expirationDate"))
+      : undefined,
+
+    couponUrl: formData.get("couponUrl")
+      ? String(formData.get("couponUrl"))
+      : undefined,
+    storeName: formData.get("storeName")
+      ? String(formData.get("storeName"))
+      : undefined,
     storeId: String(formData.get("storeId") || ""),
-    isTopOne: formData.get("isTopOne") === "true" || formData.get("isTopOne") === "on",
-    discount: formData.get("discount") ? String(formData.get("discount")) : undefined,
+    isTopOne:
+      formData.get("isTopOne") === "true" || formData.get("isTopOne") === "on",
+    discount: formData.get("discount")
+      ? String(formData.get("discount"))
+      : undefined,
     uses: formData.get("uses") ? Number(formData.get("uses")) : 0,
-    verified: formData.get("verified") === "true" || formData.get("verified") === "on",
+    verified:
+      formData.get("verified") === "true" || formData.get("verified") === "on",
   };
 }
 
@@ -171,7 +194,9 @@ export async function fetchAllCouponsWithStoresAction() {
     const couponsWithStores = await getAllCouponsWithStores();
     return { data: couponsWithStores };
   } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch coupons with stores"] } };
+    return {
+      error: { message: [error.message || "Failed to fetch coupons with stores"] },
+    };
   }
 }
 
@@ -182,7 +207,9 @@ export async function fetchTopCouponsWithStoresAction() {
     const coupons = await getTopCouponsWithStores();
     return { data: coupons };
   } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch top coupons with stores"] } };
+    return {
+      error: { message: [error.message || "Failed to fetch top coupons with stores"] },
+    };
   }
 }
 
@@ -193,7 +220,9 @@ export async function fetchTopDealsWithStoresAction() {
     const deals = await getTopDealsWithStores();
     return { data: deals };
   } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch top deals with stores"] } };
+    return {
+      error: { message: [error.message || "Failed to fetch top deals with stores"] },
+    };
   }
 }
 
@@ -209,6 +238,8 @@ export async function fetchCouponsByStoreAction(storeId: string) {
     const coupons = await getCouponsByStore(storeId);
     return { data: coupons };
   } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch coupons for store"] } };
+    return {
+      error: { message: [error.message || "Failed to fetch coupons for store"] },
+    };
   }
 }

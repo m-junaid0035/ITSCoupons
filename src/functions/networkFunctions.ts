@@ -1,5 +1,7 @@
 import { Network } from "@/models/Network";
 import { INetwork } from "@/models/Network";
+import { Store } from "@/models/Store";
+import { Types } from "mongoose";
 
 /**
  * Helper to sanitize and format incoming network data.
@@ -96,4 +98,17 @@ export const deleteNetwork = async (
 export const getNetworkNames = async (): Promise<string[]> => {
   const networks = await Network.find().select("networkName").lean<{ networkName: string }[]>();
   return networks.map((net) => net.networkName);
+};
+
+/**
+ * Get the total number of stores under a particular network.
+ */
+export const getStoreCountByNetworkId = async (networkId: string): Promise<number> => {
+  if (!Types.ObjectId.isValid(networkId)) return 0;
+
+  const count = await Store.countDocuments({
+    network: new Types.ObjectId(networkId),
+  });
+
+  return count;
 };

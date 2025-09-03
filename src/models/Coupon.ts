@@ -7,7 +7,7 @@ export interface ICoupon extends Document {
   couponType: "deal" | "coupon";
   status: "active" | "expired";
   couponCode: string;
-  expirationDate: Date;
+  expirationDate?: Date;   // ✅ Made optional
   couponUrl?: string;
   storeName?: string;
   storeId: Types.ObjectId;
@@ -48,7 +48,7 @@ const couponSchema = new Schema<ICoupon>(
     },
     expirationDate: {
       type: Date,
-      required: [true, "Expiration date is required"],
+      // Removed "required", now optional
     },
     couponUrl: {
       type: String,

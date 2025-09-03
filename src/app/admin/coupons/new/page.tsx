@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/card";
 import { createCouponAction } from "@/actions/couponActions";
 import { fetchAllStoresAction } from "@/actions/storeActions";
+import { fetchNetworkByIdAction } from "@/actions/networkActions"; // <-- added
 import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -32,12 +33,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-
-import DescriptionEditor from "@/components/DescriptionEditor"; // Rich text editor component
+import RichTextEditor from "@/components/RichTextEditor";
 
 interface Store {
   _id: string;
   name: string;
+  network?: string;
 }
 
 interface FieldErrors {
@@ -64,14 +65,25 @@ export default function CouponForm() {
 
   // Description HTML state
   const [descriptionHtml, setDescriptionHtml] = useState("");
-  const [descriptionModalOpen, setDescriptionModalOpen] = useState(false);
+
+  // Discount auto-extraction state
+  const [discount, setDiscount] = useState("");
+
+  // Coupon URL state (auto update on store change)
+  const [couponUrl, setCouponUrl] = useState("");
 
   const [formState, dispatch, isPending] = useActionState(
     async (prevState: any, formData: FormData) => {
       if (expirationDate) {
         formData.set("expirationDate", expirationDate.toISOString());
+      } else {
+        formData.delete("expirationDate"); // ✅ allow empty expiry date
       }
       formData.set("description", descriptionHtml);
+      formData.set("couponUrl", couponUrl); // <-- updated
+      if (discount) {
+        formData.set("discount", discount); // ✅ auto-filled discount
+      }
       const result = await createCouponAction(prevState, formData);
       return result;
     },
@@ -108,69 +120,82 @@ export default function CouponForm() {
     }
   }, [formState]);
 
+  // 🔥 Auto extract discount from title
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const percentMatch = value.match(/(\d+%)/); // capture e.g. 90%
+    if (percentMatch) {
+      setDiscount(`${percentMatch[0]} Off`);
+    }
+  };
+
+  // 🔥 Auto-update couponUrl when store changes
+  const handleStoreChange = async (storeId: string) => {
+    const store = stores.find((s) => s._id === storeId);
+    if (store?.network) {
+      const netRes = await fetchNetworkByIdAction(store.network);
+      if (netRes?.data?.storeNetworkUrl) {
+        setCouponUrl(netRes.data.storeNetworkUrl);
+      }
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    if (expirationDate)
+
+    if (expirationDate) {
       formData.set("expirationDate", expirationDate.toISOString());
+    } else {
+      formData.delete("expirationDate"); // ✅ skip if empty
+    }
+
     formData.set("description", descriptionHtml);
+    formData.set("couponUrl", couponUrl); // <-- updated
+    if (discount) {
+      formData.set("discount", discount);
+    }
 
     startTransition(() => dispatch(formData));
   };
 
   return (
     <>
-      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
-        <CardHeader className="flex items-center justify-between border-none">
-          <CardTitle>Create Coupon</CardTitle>
-          <Button
-            variant="secondary"
-            onClick={() => router.push("/admin/coupons")}
-          >
-            Back to Coupons
-          </Button>
+      <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
+       <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Create Coupon</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/coupons")}>Back to Coupons</Button>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
               <Input
                 id="title"
                 name="title"
                 required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Enter coupon title"
+                onChange={handleTitleChange} // 🔥 auto extract discount
               />
               {errorFor("title") && (
                 <p className="text-sm text-red-500">{errorFor("title")}</p>
               )}
             </div>
 
-            {/* Description with Rich Editor */}
+            {/* Description */}
             <div className="space-y-2">
-              <Label>Description</Label>
-              <Button
-                type="button"
-                onClick={() => setDescriptionModalOpen(true)}
-              >
-                {descriptionHtml ? "Edit Description" : "Add Description"}
-              </Button>
-              {descriptionHtml && (
-                <div
-                  className="mt-2 p-2 border rounded bg-gray-50 dark:bg-gray-700 line-clamp-3"
-                  dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-                />
-              )}
-              {errorFor("description") && (
-                <p className="text-sm text-red-500">{errorFor("description")}</p>
-              )}
+              <Label>
+                Description
+              </Label>
+              <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} height="200px" />
             </div>
 
             {/* Coupon Type */}
             <div className="space-y-2">
-              <Label htmlFor="couponType">Coupon Type</Label>
+              <Label htmlFor="couponType">Coupon Type <span className="text-red-500">*</span></Label>
               <select
                 id="couponType"
                 name="couponType"
@@ -185,7 +210,7 @@ export default function CouponForm() {
 
             {/* Coupon Code */}
             <div className="space-y-2">
-              <Label htmlFor="couponCode">Coupon Code</Label>
+              <Label htmlFor="couponCode">Coupon Code <span className="text-red-500">*</span></Label>
               <Input
                 id="couponCode"
                 name="couponCode"
@@ -198,9 +223,9 @@ export default function CouponForm() {
               )}
             </div>
 
-            {/* Expiration Date */}
+            {/* Expiration Date (optional) */}
             <div className="space-y-2">
-              <Label>Expiration Date</Label>
+              <Label>Expiration Date (optional)</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -211,7 +236,7 @@ export default function CouponForm() {
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {expirationDate ? format(expirationDate, "PPP") : "Pick a date"}
+                    {expirationDate ? format(expirationDate, "PPP") : "No expiry date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -223,15 +248,25 @@ export default function CouponForm() {
                   />
                 </PopoverContent>
               </Popover>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setExpirationDate(undefined)}
+              >
+                Clear Date
+              </Button>
             </div>
 
             {/* Coupon URL */}
             <div className="space-y-2">
-              <Label htmlFor="couponUrl">Coupon URL</Label>
+              <Label htmlFor="couponUrl">Coupon URL (auto-filled)</Label>
               <Input
                 id="couponUrl"
                 name="couponUrl"
                 type="url"
+                value={couponUrl}
+                onChange={(e) => setCouponUrl(e.target.value)}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="https://example.com/coupon"
               />
@@ -239,11 +274,13 @@ export default function CouponForm() {
 
             {/* Discount */}
             <div className="space-y-2">
-              <Label htmlFor="discount">Discount (optional)</Label>
+              <Label htmlFor="discount">Discount (auto-filled)</Label>
               <Input
                 id="discount"
                 name="discount"
-                placeholder="e.g. 20% off"
+                value={discount}
+                onChange={(e) => setDiscount(e.target.value)}
+                placeholder="e.g. 20% Off"
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
             </div>
@@ -275,12 +312,13 @@ export default function CouponForm() {
 
             {/* Store */}
             <div className="space-y-2">
-              <Label htmlFor="storeId">Store</Label>
+              <Label htmlFor="storeId">Store <span className="text-red-500">*</span></Label>
               <select
                 id="storeId"
                 name="storeId"
                 required
                 className="w-full rounded px-3 py-2 shadow-sm border-none bg-gray-50 dark:bg-gray-700"
+                onChange={(e) => handleStoreChange(e.target.value)}
               >
                 <option value="">Select a store</option>
                 {stores.map((store) => (
@@ -290,7 +328,6 @@ export default function CouponForm() {
                 ))}
               </select>
             </div>
-
             {/* Store Name */}
             <div className="space-y-2">
               <Label htmlFor="storeName">Store Name (optional)</Label>
@@ -323,31 +360,6 @@ export default function CouponForm() {
           </form>
         </CardContent>
       </Card>
-
-      {/* Description Editor Modal */}
-      <Dialog
-        open={descriptionModalOpen}
-        onOpenChange={setDescriptionModalOpen}
-      >
-        <DialogContent className="max-w-3xl w-full">
-          <DialogHeader>
-            <DialogTitle>Edit Description</DialogTitle>
-          </DialogHeader>
-          <DescriptionEditor
-            initialContent={descriptionHtml}
-            onChange={setDescriptionHtml}
-          />
-          <DialogFooter className="space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setDescriptionModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>

@@ -19,13 +19,9 @@ import {
 import { saveStoreImage } from "@/lib/uploadStoreImage";
 
 /* ---------------------------- 📝 Validation Schema ---------------------------- */
-const allowedNetworks = ["CJ", "Rakuten", "Awin", "Impact", "ShareASale", "N/A"] as const;
-type NetworkName = (typeof allowedNetworks)[number];
-
 const storeSchema = z.object({
   name: z.string().trim().min(3).max(100),
-  networkName: z.enum(allowedNetworks).default("N/A"),
-  storeNetworkUrl: z.string().url("Invalid URL").optional().or(z.literal("")),
+  network: z.string().optional().or(z.literal("")),
   directUrl: z.string().url("Invalid direct URL").optional().or(z.literal("")),
   categories: z.array(z.string().min(1, "Invalid category ID")),
   totalCouponUsedTimes: z.coerce.number().min(0).optional(),
@@ -38,15 +34,6 @@ const storeSchema = z.object({
   slug: z.string().trim().min(3).max(100),
   isPopular: z.coerce.boolean().optional().default(false),
   isActive: z.coerce.boolean().optional().default(true),
-}).superRefine((data, ctx) => {
-  // Conditional validation: storeNetworkUrl required if networkName != "N/A"
-  if (data.networkName !== "N/A" && !data.storeNetworkUrl?.trim()) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["storeNetworkUrl"],
-      message: "storeNetworkUrl is required if networkName is not 'N/A'",
-    });
-  }
 });
 
 type StoreFormData = z.infer<typeof storeSchema>;
@@ -57,9 +44,7 @@ export type StoreFormState = {
 };
 
 /* ---------------------------- 🛠️ Helper Parser ---------------------------- */
-async function parseStoreFormData(
-  formData: FormData
-): Promise<StoreFormData & { imageFile: File }> {
+async function parseStoreFormData(formData: FormData): Promise<StoreFormData & { imageFile: File }> {
   const categoryIds = formData.getAll("categories") as string[];
 
   const parseCSV = (value: FormDataEntryValue | null) =>
@@ -75,15 +60,9 @@ async function parseStoreFormData(
 
   const imagePath = await saveStoreImage(uploadedFile);
 
-  const rawNetworkName = String(formData.get("networkName") || "N/A");
-  const networkName: NetworkName = allowedNetworks.includes(rawNetworkName as NetworkName)
-    ? (rawNetworkName as NetworkName)
-    : "N/A";
-
   return {
     name: String(formData.get("name") || ""),
-    networkName,
-    storeNetworkUrl: String(formData.get("storeNetworkUrl") || ""),
+    network: String(formData.get("network") || ""),
     directUrl: String(formData.get("directUrl") || ""),
     categories: categoryIds,
     totalCouponUsedTimes: Number(formData.get("totalCouponUsedTimes") || 0),
@@ -101,10 +80,7 @@ async function parseStoreFormData(
 }
 
 /* ---------------------------- 🔹 CREATE ---------------------------- */
-export async function createStoreAction(
-  prevState: StoreFormState,
-  formData: FormData
-): Promise<StoreFormState> {
+export async function createStoreAction(prevState: StoreFormState, formData: FormData): Promise<StoreFormState> {
   await connectToDatabase();
 
   try {
@@ -112,11 +88,7 @@ export async function createStoreAction(
     const result = storeSchema.safeParse(parsed);
 
     if (!result.success) return { error: result.error.flatten().fieldErrors };
-
-    const store = await createStore({
-      ...result.data,
-      imageFile: parsed.imageFile,
-    });
+    const store = await createStore({ ...result.data, imageFile: parsed.imageFile });
 
     return { data: store };
   } catch (error: any) {
@@ -125,11 +97,7 @@ export async function createStoreAction(
 }
 
 /* ---------------------------- 🔹 UPDATE ---------------------------- */
-export async function updateStoreAction(
-  prevState: StoreFormState,
-  id: string,
-  formData: FormData
-): Promise<StoreFormState> {
+export async function updateStoreAction(prevState: StoreFormState, id: string, formData: FormData): Promise<StoreFormState> {
   await connectToDatabase();
 
   try {
@@ -138,10 +106,7 @@ export async function updateStoreAction(
 
     if (!result.success) return { error: result.error.flatten().fieldErrors };
 
-    const updated = await updateStore(id, {
-      ...result.data,
-      imageFile: parsed.imageFile,
-    });
+    const updated = await updateStore(id, { ...result.data, imageFile: parsed.imageFile });
 
     if (!updated) return { error: { message: ["Store not found"] } };
     return { data: updated };
@@ -227,7 +192,7 @@ export async function fetchCouponCountByStoreIdAction(storeId: string) {
   } catch (error: any) { return { error: { message: [error.message || "Failed to fetch coupon count"] } }; }
 }
 
-
+/* ---------------------------- 🔹 INLINE UPDATE ---------------------------- */
 export type InlineStoreUpdate = Partial<{
   name: string;
   network: string;
@@ -246,7 +211,7 @@ export type InlineStoreUpdate = Partial<{
   isActive: boolean;
 }>;
 
-export async function updateStoreInline(id: string, updates: InlineStoreUpdate & Partial<{ categories: string[]; directUrl: string; imageFile: File }>) {
+export async function updateStoreInline(id: string, updates: InlineStoreUpdate) {
   await connectToDatabase();
 
   const store = await getStoreById(id);
@@ -268,14 +233,13 @@ export async function updateStoreInline(id: string, updates: InlineStoreUpdate &
     updates.focusKeywords = [updates.name.toLowerCase()];
   }
 
-  // Fill missing required fields from existing store
   const finalUpdates = {
     name: updates.name ?? store.name,
     categories: updates.categories ?? store.categories,
     directUrl: updates.directUrl ?? store.directUrl,
-    imageFile: updates.imageFile,
     network: updates.network ?? store.network,
     totalCouponUsedTimes: updates.totalCouponUsedTimes ?? store.totalCouponUsedTimes,
+    imageFile: updates.imageFile,
     image: updates.image ?? store.image,
     description: updates.description ?? store.description,
     metaTitle: updates.metaTitle ?? store.metaTitle,
