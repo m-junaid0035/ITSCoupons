@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { fetchAllStoresAction } from "@/actions/storeActions";
 import { fetchLatestSettingAction } from "@/actions/settingActions";
+import { fetchLatestStaticPageTitlesAndSlugsAction } from "@/actions/staticPagesActions";
 import type { StoreData } from "@/types/store";
 import type { SettingData } from "@/types/setting";
 
@@ -13,7 +14,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   const storesResult = await fetchAllStoresAction();
   const stores: StoreData[] = Array.isArray(storesResult?.data)
     ? storesResult.data
@@ -21,6 +21,11 @@ export default async function RootLayout({
 
   const settingResult = await fetchLatestSettingAction();
   const latestSetting: SettingData | null = settingResult?.data || null;
+
+  const pagesResult = await fetchLatestStaticPageTitlesAndSlugsAction();
+  const aboutPages: { title: string; slug: string }[] = Array.isArray(pagesResult?.data)
+    ? pagesResult.data
+    : [];
 
   const metadata: Metadata = {
     title: latestSetting?.metaTitle || "ITSCoupons",
@@ -53,8 +58,8 @@ export default async function RootLayout({
         {/* Pass stores into Header */}
         <Header allStores={stores} />
         {children}
-        {/* Pass latest setting into Footer */}
-        <Footer latestSetting={latestSetting} />
+        {/* Pass latest setting and aboutPages into Footer */}
+        <Footer latestSetting={latestSetting} aboutPages={aboutPages} />
       </body>
     </html>
   );

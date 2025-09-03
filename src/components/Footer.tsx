@@ -8,9 +8,10 @@ import Link from "next/link";
 
 interface FooterProps {
   latestSetting: SettingData | null;
+  aboutPages: { title: string; slug: string }[];
 }
 
-export default function Footer({ latestSetting }: FooterProps) {
+export default function Footer({ latestSetting, aboutPages }: FooterProps) {
   return (
     <footer className="bg-purple-800 text-white px-6 md:px-16 py-16">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-sm">
@@ -20,7 +21,8 @@ export default function Footer({ latestSetting }: FooterProps) {
             {latestSetting?.siteName || "ITSCoupons"}
           </h2>
           <p className="max-w-sm mx-auto md:mx-0">
-            Helping you save money with verified coupons and deals from your favorite stores.
+            Helping you save money with verified coupons and deals from your
+            favorite stores.
           </p>
           <div className="flex justify-center md:justify-start space-x-4">
             {latestSetting?.whatsappUrl && (
@@ -108,7 +110,6 @@ export default function Footer({ latestSetting }: FooterProps) {
               { href: "/stores", label: "Stores" },
               { href: "/categories", label: "Categories" },
               { href: "/blogs", label: "Blogs" },
-              { href: "/aboutus", label: "About us" },
             ].map((link) => (
               <li key={link.href}>
                 <Link
@@ -122,51 +123,62 @@ export default function Footer({ latestSetting }: FooterProps) {
           </ul>
         </div>
 
-        {/* Top Categories */}
+        {/* About Section (Latest 4 Static Pages) */}
         <div>
-          <h4 className="font-semibold mb-2">Top Categories</h4>
+          <h4 className="font-semibold mb-2">About</h4>
           <ul className="space-y-1">
+            {/* Static Links First */}
             <li>
-              <Link href="/categories" className="hover:underline">
-                Fashion
+              <Link href="/aboutus" className="hover:underline">
+                About Us
               </Link>
             </li>
             <li>
-              <Link href="/categories" className="hover:underline">
-                Electronics
+              <Link href="/contactus" className="hover:underline">
+                Contact Us
               </Link>
             </li>
-            <li>
-              <Link href="/categories" className="hover:underline">
-                Food & Drinks
-              </Link>
-            </li>
-            <li>
-              <Link href="/categories" className="hover:underline">
-                Travel
-              </Link>
-            </li>
-            <li>
-              <Link href="/categories" className="hover:underline">
-                Beauty & Health
-              </Link>
-            </li>
+
+            {/* Dynamic Pages */}
+            {aboutPages.length > 0 ? (
+              aboutPages.map((page) => (
+                <li key={page.slug}>
+                  <Link
+                    href={`/about?slug=${page.slug}`}
+                    className="hover:underline"
+                  >
+                    {page.title}
+                  </Link>
+                </li>
+              ))
+            ) : (
+              <li>No pages found</li>
+            )}
           </ul>
         </div>
+
+
         {/* Contact Info */}
         <div>
           <h4 className="font-semibold mb-2">Contact Us</h4>
           <ul className="space-y-1">
-            <li className="max-w-full break-words">{latestSetting?.contactEmail || "support@itscoupons.com"}</li>
-            <li className="max-w-full break-words">{latestSetting?.contactPhone || "(+92) 3143328342"}</li>
-            <li className="max-w-full break-words">{latestSetting?.address || "123, street, Discount city, 50050"}</li>
+            <li className="max-w-full break-words">
+              {latestSetting?.contactEmail || "support@itscoupons.com"}
+            </li>
+            <li className="max-w-full break-words">
+              {latestSetting?.contactPhone || "(+92) 3143328342"}
+            </li>
+            <li className="max-w-full break-words">
+              {latestSetting?.address || "123, street, Discount city, 50050"}
+            </li>
           </ul>
         </div>
       </div>
 
       {/* Bottom copyright */}
       <div className="mt-10 text-center text-sm text-white/70">
-        © {new Date().getFullYear()} {latestSetting?.siteName || "ITSCoupons"}. All rights reserved.
+        © {new Date().getFullYear()} {latestSetting?.siteName || "ITSCoupons"}.
+        All rights reserved.
       </div>
     </footer>
   );
