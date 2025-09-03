@@ -28,7 +28,7 @@ export default function BlogShow({ blog }: BlogShowProps) {
       {blog.image && (
         <div className="w-full h-64 sm:h-80 md:h-96 mb-8 overflow-hidden rounded-2xl shadow-lg relative">
           <Image
-            src={blog.image}
+            src={`https://itscoupons.com${blog.image}`}
             alt={blog.title}
             fill
             className="object-cover object-center transition-transform duration-500 hover:scale-105"
