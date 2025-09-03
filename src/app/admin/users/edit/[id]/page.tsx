@@ -103,8 +103,8 @@ export default function EditUserForm() {
 
   const errorFor = (field: string) =>
     formState.error &&
-    typeof formState.error === "object" &&
-    field in formState.error
+      typeof formState.error === "object" &&
+      field in formState.error
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
 
@@ -116,22 +116,17 @@ export default function EditUserForm() {
 
   return (
     <>
-      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
-        <CardHeader className="flex items-center justify-between border-none">
-          <CardTitle>Edit User</CardTitle>
-          <Button
-            variant="secondary"
-            onClick={() => router.push("/admin/users")}
-          >
-            Back to Users
-          </Button>
+      <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Edit User</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/users")}>Back to Users</Button>
         </CardHeader>
 
         <CardContent>
-          <form action={dispatch} className="space-y-6 max-w-xl">
+          <form action={dispatch} className="space-y-6">
             {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
               <Input
                 id="name"
                 name="name"
@@ -147,7 +142,7 @@ export default function EditUserForm() {
 
             {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
               <Input
                 id="email"
                 name="email"
@@ -164,7 +159,7 @@ export default function EditUserForm() {
 
             {/* Role */}
             <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">Role <span className="text-red-500">*</span></Label>
               <select
                 id="role"
                 name="roleId"
@@ -173,7 +168,7 @@ export default function EditUserForm() {
                 onChange={(e) => setSelectedRole(e.target.value)}
                 className="w-full border rounded px-3 py-2 bg-gray-50 dark:bg-gray-700"
               >
-                <option value="">Select a role</option>
+                <option value="">Select a role <span className="text-red-500">*</span></option>
                 {roles.map((role) => (
                   <option key={role._id} value={role._id}>
                     {role.name}

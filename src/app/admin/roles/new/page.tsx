@@ -88,19 +88,17 @@ export default function RoleForm() {
 
   return (
     <>
-      <Card className="max-w-xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
-        <CardHeader className="flex items-center justify-between border-none">
-          <CardTitle>Create Role</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/roles")}>
-            Back to Roles
-          </Button>
+      <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Create Role</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/roles")}>Back to Roles</Button>
         </CardHeader>
 
         <CardContent>
-          <form action={dispatch} className="space-y-6 max-w-xl">
+          <form action={dispatch} className="space-y-6">
             {/* Role Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Role Name</Label>
+              <Label htmlFor="name">Role Name <span className="text-red-500">*</span></Label>
               <Input
                 id="name"
                 name="name"
@@ -115,7 +113,7 @@ export default function RoleForm() {
 
             {/* Display Name */}
             <div className="space-y-2">
-              <Label htmlFor="displayName">Display Name</Label>
+              <Label htmlFor="displayName">Display Name <span className="text-red-500">*</span></Label>
               <Input
                 id="displayName"
                 name="displayName"

@@ -97,31 +97,29 @@ export default function EditRoleForm() {
     }
   }, [formState]);
 
-  if (loading) return <LoadingSkeleton/>;
+  if (loading) return <LoadingSkeleton />;
   if (!role) return <p className="text-red-500">Role not found</p>;
 
   const errorFor = (field: string) =>
     formState.error &&
-    typeof formState.error === "object" &&
-    field in formState.error
+      typeof formState.error === "object" &&
+      field in formState.error
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
 
   return (
     <>
-      <Card className="max-w-xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
-        <CardHeader className="flex items-center justify-between border-none">
-          <CardTitle>Edit Role</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/roles")}>
-            Back to Roles
-          </Button>
+      <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Edit Role</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/roles")}>Back to Roles</Button>
         </CardHeader>
 
         <CardContent>
-          <form action={dispatch} className="space-y-6 max-w-xl">
+          <form action={dispatch} className="space-y-6">
             {/* Role Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Role Name</Label>
+              <Label htmlFor="name">Role Name <span className="text-red-500">*</span></Label>
               <Input
                 id="name"
                 name="name"
@@ -137,7 +135,7 @@ export default function EditRoleForm() {
 
             {/* Display Name */}
             <div className="space-y-2">
-              <Label htmlFor="displayName">Display Name</Label>
+              <Label htmlFor="displayName">Display Name <span className="text-red-500">*</span></Label>
               <Input
                 id="displayName"
                 name="displayName"

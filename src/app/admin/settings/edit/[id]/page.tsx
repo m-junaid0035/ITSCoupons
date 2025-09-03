@@ -101,22 +101,17 @@ export default function EditSettingForm() {
 
   return (
     <>
-      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
-        <CardHeader className="flex items-center justify-between border-none">
-          <CardTitle>Edit Setting</CardTitle>
-          <Button
-            variant="secondary"
-            onClick={() => router.push("/admin/settings")}
-          >
-            Back to Settings
-          </Button>
+      <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Edit Setting</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/settings")}>Back to Settings</Button>
         </CardHeader>
 
         <CardContent>
-          <form action={dispatch} className="space-y-6 max-w-2xl mx-auto">
+          <form action={dispatch} className="space-y-6">
             {/* Site Name */}
             <div className="space-y-2">
-              <Label htmlFor="siteName">Site Name</Label>
+              <Label htmlFor="siteName">Site Name <span className="text-red-500">*</span></Label>
               <Input
                 id="siteName"
                 name="siteName"

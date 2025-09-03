@@ -112,19 +112,17 @@ export default function EditBlogForm() {
 
   return (
     <>
-      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
-        <CardHeader className="flex items-center justify-between border-none">
-          <CardTitle>Edit Blog</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/blogs")}>
-            Back to Blogs
-          </Button>
+      <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Edit Blog</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/blogs")}>Back to Blogs</Button>
         </CardHeader>
 
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
               <Input
                 id="title"
                 name="title"
@@ -137,7 +135,7 @@ export default function EditBlogForm() {
 
             {/* Writer */}
             <div className="space-y-2">
-              <Label htmlFor="writer">Writer</Label>
+              <Label htmlFor="writer">Writer <span className="text-red-500">*</span></Label>
               <Input
                 id="writer"
                 name="writer"
@@ -151,7 +149,7 @@ export default function EditBlogForm() {
 
             {/* Category */}
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">Category <span className="text-red-500">*</span></Label>
               <select
                 id="category"
                 name="category"
@@ -170,7 +168,7 @@ export default function EditBlogForm() {
 
             {/* Slug */}
             <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
+              <Label htmlFor="slug">Slug <span className="text-red-500">*</span></Label>
               <Input
                 id="slug"
                 name="slug"
@@ -182,7 +180,7 @@ export default function EditBlogForm() {
 
             {/* Date */}
             <div className="space-y-2">
-              <Label>Date</Label>
+              <Label>Date <span className="text-red-500">*</span></Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -202,7 +200,7 @@ export default function EditBlogForm() {
 
             {/* Description with modal */}
             <div className="space-y-2">
-              <Label>Description</Label>
+              <Label>Description <span className="text-red-500">*</span></Label>
               <Button type="button" onClick={() => setDescriptionModalOpen(true)}>
                 {descriptionHtml ? "Edit Description" : "Add Description"}
               </Button>
@@ -211,7 +209,7 @@ export default function EditBlogForm() {
 
             {/* Image Upload */}
             <div className="space-y-2">
-              <Label htmlFor="imageFile">Blog Image</Label>
+              <Label htmlFor="imageFile">Blog Image <span className="text-red-500">*</span></Label>
               {blog.image && (
                 <img
                   src={blog.image}

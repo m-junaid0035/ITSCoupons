@@ -95,22 +95,20 @@ export default function UserForm() {
 
   return (
     <>
-      <Card className="max-w-xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
-        <CardHeader className="flex items-center justify-between border-none">
-          <CardTitle>Create User</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/users")}>
-            Back to Users
-          </Button>
+      <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Create User</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/users")}>Back to Users</Button>
         </CardHeader>
 
         <CardContent>
           <form
             action={dispatch}
-            className="space-y-6 max-w-xl"
+            className="space-y-6"
           >
             {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">Name <span className="text-red-500">*</span></Label>
               <Input
                 id="name"
                 name="name"
@@ -125,7 +123,7 @@ export default function UserForm() {
 
             {/* Email */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
               <Input
                 id="email"
                 name="email"
@@ -141,7 +139,7 @@ export default function UserForm() {
 
             {/* Password */}
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
               <Input
                 id="password"
                 name="password"
@@ -157,7 +155,7 @@ export default function UserForm() {
 
             {/* Role */}
             <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">Role <span className="text-red-500">*</span></Label>
               <select
                 id="role"
                 name="roleId" // <-- changed from "role" to "roleId"

@@ -74,19 +74,17 @@ export default function SEOForm() {
 
   return (
     <>
-      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
-        <CardHeader className="flex items-center justify-between border-none">
-          <CardTitle>Create SEO Entry</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/seo")}>
-            Back to SEO List
-          </Button>
+      <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Create SEO Entry</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/seo")}>Back to SEO List</Button>
         </CardHeader>
 
         <CardContent>
-          <form action={dispatch} className="space-y-6 max-w-2xl mx-auto">
+          <form action={dispatch} className="space-y-6">
             {/* Meta Title */}
             <div className="space-y-2">
-              <Label htmlFor="metaTitle">Meta Title</Label>
+              <Label htmlFor="metaTitle">Meta Title <span className="text-red-500">*</span></Label>
               <Input
                 id="metaTitle"
                 name="metaTitle"
@@ -100,7 +98,7 @@ export default function SEOForm() {
 
             {/* Meta Description */}
             <div className="space-y-2">
-              <Label htmlFor="metaDescription">Meta Description</Label>
+              <Label htmlFor="metaDescription">Meta Description <span className="text-red-500">*</span></Label>
               <Textarea
                 id="metaDescription"
                 name="metaDescription"
@@ -140,7 +138,7 @@ export default function SEOForm() {
 
             {/* Slug */}
             <div className="space-y-2">
-              <Label htmlFor="slug">Slug</Label>
+              <Label htmlFor="slug">Slug <span className="text-red-500">*</span></Label>
               <Input
                 id="slug"
                 name="slug"

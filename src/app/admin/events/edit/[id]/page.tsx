@@ -119,19 +119,17 @@ export default function EditEventForm() {
 
   return (
     <>
-      <Card className="max-w-3xl mx-auto shadow-lg bg-white dark:bg-gray-800 pt-4">
-        <CardHeader className="flex items-center justify-between border-none">
-          <CardTitle>Edit Event</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/events")}>
-            Back to Events
-          </Button>
+      <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
+          <CardTitle className="text-lg sm:text-xl font-semibold">Create Event</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/events")}>Back to Events</Button>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
             {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
               <Input id="title" name="title" defaultValue={event.title} required className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               {errorFor("title") && <p className="text-sm text-red-500">{errorFor("title")}</p>}
             </div>
@@ -145,7 +143,7 @@ export default function EditEventForm() {
 
             {/* Date */}
             <div className="space-y-2">
-              <Label>Date</Label>
+              <Label>Date <span className="text-red-500">*</span></Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button

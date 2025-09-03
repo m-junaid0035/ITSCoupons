@@ -111,7 +111,10 @@ function CouponsTable({
                 <TableCell className="capitalize">{coupon.couponType}</TableCell>
                 <TableCell className="capitalize">{coupon.status}</TableCell>
                 <TableCell>
-                  {new Date(coupon.expirationDate).toLocaleDateString()}
+                  {coupon?.expirationDate && !isNaN(Date.parse(coupon.expirationDate))
+                    ? new Date(coupon.expirationDate).toLocaleDateString()
+                    : "N/A"}
+
                 </TableCell>
                 <TableCell>{coupon.storeName || "-"}</TableCell>
                 <TableCell>
