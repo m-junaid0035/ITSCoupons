@@ -8,6 +8,58 @@ import { fetchStoresByCategoriesAction } from "@/actions/storeActions";
 import type { StoreData as StoreType } from "@/types/store";
 import { StoreWithCouponsData } from "@/types/storesWithCouponsData";
 
+import { Metadata } from "next";
+
+/* ---------------------- Generate Metadata Dynamically ---------------------- */
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const storeResult = await fetchStoreWithCouponsByIdAction(params.id);
+  const store: StoreWithCouponsData | null = storeResult?.data ?? null;
+
+  if (!store) {
+    return {
+      title: "Store Not Found",
+      description: "The store you are looking for does not exist.",
+    };
+  }
+
+  const metaTitle = store.metaTitle || store.name;
+  const metaDescription = store.metaDescription || store.description || "";
+  const metaKeywords = (store.metaKeywords ?? store.focusKeywords ?? [store.name]).join(
+    ", "
+  );
+
+  return {
+    title: metaTitle,
+    description: metaDescription,
+    keywords: metaKeywords,
+    openGraph: {
+      title: metaTitle,
+      description: metaDescription,
+      type: "website",
+      url: `${process.env.DOMAIN}/stores/${store._id}/${store.slug}`,
+      images: [
+        {
+          url: store.image,
+          width: 1200,
+          height: 630,
+          alt: store.name,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: metaTitle,
+      description: metaDescription,
+      images: [store.image],
+    },
+  };
+}
+
+/* ---------------------- Store Page Component ---------------------- */
 export default async function StorePage({
   params,
   searchParams,
@@ -18,6 +70,7 @@ export default async function StorePage({
   // Await params to get the store ID
   const { id: storeId } = await params;
   const { couponId = "" } = await searchParams;
+
   // Fetch the store with coupons
   const storeResult = await fetchStoreWithCouponsByIdAction(storeId);
   const store: StoreWithCouponsData | null = storeResult?.data ?? null;
@@ -43,10 +96,8 @@ export default async function StorePage({
 
   return (
     <main className="max-w-7xl mx-auto px-4 md:px-8 py-10 space-y-10">
-        <StoreData store={store} couponId={couponId} />
-      {relatedStores.length > 0 && (
-        <RelatedStores stores={relatedStores} />
-      )}
+      <StoreData store={store} couponId={couponId} />
+      {relatedStores.length > 0 && <RelatedStores stores={relatedStores} />}
     </main>
   );
 }

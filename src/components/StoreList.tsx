@@ -57,7 +57,7 @@ export default function StoreList({ stores, selectedLetter = "" }: StoreListProp
       </div>
 
       {/* Desktop Alphabet Nav */}
-      <div className="hidden md:flex mb-8 border-b border-gray-200 pb-2 flex overflow-x-auto whitespace-nowrap space-x-4 md:overflow-x-visible md:flex-wrap md:justify-between md:space-x-0">
+      <div className="hidden md:flex mb-8 border-b border-gray-200 pb-2 overflow-x-auto whitespace-nowrap space-x-4 md:overflow-x-visible md:flex-wrap md:justify-between md:space-x-0">
         <AlphaLink href="/stores" active={!currentLetter}>
           All
         </AlphaLink>
