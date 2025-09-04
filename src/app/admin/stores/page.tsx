@@ -52,15 +52,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Eye, Pencil, Trash2, Loader2, ExternalLink } from "lucide-react";
-
-interface IStore {
-  _id: string;
-  name: string;
-  network?: { _id: string; name: string } | null;
-  totalCoupons?: number;
-  image?: string;
-  slug?: string;
-}
+import StoreModal,{ IStore } from "@/components/views/StoreModel";
 
 interface INetwork {
   _id: string;
@@ -79,7 +71,7 @@ function StoresTable({
 }: {
   stores: IStore[];
   networks: INetwork[];
-  onView: (id: string) => void;
+  onView: (store: IStore) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onCouponsClick: (id: string) => void;
@@ -157,7 +149,7 @@ function StoresTable({
                 >
                   {editingNetworkId === store._id ? (
                     <Select
-                      value={store.network?._id || ""}
+                      value={store.network || ""}
                       onValueChange={(value) => {
                         onInlineUpdate(store._id, "network", value);
                         setEditingNetworkId(null);
@@ -251,11 +243,12 @@ function StoresTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onView(store._id)}
+                      onClick={() => onView(store)}
                       title="View"
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
+
                     <Button
                       variant="ghost"
                       size="icon"
@@ -310,6 +303,8 @@ export default function StoresPage({
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [searchType, setSearchType] = useState<"store" | "network">("store");
+  const [viewStore, setViewStore] = useState<IStore | null>(null);
+
 
 
   const pageSize = 8;
@@ -470,13 +465,14 @@ export default function StoresPage({
           <StoresTable
             stores={paginatedStores}
             networks={networks}
-            onView={(id) => router.push(`/admin/stores/view/${id}`)}
+            onView={(store) => setViewStore(store)} // pass the store here
             onEdit={(id) => router.push(`/admin/stores/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
             onCouponsClick={(id) => router.push(`/admin/coupons?storeId=${id}`)}
             loading={loading}
             onInlineUpdate={handleInlineUpdate}
           />
+
         </Suspense>
 
         {totalPages > 1 && (
@@ -536,6 +532,15 @@ export default function StoresPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {viewStore && (
+        <StoreModal
+          store={viewStore}
+          isOpen={!!viewStore}
+          onClose={() => setViewStore(null)}
+        />
+      )}
+
     </Card>
   );
 }

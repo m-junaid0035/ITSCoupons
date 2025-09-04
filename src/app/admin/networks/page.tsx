@@ -1,13 +1,12 @@
 "use client";
 
-import { Suspense, useEffect, useState, useOptimistic } from "react";
+import { Suspense, useEffect, useState, useOptimistic, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   fetchAllNetworksAction,
   deleteNetworkAction,
-  fetchStoreCountByNetworkIdAction, // new action
+  fetchStoreCountByNetworkIdAction,
 } from "@/actions/networkActions";
-import { startTransition } from "react";
 import {
   Card,
   CardHeader,
@@ -41,14 +40,23 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import NetworkModal from "@/components/views/NetworkModal";
 
-interface INetwork {
+// Network Modal Component
+type INetwork = {
   _id: string;
   networkName: string;
   storeNetworkUrl: string;
   totalStores?: number;
-}
+};
 
+type NetworkModalProps = {
+  network: INetwork;
+  isOpen: boolean;
+  onClose: () => void;
+};
+
+// Networks Table Component
 function NetworksTable({
   networks,
   onView,
@@ -58,10 +66,10 @@ function NetworksTable({
   loading,
 }: {
   networks: INetwork[];
-  onView: (id: string) => void;
+  onView: (network: INetwork) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  onStoresClick: (id: string) => void; // new
+  onStoresClick: (id: string) => void;
   loading: boolean;
 }) {
   if (loading) {
@@ -93,8 +101,6 @@ function NetworksTable({
               >
                 <TableCell className="font-medium">{network.networkName}</TableCell>
                 <TableCell>{network.storeNetworkUrl}</TableCell>
-
-                {/* Total Stores clickable */}
                 <TableCell>
                   <button
                     onClick={() => onStoresClick(network._id)}
@@ -103,14 +109,13 @@ function NetworksTable({
                     {network.totalStores ?? 0}
                   </button>
                 </TableCell>
-
                 <TableCell>
                   <div className="flex justify-end items-center gap-1.5">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onView(network._id)}
+                      onClick={() => onView(network)}
                       title="View"
                     >
                       <Eye className="h-4 w-4" />
@@ -150,6 +155,7 @@ function NetworksTable({
   );
 }
 
+// Networks Page Component
 export default function NetworksPage() {
   const router = useRouter();
   const [networks, setNetworks] = useState<INetwork[]>([]);
@@ -157,6 +163,8 @@ export default function NetworksPage() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [selectedNetwork, setSelectedNetwork] = useState<INetwork | null>(null);
+
   const pageSize = 8;
 
   const [optimisticNetworks, deleteOptimistic] = useOptimistic(
@@ -168,14 +176,10 @@ export default function NetworksPage() {
     setLoading(true);
     const result = await fetchAllNetworksAction();
     if (result?.data && Array.isArray(result.data)) {
-      // fetch store counts
       const networksWithCounts = await Promise.all(
         result.data.map(async (network: INetwork) => {
           const countRes = await fetchStoreCountByNetworkIdAction(network._id);
-          return {
-            ...network,
-            totalStores: countRes?.data ?? 0,
-          };
+          return { ...network, totalStores: countRes?.data ?? 0 };
         })
       );
       setNetworks(networksWithCounts);
@@ -219,7 +223,6 @@ export default function NetworksPage() {
   const filteredNetworks = optimisticNetworks.filter((n) =>
     n.networkName.toLowerCase().includes(search.toLowerCase())
   );
-
   const totalPages = Math.ceil(filteredNetworks.length / pageSize);
   const paginatedNetworks = filteredNetworks.slice(
     (currentPage - 1) * pageSize,
@@ -257,10 +260,10 @@ export default function NetworksPage() {
         >
           <NetworksTable
             networks={paginatedNetworks}
-            onView={(id) => router.push(`/admin/networks/view/${id}`)}
+            onView={(network) => setSelectedNetwork(network)}
             onEdit={(id) => router.push(`/admin/networks/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
-            onStoresClick={handleStoresClick} // pass the handler
+            onStoresClick={handleStoresClick}
             loading={loading}
           />
         </Suspense>
@@ -297,6 +300,7 @@ export default function NetworksPage() {
         )}
       </CardContent>
 
+      {/* Confirm Delete Dialog */}
       <Dialog
         open={!!confirmDeleteId}
         onOpenChange={() => setConfirmDeleteId(null)}
@@ -328,6 +332,15 @@ export default function NetworksPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Network View Modal */}
+      {selectedNetwork && (
+        <NetworkModal
+          network={selectedNetwork}
+          isOpen={!!selectedNetwork}
+          onClose={() => setSelectedNetwork(null)}
+        />
+      )}
     </Card>
   );
 }

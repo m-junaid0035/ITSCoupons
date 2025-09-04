@@ -6,6 +6,7 @@ import { FaSearch, FaBars } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
 import { useState, useEffect } from "react";
 import type { StoreData } from "@/types/store";
+import Image from "next/image";
 
 interface HeaderProps {
   allStores: StoreData[];
@@ -17,7 +18,7 @@ export default function Header({ allStores }: HeaderProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredStores, setFilteredStores] = useState<StoreData[]>([]);
   const pathname = usePathname();
-  const router = useRouter(); 
+  const router = useRouter();
 
   const navLinks = [
     { href: "/", label: "Home" },
@@ -62,71 +63,86 @@ export default function Header({ allStores }: HeaderProps) {
       )}
 
       {/* Main Header */}
-      <div className="bg-white shadow-sm px-4 sm:px-6 lg:px-16 py-4 md:py-6 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="text-2xl md:text-3xl font-bold text-purple-800">
-          ITS<span className="font-light text-black">Coupons</span>
+      <div className="bg-white shadow-sm px-4 sm:px-6 lg:px-16 py-4 md:py-6 flex items-center justify-between relative">
+        {/* Logo (absolutely positioned so header height doesn't change) */}
+        <Link
+          href="/"
+          className="absolute left-4 sm:left-6 lg:left-16 top-[55%] -translate-y-1/2"
+        >
+          <Image
+            src="/logos/ITS-Coupons-Logo.png"
+            alt="ITS Coupons Logo"
+            width={280}
+            height={280}
+            className="h-20 sm:h-24 md:h-28 w-auto object-contain"
+            priority
+          />
         </Link>
 
-        {/* Navbar (visible only when width >= 1201px) */}
-        <div className="hidden min-[1201px]:flex items-center w-full max-w-6xl justify-between relative">
-          <nav className="flex space-x-6 text-base lg:text-lg font-medium text-gray-700 mx-auto">
-            {navLinks.map(({ href, label }) => {
-              const isActive =
-                pathname === href || (href !== "/" && pathname.startsWith(href));
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`px-1 py-1 ${isActive
-                    ? "text-purple-800 font-semibold underline underline-offset-4"
-                    : "text-gray-700 hover:text-purple-700"
-                    }`}
-                >
-                  {label}
-                </Link>
-              );
-            })}
-          </nav>
 
-          {/* Search */}
-          <div className="relative w-64">
-            <input
-              type="search"
-              placeholder="Search stores..."
-              className="w-full border border-gray-300 rounded px-4 py-2 pr-10 text-sm outline-none focus:border-gray-300 focus:ring-0"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <FaSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" />
-
-            {filteredStores.length > 0 && (
-              <ul className="absolute z-50 w-full mt-1 max-h-64 overflow-y-auto bg-white border border-gray-300 rounded shadow-lg">
-                {filteredStores.map((store) => (
-                  <li
-                    key={store._id}
-                    className="px-4 py-2 hover:bg-purple-50 cursor-pointer"
-                    onClick={() => handleSelectStore(store._id)}
+        {/* Right section (nav + search + sidebar toggle) */}
+        <div className="flex-1 flex items-center justify-end pl-44 sm:pl-52 md:pl-60">
+          {/* Navbar (visible only when width >= 1201px) */}
+          <div className="hidden min-[1201px]:flex items-center w-full max-w-6xl justify-between relative">
+            <nav className="flex space-x-6 text-base lg:text-lg font-medium text-gray-700 mx-auto">
+              {navLinks.map(({ href, label }) => {
+                const isActive =
+                  pathname === href ||
+                  (href !== "/" && pathname.startsWith(href));
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={`px-1 py-1 ${isActive
+                        ? "text-purple-800 font-semibold underline underline-offset-4"
+                        : "text-gray-700 hover:text-purple-700"
+                      }`}
                   >
-                    {store.name}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
+                    {label}
+                  </Link>
+                );
+              })}
+            </nav>
 
-        {/* Sidebar Toggle (visible only when width <= 1200px) */}
-        <button
-          className="min-[1201px]:hidden text-gray-700 hover:text-purple-700"
-          onClick={() => setMobileMenuOpen((prev) => !prev)}
-        >
-          {mobileMenuOpen ? (
-            <IoMdClose className="w-6 h-6" />
-          ) : (
-            <FaBars className="w-6 h-6" />
-          )}
-        </button>
+            {/* Search */}
+            <div className="relative w-64">
+              <input
+                type="search"
+                placeholder="Search stores..."
+                className="w-full border border-gray-300 rounded px-4 py-2 pr-10 text-sm outline-none focus:border-gray-300 focus:ring-0"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <FaSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" />
+
+              {filteredStores.length > 0 && (
+                <ul className="absolute z-50 w-full mt-1 max-h-64 overflow-y-auto bg-white border border-gray-300 rounded shadow-lg">
+                  {filteredStores.map((store) => (
+                    <li
+                      key={store._id}
+                      className="px-4 py-2 hover:bg-purple-50 cursor-pointer"
+                      onClick={() => handleSelectStore(store._id)}
+                    >
+                      {store.name}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar Toggle (visible only when width <= 1200px) */}
+          <button
+            className="min-[1201px]:hidden text-gray-700 hover:text-purple-700"
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+          >
+            {mobileMenuOpen ? (
+              <IoMdClose className="w-6 h-6" />
+            ) : (
+              <FaBars className="w-6 h-6" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar (for <=1200px) */}
@@ -146,15 +162,16 @@ export default function Header({ allStores }: HeaderProps) {
           <nav className="flex flex-col space-y-6 text-lg font-semibold text-gray-800">
             {navLinks.map(({ href, label }) => {
               const isActive =
-                pathname === href || (href !== "/" && pathname.startsWith(href));
+                pathname === href ||
+                (href !== "/" && pathname.startsWith(href));
               return (
                 <Link
                   key={href}
                   href={href}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`${isActive
-                    ? "text-purple-800 underline underline-offset-4"
-                    : "hover:text-purple-700"
+                      ? "text-purple-800 underline underline-offset-4"
+                      : "hover:text-purple-700"
                     }`}
                 >
                   {label}

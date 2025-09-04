@@ -50,17 +50,7 @@ import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { fetchAllStoresAction } from "@/actions/storeActions";
 
-interface ICoupon {
-  _id: string;
-  title: string;
-  couponCode: string;
-  storeId: string;
-  couponType: "deal" | "coupon";
-  status: "active" | "expired";
-  expirationDate: string;
-  storeName?: string;
-  isTopOne?: boolean;
-}
+import CouponModal, { ICoupon } from "@/components/views/CouponModal"; // Make sure path is correct
 
 function CouponsTable({
   coupons,
@@ -70,7 +60,7 @@ function CouponsTable({
   loading,
 }: {
   coupons: ICoupon[];
-  onView: (id: string) => void;
+  onView: (coupon: ICoupon) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   loading: boolean;
@@ -114,7 +104,6 @@ function CouponsTable({
                   {coupon?.expirationDate && !isNaN(Date.parse(coupon.expirationDate))
                     ? new Date(coupon.expirationDate).toLocaleDateString()
                     : "N/A"}
-
                 </TableCell>
                 <TableCell>{coupon.storeName || "-"}</TableCell>
                 <TableCell>
@@ -130,7 +119,7 @@ function CouponsTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onView(coupon._id)}
+                      onClick={() => onView(coupon)}
                       title="View"
                     >
                       <Eye className="h-4 w-4" />
@@ -185,6 +174,7 @@ export default function CouponsPage({
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [viewCoupon, setViewCoupon] = useState<ICoupon | null>(null); // NEW: selected coupon
   const pageSize = 8;
 
   const [optimisticCoupons, deleteOptimistic] = useOptimistic(
@@ -305,7 +295,7 @@ export default function CouponsPage({
               ...c,
               storeName: storesMap[c.storeId] || "-", // map ID to name
             }))}
-            onView={(id) => router.push(`/admin/coupons/view/${id}`)}
+            onView={(coupon) => setViewCoupon(coupon)} // NEW: open modal
             onEdit={(id) => router.push(`/admin/coupons/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
             loading={loading}
@@ -346,6 +336,7 @@ export default function CouponsPage({
         )}
       </CardContent>
 
+      {/* Delete Confirmation Dialog */}
       <Dialog
         open={!!confirmDeleteId}
         onOpenChange={() => setConfirmDeleteId(null)}
@@ -374,6 +365,15 @@ export default function CouponsPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Coupon Modal */}
+      {viewCoupon && (
+        <CouponModal
+          coupon={viewCoupon}
+          isOpen={!!viewCoupon}
+          onClose={() => setViewCoupon(null)}
+        />
+      )}
     </Card>
   );
 }

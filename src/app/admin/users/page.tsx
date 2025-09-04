@@ -40,15 +40,7 @@ import {
 } from "@/components/ui/pagination";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 
-interface IUser {
-  _id: string;
-  name: string;
-  email: string;
-  role: string; // store only role _id
-  image?: string;
-  isActive: boolean;
-  createdAt?: string;
-}
+import UserModal, { IUser } from "@/components/views/UserModal"; // Make sure path is correct
 
 interface IRole {
   _id: string;
@@ -66,26 +58,20 @@ function UsersTable({
 }: {
   users: IUser[];
   roles: IRole[];
-  onView: (id: string) => void;
+  onView: (user: IUser) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   loading: boolean;
 }) {
-  // Get role displayName by matching role _id
   const getRoleDisplayName = (roleId: string) => {
-  let displayName = "-";
-  console.log("passed value", roleId)
-  roles.map((role) => {
-    console.log(role)
-    if (String(role._id) === String(roleId)) {
-      displayName = role.displayName || role.name;
-    }
-  });
-
-  return displayName;
-};
-
-
+    let displayName = "-";
+    roles.forEach((role) => {
+      if (String(role._id) === String(roleId)) {
+        displayName = role.displayName || role.name;
+      }
+    });
+    return displayName;
+  };
 
   if (loading) {
     return (
@@ -146,7 +132,7 @@ function UsersTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onView(user._id)}
+                      onClick={() => onView(user)}
                       title="View"
                     >
                       <Eye className="h-4 w-4" />
@@ -194,6 +180,7 @@ export default function UsersPage() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [viewUser, setViewUser] = useState<IUser | null>(null); // NEW: selected user
   const pageSize = 8;
 
   const [optimisticUsers, deleteOptimistic] = useOptimistic(
@@ -210,7 +197,6 @@ export default function UsersPage() {
       ]);
 
       if (usersResult?.data && Array.isArray(usersResult.data)) {
-        // Normalize role field to _id if it comes as object
         const normalizedUsers = usersResult.data.map((u) => ({
           ...u,
           role: typeof u.role === "object" ? u.role._id : u.role,
@@ -254,7 +240,7 @@ export default function UsersPage() {
         description: result.error.message || "Failed to delete user",
         variant: "destructive",
       });
-      await loadData(); // rollback optimistic update
+      await loadData(); // rollback
     } else {
       setUsers((prev) => prev.filter((user) => user._id !== id));
       toast({
@@ -310,7 +296,7 @@ export default function UsersPage() {
           <UsersTable
             users={paginatedUsers}
             roles={roles}
-            onView={(id) => router.push(`/admin/users/view/${id}`)}
+            onView={(user) => setViewUser(user)} // NEW: open modal
             onEdit={(id) => router.push(`/admin/users/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
             loading={loading}
@@ -338,9 +324,7 @@ export default function UsersPage() {
                 ))}
                 <PaginationItem>
                   <PaginationNext
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   />
                 </PaginationItem>
               </PaginationContent>
@@ -349,10 +333,8 @@ export default function UsersPage() {
         )}
       </CardContent>
 
-      <Dialog
-        open={!!confirmDeleteId}
-        onOpenChange={() => setConfirmDeleteId(null)}
-      >
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!confirmDeleteId} onOpenChange={() => setConfirmDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
@@ -377,6 +359,15 @@ export default function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* User Modal */}
+      {viewUser && (
+        <UserModal
+          user={viewUser}
+          isOpen={!!viewUser}
+          onClose={() => setViewUser(null)}
+        />
+      )}
     </Card>
   );
 }

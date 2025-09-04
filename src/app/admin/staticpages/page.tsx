@@ -1,12 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useState, useOptimistic } from "react";
+import { Suspense, useEffect, useState, useOptimistic, startTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
-  fetchAllStaticPagesAction,
-  deleteStaticPageAction,
-} from "@/actions/staticPagesActions";
-import { startTransition } from "react";
+import { fetchAllStaticPagesAction, deleteStaticPageAction } from "@/actions/staticPagesActions";
 import {
   Card,
   CardHeader,
@@ -40,13 +36,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
-
-interface IStaticPage {
-  _id: string;
-  title: string;
-  slug: string;
-  isPublished: boolean;
-}
+import StaticPageModal, { IStaticPage } from "@/components/views/StaticPageModal"; // make sure path is correct
 
 function StaticPagesTable({
   pages,
@@ -56,7 +46,7 @@ function StaticPagesTable({
   loading,
 }: {
   pages: IStaticPage[];
-  onView: (id: string) => void;
+  onView: (page: IStaticPage) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   loading: boolean;
@@ -68,6 +58,10 @@ function StaticPagesTable({
         Loading pages...
       </div>
     );
+  }
+
+  if (!pages.length) {
+    return <div className="text-center py-6 text-muted-foreground">No static pages found.</div>;
   }
 
   return (
@@ -82,64 +76,50 @@ function StaticPagesTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {pages.length > 0 ? (
-            pages.map((page) => (
-              <TableRow
-                key={page._id}
-                className="hover:bg-muted/40 transition-colors"
-              >
-                <TableCell className="font-medium">{page.title}</TableCell>
-                <TableCell>{page.slug}</TableCell>
-                <TableCell>
-                  {page.isPublished ? (
-                    <span className="text-green-600 font-semibold">Published</span>
-                  ) : (
-                    <span className="text-gray-400">Draft</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-end items-center gap-1.5">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onView(page._id)}
-                      title="View"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onEdit(page._id)}
-                      title="Edit"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => onDelete(page._id)}
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell
-                colSpan={4}
-                className="text-center text-muted-foreground py-6"
-              >
-                No static pages found.
+          {pages.map((page) => (
+            <TableRow key={page._id} className="hover:bg-muted/40 transition-colors">
+              <TableCell className="font-medium">{page.title}</TableCell>
+              <TableCell>{page.slug}</TableCell>
+              <TableCell>
+                {page.isPublished ? (
+                  <span className="text-green-600 font-semibold">Published</span>
+                ) : (
+                  <span className="text-gray-400">Draft</span>
+                )}
+              </TableCell>
+              <TableCell>
+                <div className="flex justify-end items-center gap-1.5">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => onView(page)}
+                    title="View"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => onEdit(page._id)}
+                    title="Edit"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                    onClick={() => onDelete(page._id)}
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
-          )}
+          ))}
         </TableBody>
       </Table>
     </div>
@@ -153,6 +133,7 @@ export default function StaticPagesPage() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [viewPage, setViewPage] = useState<IStaticPage | null>(null); // NEW: selected page for modal
   const pageSize = 8;
 
   const [optimisticPages, deleteOptimistic] = useOptimistic(
@@ -176,10 +157,7 @@ export default function StaticPagesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    startTransition(() => {
-      deleteOptimistic(id);
-    });
-
+    startTransition(() => deleteOptimistic(id));
     const result = await deleteStaticPageAction(id);
     if (result?.error) {
       toast({
@@ -187,13 +165,10 @@ export default function StaticPagesPage() {
         description: result.error.message || "Failed to delete static page",
         variant: "destructive",
       });
-      await loadPages(); // revert if failed
+      await loadPages();
     } else {
       setPages((prev) => prev.filter((p) => p._id !== id));
-      toast({
-        title: "Deleted",
-        description: "Static page deleted successfully.",
-      });
+      toast({ title: "Deleted", description: "Static page deleted successfully." });
     }
   };
 
@@ -241,7 +216,7 @@ export default function StaticPagesPage() {
         >
           <StaticPagesTable
             pages={paginatedPages}
-            onView={(id) => router.push(`/admin/staticpages/view/${id}`)}
+            onView={(page) => setViewPage(page)} // open modal
             onEdit={(id) => router.push(`/admin/staticpages/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
             loading={loading}
@@ -254,9 +229,7 @@ export default function StaticPagesPage() {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() =>
-                      setCurrentPage((p) => Math.max(1, p - 1))
-                    }
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   />
                 </PaginationItem>
                 {Array.from({ length: totalPages }, (_, i) => (
@@ -271,9 +244,7 @@ export default function StaticPagesPage() {
                 ))}
                 <PaginationItem>
                   <PaginationNext
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   />
                 </PaginationItem>
               </PaginationContent>
@@ -282,23 +253,15 @@ export default function StaticPagesPage() {
         )}
       </CardContent>
 
-      <Dialog
-        open={!!confirmDeleteId}
-        onOpenChange={() => setConfirmDeleteId(null)}
-      >
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!confirmDeleteId} onOpenChange={() => setConfirmDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
-          <p>
-            Are you sure you want to delete this static page? This action cannot
-            be undone.
-          </p>
+          <p>This action cannot be undone.</p>
           <DialogFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setConfirmDeleteId(null)}
-            >
+            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
               Cancel
             </Button>
             <Button
@@ -313,6 +276,15 @@ export default function StaticPagesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Static Page Modal */}
+      {viewPage && (
+        <StaticPageModal
+          page={viewPage}
+          isOpen={!!viewPage}
+          onClose={() => setViewPage(null)}
+        />
+      )}
     </Card>
   );
 }

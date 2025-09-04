@@ -47,25 +47,9 @@ import {
 } from "@/components/ui/pagination";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 
-interface ISetting {
-  _id: string;
-  siteName: string;
-  logo?: string;
-  favicon?: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  address?: string;
-  metaTitle?: string;
-  metaDescription?: string;
-  metaKeywords: string[];
-  facebookUrl?: string;
-  XUrl?: string;
-  instagramUrl?: string;
-  whatsappUrl?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import SettingModal, { ISetting } from "@/components/views/SettingModal"; // Make sure this path is correct
 
+// Table Component
 function SettingsTable({
   settings,
   onView,
@@ -74,7 +58,7 @@ function SettingsTable({
   loading,
 }: {
   settings: ISetting[];
-  onView: (id: string) => void;
+  onView: (setting: ISetting) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   loading: boolean;
@@ -123,7 +107,7 @@ function SettingsTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onView(setting._id)}
+                      onClick={() => onView(setting)}
                       title="View"
                     >
                       <Eye className="h-4 w-4" />
@@ -166,6 +150,7 @@ function SettingsTable({
   );
 }
 
+// Main Page
 export default function SettingsPage() {
   const router = useRouter();
   const [settings, setSettings] = useState<ISetting[]>([]);
@@ -173,6 +158,7 @@ export default function SettingsPage() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [viewSetting, setViewSetting] = useState<ISetting | null>(null); // Modal
   const pageSize = 8;
 
   const [optimisticSettings, deleteOptimistic] = useOptimistic(
@@ -196,9 +182,7 @@ export default function SettingsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    startTransition(() => {
-      deleteOptimistic(id);
-    });
+    startTransition(() => deleteOptimistic(id));
 
     const result = await deleteSettingAction(id);
     if (result?.error) {
@@ -207,9 +191,9 @@ export default function SettingsPage() {
         description: result.error.message || "Failed to delete setting",
         variant: "destructive",
       });
-      await loadSettings(); // rollback optimistic update
+      await loadSettings(); // rollback
     } else {
-      setSettings((prev) => prev.filter((setting) => setting._id !== id)); // keep state in sync
+      setSettings((prev) => prev.filter((s) => s._id !== id));
       toast({
         title: "Deleted",
         description: "Setting deleted successfully.",
@@ -221,9 +205,9 @@ export default function SettingsPage() {
     loadSettings();
   }, []);
 
-  // Filter and paginate settings
-  const filteredSettings = optimisticSettings.filter((setting) =>
-    setting.siteName.toLowerCase().includes(search.toLowerCase())
+  // Filter and paginate
+  const filteredSettings = optimisticSettings.filter((s) =>
+    s.siteName.toLowerCase().includes(search.toLowerCase())
   );
   const totalPages = Math.ceil(filteredSettings.length / pageSize);
   const paginatedSettings = filteredSettings.slice(
@@ -262,7 +246,7 @@ export default function SettingsPage() {
         >
           <SettingsTable
             settings={paginatedSettings}
-            onView={(id) => router.push(`/admin/settings/view/${id}`)}
+            onView={(s) => setViewSetting(s)} // open modal
             onEdit={(id) => router.push(`/admin/settings/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
             loading={loading}
@@ -290,7 +274,9 @@ export default function SettingsPage() {
                 ))}
                 <PaginationItem>
                   <PaginationNext
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
                   />
                 </PaginationItem>
               </PaginationContent>
@@ -299,6 +285,7 @@ export default function SettingsPage() {
         )}
       </CardContent>
 
+      {/* Delete Confirmation */}
       <Dialog
         open={!!confirmDeleteId}
         onOpenChange={() => setConfirmDeleteId(null)}
@@ -307,9 +294,7 @@ export default function SettingsPage() {
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
-          <p>
-            Are you sure you want to delete this setting? This action cannot be undone.
-          </p>
+          <p>This action cannot be undone. Are you sure?</p>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
               Cancel
@@ -326,6 +311,15 @@ export default function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Setting Modal */}
+      {viewSetting && (
+        <SettingModal
+          setting={viewSetting}
+          isOpen={!!viewSetting}
+          onClose={() => setViewSetting(null)}
+        />
+      )}
     </Card>
   );
 }

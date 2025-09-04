@@ -1,4 +1,5 @@
 "use client";
+
 import { startTransition } from "react";
 import {
   Suspense,
@@ -46,12 +47,17 @@ import {
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-interface IRole {
-  _id: string;
-  name: string;
-  displayName: string;
-  permissions: string[];
+// Import the RoleModal
+import RoleModal from "@/components/views/RoleModal";
+export interface IRole {
+  _id: string;              // from role._id.toString()
+  name: string;             // role name
+  displayName: string;      // display name
+  permissions: string[];    // array of permission strings
+  createdAt?: string;       // optional ISO string
+  updatedAt?: string;       // optional ISO string
 }
+
 
 function RolesTable({
   roles,
@@ -153,6 +159,11 @@ export default function RolesPage() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Modal state
+  const [selectedRole, setSelectedRole] = useState<IRole | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const pageSize = 8;
 
   const [optimisticRoles, deleteOptimistic] = useOptimistic(
@@ -176,33 +187,30 @@ export default function RolesPage() {
   };
 
   const handleDelete = async (id: string) => {
-  // Optimistic UI update
-  startTransition(() => {
-  deleteOptimistic(id);
-  });
-  const result = await deleteRoleAction(id);
-  if (result?.error) {
-    toast({
-      title: "Error",
-      description: result.error.message || "Failed to delete role",
-      variant: "destructive",
+    startTransition(() => {
+      deleteOptimistic(id);
     });
-    await loadRoles(); // rollback if failed
-  } else {
-    // Ensure local state matches backend
-    setRoles(prev => prev.filter(role => role._id !== id));
-    toast({
-      title: "Deleted",
-      description: "Role deleted successfully.",
-    });
-  }
-};
+    const result = await deleteRoleAction(id);
+    if (result?.error) {
+      toast({
+        title: "Error",
+        description: result.error.message || "Failed to delete role",
+        variant: "destructive",
+      });
+      await loadRoles();
+    } else {
+      setRoles((prev) => prev.filter((role) => role._id !== id));
+      toast({
+        title: "Deleted",
+        description: "Role deleted successfully.",
+      });
+    }
+  };
 
   useEffect(() => {
     loadRoles();
   }, []);
 
-  // Filter and paginate roles based on search (search in name or displayName)
   const filteredRoles = optimisticRoles.filter(
     (r) =>
       r.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -245,7 +253,13 @@ export default function RolesPage() {
         >
           <RolesTable
             roles={paginatedRoles}
-            onView={(id) => router.push(`/admin/roles/view/${id}`)}
+            onView={(roleId) => {
+              const role = roles.find((r) => r._id === roleId);
+              if (role) {
+                setSelectedRole(role);
+                setIsModalOpen(true);
+              }
+            }}
             onEdit={(id) => router.push(`/admin/roles/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
             loading={loading}
@@ -284,6 +298,7 @@ export default function RolesPage() {
         </div>
       )}
 
+      {/* Confirm Delete Dialog */}
       <Dialog
         open={!!confirmDeleteId}
         onOpenChange={() => setConfirmDeleteId(null)}
@@ -315,6 +330,18 @@ export default function RolesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Role View Modal */}
+      {selectedRole && (
+        <RoleModal
+          role={selectedRole}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedRole(null);
+          }}
+        />
+      )}
     </Card>
   );
 }

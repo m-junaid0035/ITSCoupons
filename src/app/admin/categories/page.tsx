@@ -25,13 +25,6 @@ import {
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -39,14 +32,25 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import CategoryModal from "@/components/views/CategoryModal"; // import the modal
 
-interface ICategory {
+export interface ICategory {
   _id: string;
   name: string;
   slug: string;
+  description: string | null;
   isPopular: boolean;
   isTrending: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 function CategoriesTable({
@@ -57,7 +61,7 @@ function CategoriesTable({
   loading,
 }: {
   categories: ICategory[];
-  onView: (id: string) => void;
+  onView: (category: ICategory) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   loading: boolean;
@@ -92,23 +96,27 @@ function CategoriesTable({
               >
                 <TableCell className="font-medium">{category.name}</TableCell>
                 <TableCell>{category.slug}</TableCell>
-                <TableCell>{category.isPopular ? (
+                <TableCell>
+                  {category.isPopular ? (
                     <span className="text-green-600 font-semibold">Yes</span>
                   ) : (
                     <span className="text-gray-400">No</span>
-                  )}</TableCell>
-                <TableCell>{category.isTrending ? (
+                  )}
+                </TableCell>
+                <TableCell>
+                  {category.isTrending ? (
                     <span className="text-green-600 font-semibold">Yes</span>
                   ) : (
                     <span className="text-gray-400">No</span>
-                  )}</TableCell>
+                  )}
+                </TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-1.5">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onView(category._id)}
+                      onClick={() => onView(category)}
                       title="View"
                     >
                       <Eye className="h-4 w-4" />
@@ -158,6 +166,7 @@ export default function CategoriesPage() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [viewCategory, setViewCategory] = useState<ICategory | null>(null); // modal state
   const pageSize = 8;
 
   const [optimisticCategories, deleteOptimistic] = useOptimistic(
@@ -246,7 +255,7 @@ export default function CategoriesPage() {
         >
           <CategoriesTable
             categories={paginatedCategories}
-            onView={(id) => router.push(`/admin/categories/view/${id}`)}
+            onView={(category) => setViewCategory(category)}
             onEdit={(id) => router.push(`/admin/categories/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
             loading={loading}
@@ -287,19 +296,20 @@ export default function CategoriesPage() {
         )}
       </CardContent>
 
+      {/* Delete Confirmation */}
       <Dialog
         open={!!confirmDeleteId}
         onOpenChange={() => setConfirmDeleteId(null)}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
+            <p className="text-lg font-semibold">Confirm Deletion</p>
           </DialogHeader>
-          <p>
+          <p className="py-2">
             Are you sure you want to delete this category? This action cannot be
             undone.
           </p>
-          <DialogFooter>
+          <div className="flex justify-end gap-2 mt-4">
             <Button
               variant="secondary"
               onClick={() => setConfirmDeleteId(null)}
@@ -315,9 +325,18 @@ export default function CategoriesPage() {
             >
               Delete
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
+
+      {/* Category View Modal */}
+      {viewCategory && (
+        <CategoryModal
+          category={viewCategory}
+          isOpen={!!viewCategory}
+          onClose={() => setViewCategory(null)}
+        />
+      )}
     </Card>
   );
 }

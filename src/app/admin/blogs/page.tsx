@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import BlogModal from "@/components/views/BlogModal"; // import your modal
 
 interface IBlog {
   _id: string;
@@ -25,6 +26,8 @@ interface IBlog {
   slug?: string;
   writer?: string;
   category?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 function BlogsTable({
@@ -99,13 +102,31 @@ function BlogsTable({
                 <TableCell>{blog.slug || "-"}</TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onView(blog._id)} title="View">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onView(blog._id)}
+                      title="View"
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onEdit(blog._id)} title="Edit">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => onEdit(blog._id)}
+                      title="Edit"
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => onDelete(blog._id)} title="Delete">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                      onClick={() => onDelete(blog._id)}
+                      title="Delete"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -138,6 +159,10 @@ export default function BlogsPage() {
     blogs,
     (state, id: string) => state.filter((blog) => blog._id !== id)
   );
+
+  // NEW: state for selected blog modal
+  const [selectedBlog, setSelectedBlog] = useState<IBlog | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   async function loadBlogs() {
     setLoading(true);
@@ -180,82 +205,111 @@ export default function BlogsPage() {
     loadBlogs();
   }, []);
 
-  const filteredBlogs = optimisticBlogs.filter((b) => b.title.toLowerCase().includes(search.toLowerCase()));
+  const filteredBlogs = optimisticBlogs.filter((b) =>
+    b.title.toLowerCase().includes(search.toLowerCase())
+  );
   const totalPages = Math.ceil(filteredBlogs.length / pageSize);
-  const paginatedBlogs = filteredBlogs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedBlogs = filteredBlogs.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   return (
-    <Card className="w-full border-none shadow-none">
-      <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <CardTitle className="text-lg font-semibold">Blogs</CardTitle>
-        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-          <Input
-            placeholder="Search blogs..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="sm:w-64"
-          />
-          <Button onClick={() => router.push("/admin/blogs/new")}>Create Blog</Button>
-        </div>
-      </CardHeader>
-
-      <CardContent>
-        <Suspense fallback={<p className="p-4 text-muted-foreground">Loading blogs...</p>}>
-          <BlogsTable
-            blogs={paginatedBlogs}
-            onView={(id) => router.push(`/admin/blogs/view/${id}`)}
-            onEdit={(id) => router.push(`/admin/blogs/edit/${id}`)}
-            onDelete={(id) => setConfirmDeleteId(id)}
-            loading={loading}
-          />
-        </Suspense>
-
-        {totalPages > 1 && (
-          <div className="mt-4 flex justify-center">
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} />
-                </PaginationItem>
-                {Array.from({ length: totalPages }, (_, i) => (
-                  <PaginationItem key={i}>
-                    <PaginationLink isActive={currentPage === i + 1} onClick={() => setCurrentPage(i + 1)}>
-                      {i + 1}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
-                <PaginationItem>
-                  <PaginationNext onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
-        )}
-      </CardContent>
-
-      <Dialog open={!!confirmDeleteId} onOpenChange={() => setConfirmDeleteId(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-          </DialogHeader>
-          <p>Are you sure you want to delete this blog? This action cannot be undone.</p>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (confirmDeleteId) handleDelete(confirmDeleteId);
-                setConfirmDeleteId(null);
+    <>
+      <Card className="w-full border-none shadow-none">
+        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <CardTitle className="text-lg font-semibold">Blogs</CardTitle>
+          <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <Input
+              placeholder="Search blogs..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
               }}
-            >
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
+              className="sm:w-64"
+            />
+            <Button onClick={() => router.push("/admin/blogs/new")}>Create Blog</Button>
+          </div>
+        </CardHeader>
+
+        <CardContent>
+          <Suspense fallback={<p className="p-4 text-muted-foreground">Loading blogs...</p>}>
+            <BlogsTable
+              blogs={paginatedBlogs}
+              onView={(id) => {
+                const blog = blogs.find((b) => b._id === id);
+                if (blog) {
+                  setSelectedBlog(blog);
+                  setIsModalOpen(true);
+                }
+              }}
+              onEdit={(id) => router.push(`/admin/blogs/edit/${id}`)}
+              onDelete={(id) => setConfirmDeleteId(id)}
+              loading={loading}
+            />
+          </Suspense>
+
+          {totalPages > 1 && (
+            <div className="mt-4 flex justify-center">
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    />
+                  </PaginationItem>
+                  {Array.from({ length: totalPages }, (_, i) => (
+                    <PaginationItem key={i}>
+                      <PaginationLink
+                        isActive={currentPage === i + 1}
+                        onClick={() => setCurrentPage(i + 1)}
+                      >
+                        {i + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  <PaginationItem>
+                    <PaginationNext
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
+        </CardContent>
+
+        <Dialog open={!!confirmDeleteId} onOpenChange={() => setConfirmDeleteId(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm Deletion</DialogTitle>
+            </DialogHeader>
+            <p>Are you sure you want to delete this blog? This action cannot be undone.</p>
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>Cancel</Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (confirmDeleteId) handleDelete(confirmDeleteId);
+                  setConfirmDeleteId(null);
+                }}
+              >
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </Card>
+
+      {/* NEW: Blog Modal */}
+      {selectedBlog && (
+        <BlogModal
+          blog={selectedBlog}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
+    </>
   );
 }

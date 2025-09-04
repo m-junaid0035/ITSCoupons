@@ -8,10 +8,7 @@ import {
   startTransition,
 } from "react";
 import { useRouter } from "next/navigation";
-import {
-  fetchAllEventsAction,
-  deleteEventAction,
-} from "@/actions/eventActions";
+import { fetchAllEventsAction, deleteEventAction } from "@/actions/eventActions";
 
 import {
   Card,
@@ -47,19 +44,7 @@ import {
 import Image from "next/image";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
-interface IEvent {
-  _id: string;
-  title: string;
-  date: string;
-  description?: string;
-  image?: string;
-  metaTitle?: string;
-  metaDescription?: string;
-  metaKeywords?: string;
-  focusKeywords?: string;
-  slug?: string;
-}
+import EventModal, { IEvent } from "@/components/views/EventModal";
 
 function EventsTable({
   events,
@@ -69,7 +54,7 @@ function EventsTable({
   loading,
 }: {
   events: IEvent[];
-  onView: (id: string) => void;
+  onView: (event: IEvent) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   loading: boolean;
@@ -118,7 +103,6 @@ function EventsTable({
                     "-"
                   )}
                 </TableCell>
-
                 <TableCell>
                   {event.image ? (
                     <Image
@@ -145,7 +129,7 @@ function EventsTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onView(event._id)}
+                      onClick={() => onView(event)}
                       title="View"
                     >
                       <Eye className="h-4 w-4" />
@@ -195,6 +179,8 @@ export default function EventsPage() {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<IEvent | null>(null); // full event for modal
+
   const pageSize = 8;
 
   const [optimisticEvents, deleteOptimistic] = useOptimistic(
@@ -216,6 +202,7 @@ export default function EventsPage() {
     }
     setLoading(false);
   };
+
   const handleDelete = async (id: string) => {
     startTransition(() => {
       deleteOptimistic(id);
@@ -230,7 +217,7 @@ export default function EventsPage() {
       });
       await loadEvents(); // rollback optimistic update
     } else {
-      setEvents(prev => prev.filter(event => event._id !== id)); // sync state
+      setEvents((prev) => prev.filter((event) => event._id !== id)); // sync state
       toast({
         title: "Deleted",
         description: "Event deleted successfully.",
@@ -238,12 +225,10 @@ export default function EventsPage() {
     }
   };
 
-
   useEffect(() => {
     loadEvents();
   }, []);
 
-  // Filter and paginate events based on search
   const filteredEvents = optimisticEvents.filter((e) =>
     e.title.toLowerCase().includes(search.toLowerCase())
   );
@@ -284,7 +269,7 @@ export default function EventsPage() {
         >
           <EventsTable
             events={paginatedEvents}
-            onView={(id) => router.push(`/admin/events/view/${id}`)}
+            onView={(event) => setSelectedEvent(event)} // pass full event
             onEdit={(id) => router.push(`/admin/events/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
             loading={loading}
@@ -297,9 +282,7 @@ export default function EventsPage() {
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() =>
-                      setCurrentPage((p) => Math.max(1, p - 1))
-                    }
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   />
                 </PaginationItem>
                 {Array.from({ length: totalPages }, (_, i) => (
@@ -325,6 +308,7 @@ export default function EventsPage() {
         )}
       </CardContent>
 
+      {/* Confirm Delete Dialog */}
       <Dialog
         open={!!confirmDeleteId}
         onOpenChange={() => setConfirmDeleteId(null)}
@@ -335,10 +319,7 @@ export default function EventsPage() {
           </DialogHeader>
           <p>Are you sure you want to delete this event? This action cannot be undone.</p>
           <DialogFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setConfirmDeleteId(null)}
-            >
+            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
               Cancel
             </Button>
             <Button
@@ -353,6 +334,15 @@ export default function EventsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Event View Modal */}
+      {selectedEvent && (
+        <EventModal
+          event={selectedEvent} // pass full event
+          isOpen={!!selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+        />
+      )}
     </Card>
   );
 }

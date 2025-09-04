@@ -1,17 +1,8 @@
 "use client";
 
-import {
-  Suspense,
-  useEffect,
-  useState,
-  useOptimistic,
-  startTransition,
-} from "react";
+import { Suspense, useEffect, useState, useOptimistic, startTransition, use } from "react";
 import { useRouter } from "next/navigation";
-import {
-  fetchAllSEOAction,
-  deleteSEOAction,
-} from "@/actions/seoActions";
+import { fetchAllSEOAction, deleteSEOAction } from "@/actions/seoActions";
 
 import {
   Card,
@@ -29,29 +20,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { toast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
-interface ISEO {
-  _id: string;
-  metaTitle: string;
-  slug: string;
-}
+import SEOModal, { ISEO } from "@/components/views/SEOModal"; // Make sure path is correct
 
 function SEOTable({
   seoList,
@@ -61,7 +35,7 @@ function SEOTable({
   loading,
 }: {
   seoList: ISEO[];
-  onView: (id: string) => void;
+  onView: (seo: ISEO) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   loading: boolean;
@@ -88,36 +62,21 @@ function SEOTable({
         <TableBody>
           {seoList.length > 0 ? (
             seoList.map((seo) => (
-              <TableRow
-                key={seo._id}
-                className="hover:bg-muted/40 transition-colors"
-              >
+              <TableRow key={seo._id} className="hover:bg-muted/40 transition-colors">
                 <TableCell className="font-medium">{seo.metaTitle}</TableCell>
                 <TableCell>{seo.slug}</TableCell>
                 <TableCell>
-                  <div className="flex justify-end items-center gap-1.5">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onView(seo._id)}
-                      title="View"
-                    >
+                  <div className="flex justify-end items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => onView(seo)} title="View">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onEdit(seo._id)}
-                      title="Edit"
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => onEdit(seo._id)} title="Edit">
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                      className="text-destructive hover:bg-destructive/10"
                       onClick={() => onDelete(seo._id)}
                       title="Delete"
                     >
@@ -129,10 +88,7 @@ function SEOTable({
             ))
           ) : (
             <TableRow>
-              <TableCell
-                colSpan={3}
-                className="text-center text-muted-foreground py-6"
-              >
+              <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
                 No SEO entries found.
               </TableCell>
             </TableRow>
@@ -146,10 +102,11 @@ function SEOTable({
 export default function SEOPage() {
   const router = useRouter();
   const [seoList, setSEOList] = useState<ISEO[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [viewSEO, setViewSEO] = useState<ISEO | null>(null); // NEW: selected SEO modal
   const pageSize = 8;
 
   const [optimisticSEO, deleteOptimistic] = useOptimistic(
@@ -203,10 +160,7 @@ export default function SEOPage() {
     seo.metaTitle.toLowerCase().includes(search.toLowerCase())
   );
   const totalPages = Math.ceil(filteredSEO.length / pageSize);
-  const paginatedSEO = filteredSEO.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const paginatedSEO = filteredSEO.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <Card className="w-full border-none shadow-none">
@@ -222,24 +176,15 @@ export default function SEOPage() {
             }}
             className="sm:w-64"
           />
-          <Button onClick={() => router.push("/admin/seo/new")}>
-            Create SEO
-          </Button>
+          <Button onClick={() => router.push("/admin/seo/new")}>Create SEO</Button>
         </div>
       </CardHeader>
 
       <CardContent>
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center py-8 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              Loading SEO entries...
-            </div>
-          }
-        >
+        <Suspense fallback={<Loader2 className="h-5 w-5 animate-spin mr-2" />}>
           <SEOTable
             seoList={paginatedSEO}
-            onView={(id) => router.push(`/admin/seo/view/${id}`)}
+            onView={(seo) => setViewSEO(seo)} // open modal
             onEdit={(id) => router.push(`/admin/seo/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
             loading={loading}
@@ -251,26 +196,17 @@ export default function SEOPage() {
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
-                  <PaginationPrevious
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  />
+                  <PaginationPrevious onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} />
                 </PaginationItem>
                 {Array.from({ length: totalPages }, (_, i) => (
                   <PaginationItem key={i}>
-                    <PaginationLink
-                      isActive={currentPage === i + 1}
-                      onClick={() => setCurrentPage(i + 1)}
-                    >
+                    <PaginationLink isActive={currentPage === i + 1} onClick={() => setCurrentPage(i + 1)}>
                       {i + 1}
                     </PaginationLink>
                   </PaginationItem>
                 ))}
                 <PaginationItem>
-                  <PaginationNext
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
-                  />
+                  <PaginationNext onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} />
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
@@ -278,23 +214,15 @@ export default function SEOPage() {
         )}
       </CardContent>
 
-      <Dialog
-        open={!!confirmDeleteId}
-        onOpenChange={() => setConfirmDeleteId(null)}
-      >
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!confirmDeleteId} onOpenChange={() => setConfirmDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
-          <p>
-            Are you sure you want to delete this SEO entry? This action cannot be
-            undone.
-          </p>
+          <p>Are you sure you want to delete this SEO entry? This action cannot be undone.</p>
           <DialogFooter>
-            <Button
-              variant="secondary"
-              onClick={() => setConfirmDeleteId(null)}
-            >
+            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
               Cancel
             </Button>
             <Button
@@ -309,6 +237,9 @@ export default function SEOPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* SEO Modal */}
+      {viewSEO && <SEOModal seo={viewSEO} isOpen={!!viewSEO} onClose={() => setViewSEO(null)} />}
     </Card>
   );
 }
