@@ -1,5 +1,8 @@
 // components/StoreList.tsx
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import type { StoreData } from "@/types/store";
 
 interface StoreListProps {
@@ -8,12 +11,16 @@ interface StoreListProps {
 }
 
 export default function StoreList({ stores, selectedLetter = "" }: StoreListProps) {
+  const [mobileLetter, setMobileLetter] = useState(selectedLetter);
+
+  const currentLetter = mobileLetter || selectedLetter;
+
   // Filter stores by selected letter
-  const filteredStores = selectedLetter
-    ? selectedLetter === "0-9"
+  const filteredStores = currentLetter
+    ? currentLetter === "0-9"
       ? stores.filter((store) => /^\d/.test(store.name || ""))
       : stores.filter((store) =>
-          (store.name || "").toLowerCase().startsWith(selectedLetter.toLowerCase())
+          (store.name || "").toLowerCase().startsWith(currentLetter.toLowerCase())
         )
     : stores;
 
@@ -24,29 +31,46 @@ export default function StoreList({ stores, selectedLetter = "" }: StoreListProp
       {/* Header */}
       <header className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">
-          {selectedLetter
-            ? selectedLetter === "0-9"
+          {currentLetter
+            ? currentLetter === "0-9"
               ? "Browse Stores Starting with 0-9"
-              : `Browse Stores Starting with ${selectedLetter.toUpperCase()}`
+              : `Browse Stores Starting with ${currentLetter.toUpperCase()}`
             : "Browse Stores"}
         </h1>
       </header>
 
-      {/* Alphabet Nav */}
-      <div className="mb-8 border-b border-gray-200 pb-2 flex overflow-x-auto whitespace-nowrap space-x-4 md:overflow-x-visible md:flex-wrap md:justify-between md:space-x-0">
-        <AlphaLink href="/stores" active={!selectedLetter}>
+      {/* Mobile Dropdown */}
+      <div className="mb-6 md:hidden">
+        <select
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-700"
+          value={currentLetter}
+          onChange={(e) => setMobileLetter(e.target.value)}
+        >
+          <option value="">All</option>
+          {alphabet.map((letter) => (
+            <option key={letter} value={letter.toLowerCase()}>
+              {letter}
+            </option>
+          ))}
+          <option value="0-9">0-9</option>
+        </select>
+      </div>
+
+      {/* Desktop Alphabet Nav */}
+      <div className="hidden md:flex mb-8 border-b border-gray-200 pb-2 flex overflow-x-auto whitespace-nowrap space-x-4 md:overflow-x-visible md:flex-wrap md:justify-between md:space-x-0">
+        <AlphaLink href="/stores" active={!currentLetter}>
           All
         </AlphaLink>
         {alphabet.map((letter) => (
           <AlphaLink
             key={letter}
             href={`/stores?letter=${letter.toLowerCase()}`}
-            active={selectedLetter.toLowerCase() === letter.toLowerCase()}
+            active={currentLetter?.toLowerCase() === letter.toLowerCase()}
           >
             {letter}
           </AlphaLink>
         ))}
-        <AlphaLink href="/stores?letter=0-9" active={selectedLetter === "0-9"}>
+        <AlphaLink href="/stores?letter=0-9" active={currentLetter === "0-9"}>
           0-9
         </AlphaLink>
       </div>
@@ -60,7 +84,7 @@ export default function StoreList({ stores, selectedLetter = "" }: StoreListProp
                 {group.map((store) => (
                   <li key={store._id}>
                     <Link
-                      href={`/stores/${store._id}`}
+                      href={`/stores/${store._id}/${store.slug}`}
                       className="text-gray-900 hover:text-blue-600 text-lg"
                     >
                       {store.name}
@@ -73,8 +97,8 @@ export default function StoreList({ stores, selectedLetter = "" }: StoreListProp
         </div>
       ) : (
         <p className="text-gray-500 italic">
-          {selectedLetter
-            ? `No stores found starting with ${selectedLetter.toUpperCase()}`
+          {currentLetter
+            ? `No stores found starting with ${currentLetter.toUpperCase()}`
             : "No stores available"}
         </p>
       )}

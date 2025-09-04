@@ -7,24 +7,10 @@ import CouponModal from "@/components/coupon_popup";
 import type { CategoryData } from "@/types/category";
 
 interface AllCouponsPageProps {
+  category: string | undefined;
   coupons: CouponWithStoreData[];
   categories?: CategoryData[];
   couponId?: string;
-}
-
-/* ─────────────────────────── Helpers ─────────────────────────── */
-function getDiscountColor(discount: string): string {
-  if (!discount) return "bg-gray-400";
-  const discountLower = discount.toLowerCase();
-  if (discountLower.includes("free ship") || discountLower.includes("free shipping")) {
-    return "bg-yellow-400 text-black";
-  }
-  const match = discountLower.match(/(\d+)%/);
-  if (match) {
-    const value = parseInt(match[1], 10);
-    return value >= 20 ? "bg-purple-700" : "bg-orange-500";
-  }
-  return "bg-gray-400";
 }
 
 function extractPercent(discount?: string | null): number {
@@ -42,6 +28,7 @@ export default function AllCouponsPage({
   coupons,
   categories = [],
   couponId,
+  category,
 }: AllCouponsPageProps): ReactElement {
   const [activeTab, setActiveTab] = useState<"all" | "promo" | "deal">("all");
 
@@ -71,6 +58,17 @@ export default function AllCouponsPage({
       }
     }
   }, [couponId, coupons]);
+
+  useEffect(() => {
+    if (category) {
+      const matchedCategory = categories.find(
+        (c) => c._id === category || c.slug === category || c.name === category
+      );
+      if (matchedCategory) {
+        setSelectedCategories([matchedCategory._id]);
+      }
+    }
+  }, [category, categories]);
 
   // ─── Filter coupons
   const filtered = useMemo(() => {

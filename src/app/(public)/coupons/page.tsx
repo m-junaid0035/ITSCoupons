@@ -10,14 +10,14 @@ import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import type { StoreData } from "@/types/store";
 import type { CategoryData } from "@/types/category";
 
-export default async function CouponsPage({ searchParams } : { searchParams: Promise<{ couponId?: ""}>}) {
+export default async function CouponsPage({ searchParams } : { searchParams: Promise<{ couponId?: string; category?: string}>}) {
   // Fetch coupons and categories in parallel
-  const { couponId = "" } = await searchParams;
+  const { couponId, category } = await searchParams;
   const [couponsResult, categoriesResult] = await Promise.allSettled([
     fetchAllCouponsWithStoresAction(),
     fetchAllCategoriesAction(),
   ]);
-
+   
   // Extract data or fallback to empty array
   const coupons: CouponWithStoreData[] = couponsResult.status === "fulfilled" ? couponsResult.value?.data ?? [] : [];
   const categories: CategoryData[] = categoriesResult.status === "fulfilled" ? categoriesResult.value?.data ?? [] : [];
@@ -41,6 +41,7 @@ export default async function CouponsPage({ searchParams } : { searchParams: Pro
           coupons={coupons}
           categories={categories}
           couponId={couponId}
+          category={category}
         />
 
       <RelatedStores
