@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useActionState } from "react";
 import { useRouter } from "next/navigation";
+import { useActionState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import {
   Card,
   CardHeader,
@@ -13,8 +14,6 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
-import { createStaticPageAction } from "@/actions/staticPagesActions";
 import {
   Dialog,
   DialogContent,
@@ -23,9 +22,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import RichTextEditor from "@/components/RichTextEditor";
+import { createCategoryAction } from "@/actions/categoryActions";
 
 interface FormState {
-  error?: Record<string, string[]> & { message?: string[] };
+  error?: Record<string, string[]> | { message?: string[] };
   data?: any;
 }
 
@@ -33,24 +33,24 @@ const initialState: FormState = {
   error: {},
 };
 
-export default function StaticPageForm() {
+export default function CreateCategoryForm() {
   const router = useRouter();
 
   const [formState, dispatch, isPending] = useActionState(
     async (prevState: FormState, formData: FormData) => {
-      const result = await createStaticPageAction(prevState, formData);
+      const result = await createCategoryAction(prevState, formData);
       return result;
     },
     initialState
   );
 
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
-  const [contentHtml, setContentHtml] = useState("");
+  const [descriptionHtml, setDescriptionHtml] = useState("");
 
-  // State for title and slug
-  const [title, setTitle] = useState("");
+  // States for name & slug
+  const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
-  const [isSlugEdited, setIsSlugEdited] = useState(false); // to detect manual editing
+  const [isSlugEdited, setIsSlugEdited] = useState(false);
 
   useEffect(() => {
     if (formState.data && !formState.error) {
@@ -59,125 +59,145 @@ export default function StaticPageForm() {
 
     if (formState.error && "message" in formState.error) {
       alert(
-        formState.error.message?.[0] ||
-          "An error occurred while saving the page"
+        (formState.error as any).message?.[0] || "Something went wrong"
       );
     }
   }, [formState]);
 
-  // Auto-update slug when title changes (only if slug was not manually edited)
+  // Auto-generate slug from name if not manually edited
   useEffect(() => {
     if (!isSlugEdited) {
-      const generatedSlug = title
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, "_"); // spaces → underscores
+      const generatedSlug = name.toLowerCase().trim().replace(/\s+/g, "_");
       setSlug(generatedSlug);
     }
-  }, [title, isSlugEdited]);
+  }, [name, isSlugEdited]);
+
+  const errorFor = (field: string) =>
+    formState.error &&
+    typeof formState.error === "object" &&
+    field in formState.error
+      ? (formState.error as Record<string, string[]>)[field]?.[0]
+      : null;
 
   return (
     <>
       <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
           <CardTitle className="text-lg sm:text-xl font-semibold">
-            Create Static Page
+            Create Category
           </CardTitle>
           <Button
             variant="secondary"
-            onClick={() => router.push("/admin/static-pages")}
+            onClick={() => router.push("/admin/categories")}
           >
-            Back to Pages
+            Back to Categories
           </Button>
         </CardHeader>
 
         <CardContent>
           <form
             action={(formData: FormData) => {
-              // attach content HTML before submitting
-              formData.set("content", contentHtml);
+              formData.set("description", descriptionHtml);
               return dispatch(formData);
             }}
             className="space-y-6"
           >
-            {/* Title */}
+            {/* Name */}
             <div className="space-y-2">
-              <Label htmlFor="title">
-                Page Title <span className="text-red-500">*</span>
-              </Label>
+              <Label htmlFor="name">Category Name</Label>
               <Input
-                id="title"
-                name="title"
+                id="name"
+                name="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="Enter page title"
+                placeholder="Enter category name"
               />
+              {errorFor("name") && (
+                <p className="text-sm text-red-500">{errorFor("name")}</p>
+              )}
             </div>
 
             {/* Slug */}
             <div className="space-y-2">
-              <Label htmlFor="slug">
-                Slug <span className="text-red-500">*</span>
-              </Label>
+              <Label htmlFor="slug">Slug</Label>
               <Input
                 id="slug"
                 name="slug"
-                required
                 value={slug}
                 onChange={(e) => {
                   setSlug(e.target.value);
-                  setIsSlugEdited(true); // user manually edited slug
+                  setIsSlugEdited(true);
                 }}
+                required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="about_us"
+                placeholder="category-slug"
               />
+              {errorFor("slug") && (
+                <p className="text-sm text-red-500">{errorFor("slug")}</p>
+              )}
             </div>
 
-            {/* Content */}
+            {/* Description */}
             <div className="space-y-2">
-              <Label>
-                Content <span className="text-red-500">*</span>
-              </Label>
-              <RichTextEditor value={contentHtml} onChange={setContentHtml} />
+              <Label>Description</Label>
+              <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
             </div>
 
-            {/* Published toggle */}
+            {/* Is Popular */}
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
-                id="isPublished"
-                name="isPublished"
+                id="isPopular"
+                name="isPopular"
                 value="true"
-                defaultChecked
                 className="w-4 h-4"
               />
-              <Label htmlFor="isPublished">Published</Label>
+              <Label htmlFor="isPopular">Popular</Label>
             </div>
+
+            {/* Is Trending */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isTrending"
+                name="isTrending"
+                value="true"
+                className="w-4 h-4"
+              />
+              <Label htmlFor="isTrending">Trending</Label>
+            </div>
+
+            {/* General Error */}
+            {"message" in (formState.error ?? {}) && (
+              <p className="text-sm text-red-500">
+                {(formState.error as any).message?.[0]}
+              </p>
+            )}
 
             <CardFooter className="flex justify-end border-none">
               <Button type="submit" disabled={isPending}>
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isPending ? "Saving..." : "Save Page"}
+                {isPending ? "Saving..." : "Create Category"}
               </Button>
             </CardFooter>
           </form>
         </CardContent>
       </Card>
 
-      {/* Success Confirmation Dialog */}
+      {/* Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Success</DialogTitle>
           </DialogHeader>
-          <p>Static page created successfully!</p>
+          <p>Category created successfully!</p>
           <DialogFooter>
             <Button
               onClick={() => {
                 setSuccessDialogOpen(false);
-                router.push("/admin/static-pages");
+                router.push("/admin/categories");
               }}
             >
               OK

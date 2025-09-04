@@ -16,13 +16,6 @@ export async function sendEmail({ to, subject, text, html }: SendEmailOptions) {
         rejectUnauthorized: false, // allows self-signed certs, useful for dev
       },
     });
-    console.log({
-      from: `"ITSCoupons Contact" <${process.env.SMTP_USER}>`,
-      to,
-      subject,
-      text,
-      html,
-    })
     const info = await transporter.sendMail({
       from: `"ITSCoupons Contact" <${process.env.SMTP_USER}>`,
       to,

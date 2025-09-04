@@ -302,13 +302,16 @@ export default function CategoriesPage() {
         onOpenChange={() => setConfirmDeleteId(null)}
       >
         <DialogContent>
-          <DialogHeader>
-            <p className="text-lg font-semibold">Confirm Deletion</p>
-          </DialogHeader>
+          {/* DialogTitle must be direct child of DialogContent */}
+          <DialogTitle className="text-lg font-semibold">
+            Confirm Deletion
+          </DialogTitle>
+
           <p className="py-2">
             Are you sure you want to delete this category? This action cannot be
             undone.
           </p>
+
           <div className="flex justify-end gap-2 mt-4">
             <Button
               variant="secondary"
@@ -328,6 +331,7 @@ export default function CategoriesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
 
       {/* Category View Modal */}
       {viewCategory && (

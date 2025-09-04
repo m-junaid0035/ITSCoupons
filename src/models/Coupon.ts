@@ -7,7 +7,7 @@ export interface ICoupon extends Document {
   couponType: "deal" | "coupon";
   status: "active" | "expired";
   couponCode: string;
-  expirationDate?: Date;   // ✅ Made optional
+  expirationDate?: Date;   // Made optional
   couponUrl?: string;
   storeName?: string;
   storeId: Types.ObjectId;
