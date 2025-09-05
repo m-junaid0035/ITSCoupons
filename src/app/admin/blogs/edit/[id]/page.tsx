@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { fetchBlogByIdAction, updateBlogAction } from "@/actions/blogActions";
 import { fetchCategoryNamesAction } from "@/actions/categoryActions";
+import { fetchLatestSEOAction } from "@/actions/seoActions"; // ✅ SEO template fetcher
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,6 +51,16 @@ export default function EditBlogForm() {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [writer, setWriter] = useState("");
   const [descriptionHtml, setDescriptionHtml] = useState("");
+  const [title, setTitle] = useState("");
+
+  // ✅ SEO state
+  const [seo, setSeo] = useState({
+    metaTitle: "",
+    metaDescription: "",
+    metaKeywords: "",
+    focusKeywords: "",
+    slug: "",
+  });
 
   // Load blog data
   useEffect(() => {
@@ -60,7 +71,17 @@ export default function EditBlogForm() {
         setWriter(res.data.writer || "");
         setSelectedCategory(res.data.category || "");
         setDescriptionHtml(res.data.description || "");
+        setTitle(res.data.title || "");
         if (res.data.date) setDate(new Date(res.data.date));
+
+        // ✅ populate SEO state
+        setSeo({
+          metaTitle: res.data.metaTitle || "",
+          metaDescription: res.data.metaDescription || "",
+          metaKeywords: res.data.metaKeywords?.join(", ") || "",
+          focusKeywords: res.data.focusKeywords?.join(", ") || "",
+          slug: res.data.slug || "",
+        });
       }
       setLoading(false);
     }
@@ -73,6 +94,39 @@ export default function EditBlogForm() {
       if (res.data) setCategories(res.data);
     });
   }, []);
+
+  // ✅ Auto SEO update when title changes
+  const updateSEO = async (blogTitle: string) => {
+    const { data: latestSEO } = await fetchLatestSEOAction("blogs");
+    if (!latestSEO) return;
+
+    const replaceBlogTitle = (text: string) =>
+      text.replace(/{{blogTitle}}|s_n/gi, blogTitle);
+
+    const slugSource = latestSEO.slug || blogTitle;
+    const processedSlug = replaceBlogTitle(slugSource)
+      .toLowerCase()
+      .replace(/\s+/g, "_");
+
+    setSeo({
+      metaTitle: replaceBlogTitle(latestSEO.metaTitle || ""),
+      metaDescription: replaceBlogTitle(latestSEO.metaDescription || ""),
+      metaKeywords: (latestSEO.metaKeywords || [])
+        .map(replaceBlogTitle)
+        .join(", "),
+      focusKeywords: (latestSEO.focusKeywords || [])
+        .map(replaceBlogTitle)
+        .join(", "),
+      slug: processedSlug,
+    });
+  };
+
+  // Run updateSEO when title changes
+  useEffect(() => {
+    if (title.trim()) {
+      updateSEO(title);
+    }
+  }, [title]);
 
   // Handle success/error
   useEffect(() => {
@@ -94,8 +148,8 @@ export default function EditBlogForm() {
 
   const errorFor = (field: string) =>
     formState.error &&
-      typeof formState.error === "object" &&
-      field in formState.error
+    typeof formState.error === "object" &&
+    field in formState.error
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
 
@@ -106,6 +160,15 @@ export default function EditBlogForm() {
     formData.set("category", selectedCategory);
     formData.set("writer", writer);
     formData.set("description", descriptionHtml);
+    formData.set("title", title);
+
+    // ✅ attach SEO fields
+    formData.set("metaTitle", seo.metaTitle);
+    formData.set("metaDescription", seo.metaDescription);
+    formData.set("metaKeywords", seo.metaKeywords);
+    formData.set("focusKeywords", seo.focusKeywords);
+    formData.set("slug", seo.slug);
+
     startTransition(() => dispatch(formData));
   };
 
@@ -114,18 +177,23 @@ export default function EditBlogForm() {
       <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
           <CardTitle className="text-lg sm:text-xl font-semibold">Edit Blog</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/blogs")}>Back to Blogs</Button>
+          <Button variant="secondary" onClick={() => router.push("/admin/blogs")}>
+            Back to Blogs
+          </Button>
         </CardHeader>
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
+              <Label htmlFor="title">
+                Title <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="title"
                 name="title"
-                defaultValue={blog.title}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
@@ -134,7 +202,9 @@ export default function EditBlogForm() {
 
             {/* Writer */}
             <div className="space-y-2">
-              <Label htmlFor="writer">Writer <span className="text-red-500">*</span></Label>
+              <Label htmlFor="writer">
+                Writer <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="writer"
                 name="writer"
@@ -148,7 +218,9 @@ export default function EditBlogForm() {
 
             {/* Category */}
             <div className="space-y-2">
-              <Label htmlFor="category">Category <span className="text-red-500">*</span></Label>
+              <Label htmlFor="category">
+                Category <span className="text-red-500">*</span>
+              </Label>
               <select
                 id="category"
                 name="category"
@@ -159,7 +231,9 @@ export default function EditBlogForm() {
               >
                 <option value="">Select a category</option>
                 {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
                 ))}
               </select>
               {errorFor("category") && <p className="text-sm text-red-500">{errorFor("category")}</p>}
@@ -167,11 +241,14 @@ export default function EditBlogForm() {
 
             {/* Slug */}
             <div className="space-y-2">
-              <Label htmlFor="slug">Slug <span className="text-red-500">*</span></Label>
+              <Label htmlFor="slug">
+                Slug <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="slug"
                 name="slug"
-                defaultValue={blog.slug}
+                value={seo.slug}
+                onChange={(e) => setSeo((prev) => ({ ...prev, slug: e.target.value }))}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("slug") && <p className="text-sm text-red-500">{errorFor("slug")}</p>}
@@ -179,12 +256,17 @@ export default function EditBlogForm() {
 
             {/* Date */}
             <div className="space-y-2">
-              <Label>Date <span className="text-red-500">*</span></Label>
+              <Label>
+                Date <span className="text-red-500">*</span>
+              </Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {date ? format(date, "PPP") : "Pick a date"}
@@ -207,7 +289,9 @@ export default function EditBlogForm() {
 
             {/* Image Upload */}
             <div className="space-y-2">
-              <Label htmlFor="imageFile">Blog Image <span className="text-red-500">*</span></Label>
+              <Label htmlFor="imageFile">
+                Blog Image <span className="text-red-500">*</span>
+              </Label>
               {blog.image && (
                 <img
                   src={blog.image}
@@ -228,19 +312,47 @@ export default function EditBlogForm() {
             {/* SEO Fields */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
-              <Input id="metaTitle" name="metaTitle" defaultValue={blog.metaTitle} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input
+                id="metaTitle"
+                name="metaTitle"
+                value={seo.metaTitle}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaTitle: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
-              <Textarea id="metaDescription" name="metaDescription" rows={3} defaultValue={blog.metaDescription} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Textarea
+                id="metaDescription"
+                name="metaDescription"
+                value={seo.metaDescription}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaDescription: e.target.value }))}
+                rows={3}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="metaKeywords">Meta Keywords (comma separated)</Label>
-              <Input id="metaKeywords" name="metaKeywords" defaultValue={blog.metaKeywords?.join(", ") || ""} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input
+                id="metaKeywords"
+                name="metaKeywords"
+                value={seo.metaKeywords}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaKeywords: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="focusKeywords">Focus Keywords (comma separated)</Label>
-              <Input id="focusKeywords" name="focusKeywords" defaultValue={blog.focusKeywords?.join(", ") || ""} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input
+                id="focusKeywords"
+                name="focusKeywords"
+                value={seo.focusKeywords}
+                onChange={(e) => setSeo((prev) => ({ ...prev, focusKeywords: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
             </div>
 
             {/* General Error */}
@@ -258,7 +370,6 @@ export default function EditBlogForm() {
         </CardContent>
       </Card>
 
-
       {/* Success Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
         <DialogContent>
@@ -267,7 +378,14 @@ export default function EditBlogForm() {
           </DialogHeader>
           <p>Blog updated successfully!</p>
           <DialogFooter>
-            <Button onClick={() => { setSuccessDialogOpen(false); router.push("/admin/blogs"); }}>OK</Button>
+            <Button
+              onClick={() => {
+                setSuccessDialogOpen(false);
+                router.push("/admin/blogs");
+              }}
+            >
+              OK
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

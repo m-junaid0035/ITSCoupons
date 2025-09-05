@@ -19,6 +19,10 @@ const seoSchema = z.object({
   metaKeywords: z.array(z.string()).optional(),
   focusKeywords: z.array(z.string()).optional(),
   slug: z.string().trim().min(3, "Slug must be at least 3 characters"),
+  templateType: z.enum(["settings", "blogs", "events", "stores"], {
+    required_error: "Template type is required",
+    invalid_type_error: "Invalid template type",
+  }),
 });
 
 export type SEOFormState = {
@@ -27,7 +31,10 @@ export type SEOFormState = {
 };
 
 /* ---------------------------- 🔹 CREATE ---------------------------- */
-export async function createSEOAction(prevState: SEOFormState, formData: FormData): Promise<SEOFormState> {
+export async function createSEOAction(
+  prevState: SEOFormState,
+  formData: FormData
+): Promise<SEOFormState> {
   await connectToDatabase();
 
   try {
@@ -43,6 +50,7 @@ export async function createSEOAction(prevState: SEOFormState, formData: FormDat
       metaKeywords: parseCSV(formData.get("metaKeywords")),
       focusKeywords: parseCSV(formData.get("focusKeywords")),
       slug: String(formData.get("slug") || ""),
+      templateType: String(formData.get("templateType") || ""),
     };
 
     const result = seoSchema.safeParse(rawData);
@@ -56,7 +64,11 @@ export async function createSEOAction(prevState: SEOFormState, formData: FormDat
 }
 
 /* ---------------------------- 🔹 UPDATE ---------------------------- */
-export async function updateSEOAction(prevState: SEOFormState, id: string, formData: FormData): Promise<SEOFormState> {
+export async function updateSEOAction(
+  prevState: SEOFormState,
+  id: string,
+  formData: FormData
+): Promise<SEOFormState> {
   await connectToDatabase();
 
   try {
@@ -72,6 +84,7 @@ export async function updateSEOAction(prevState: SEOFormState, id: string, formD
       metaKeywords: parseCSV(formData.get("metaKeywords")),
       focusKeywords: parseCSV(formData.get("focusKeywords")),
       slug: String(formData.get("slug") || ""),
+      templateType: String(formData.get("templateType") || ""),
     };
 
     const result = seoSchema.safeParse(rawData);
@@ -133,15 +146,19 @@ export async function fetchSEOBySlugAction(slug: string) {
     return { error: { message: [error.message || "Failed to fetch SEO entry by slug"] } };
   }
 }
+
 /* ---------------------------- 🔹 FETCH LATEST SEO ---------------------------- */
-export async function fetchLatestSEOAction() {
+export async function fetchLatestSEOAction(
+  templateType: "settings" | "blogs" | "events" | "stores"
+) {
   await connectToDatabase();
 
   try {
-    const seo = await getLatestSEO(); // <-- use the function we added in seoFunctions
-    if (!seo) return { error: { message: ["No SEO entries found"] } };
+    const seo = await getLatestSEO(templateType);
+    if (!seo) return { error: { message: ["No SEO entries found for this template type"] } };
     return { data: seo };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch latest SEO entry"] } };
   }
 }
+

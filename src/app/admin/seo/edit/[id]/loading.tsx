@@ -36,6 +36,12 @@ export default function SEOLoadingSkeleton() {
         <div className="h-4 w-32 bg-gray-300 rounded dark:bg-gray-600"></div>
         <div className="h-10 bg-gray-300 rounded dark:bg-gray-600"></div>
       </div>
+      
+      {/* Template Type */}
+      <div className="space-y-2">
+        <div className="h-4 w-32 bg-gray-300 rounded dark:bg-gray-600"></div>
+        <div className="h-10 bg-gray-300 rounded dark:bg-gray-600"></div>
+      </div>
 
       {/* Submit button */}
       <div className="flex justify-end mt-6">

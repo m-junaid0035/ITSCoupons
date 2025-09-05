@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useActionState } from "react"; // adjust import if needed
+import { useState, useEffect, startTransition } from "react";
+import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { createSettingAction } from "@/actions/settingActions";
+import { fetchLatestSEOAction } from "@/actions/seoActions"; // ✅ for auto SEO templates
 
 interface FieldErrors {
   [key: string]: string[];
@@ -49,6 +50,44 @@ export default function SettingForm() {
 
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
+  /** ---------------- SEO state ---------------- */
+  const [seo, setSeo] = useState({
+    metaTitle: "",
+    metaDescription: "",
+    metaKeywords: "",
+  });
+
+  // ✅ Auto SEO update when site name changes
+  const updateSEO = async (siteName: string) => {
+    const { data: latestSEO } = await fetchLatestSEOAction("settings");
+    if (!latestSEO) return;
+
+    const replaceSiteName = (text: string) =>
+      text.replace(/{{blogTitle}}|s_n/gi, siteName);
+
+    setSeo({
+      metaTitle: replaceSiteName(latestSEO.metaTitle || ""),
+      metaDescription: replaceSiteName(latestSEO.metaDescription || ""),
+      metaKeywords: (latestSEO.metaKeywords || [])
+        .map(replaceSiteName)
+        .join(", "),
+    });
+  };
+
+  useEffect(() => {
+    const input = document.getElementById("siteName") as HTMLInputElement | null;
+    if (!input) return;
+
+    const listener = () => {
+      const name = input.value.trim();
+      if (name) updateSEO(name);
+    };
+
+    input.addEventListener("input", listener);
+    return () => input.removeEventListener("input", listener);
+  }, []);
+
+  /** ---------------- Helpers ---------------- */
   const errorFor = (field: string) => {
     return formState.error &&
       typeof formState.error === "object" &&
@@ -72,16 +111,33 @@ export default function SettingForm() {
     }
   }, [formState]);
 
+  /** ---------------- Submit handler ---------------- */
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    // ✅ attach SEO fields
+    formData.set("metaTitle", seo.metaTitle);
+    formData.set("metaDescription", seo.metaDescription);
+    formData.set("metaKeywords", seo.metaKeywords);
+
+    startTransition(() => dispatch(formData));
+  };
+
   return (
     <>
       <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
-          <CardTitle className="text-lg sm:text-xl font-semibold">Create Setting</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/settings")}>Back to Settings</Button>
+          <CardTitle className="text-lg sm:text-xl font-semibold">
+            Create Setting
+          </CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/settings")}>
+            Back to Settings
+          </Button>
         </CardHeader>
 
         <CardContent>
-          <form action={dispatch} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Site Name */}
             <div className="space-y-2">
               <Label htmlFor="siteName">Site Name <span className="text-red-500">*</span></Label>
@@ -171,47 +227,40 @@ export default function SettingForm() {
               )}
             </div>
 
-            {/* Meta Title */}
+            {/* SEO (auto-updated) */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
               <Input
                 id="metaTitle"
                 name="metaTitle"
+                value={seo.metaTitle}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaTitle: e.target.value }))}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Meta title for SEO"
               />
-              {errorFor("metaTitle") && (
-                <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
-              )}
             </div>
-
-            {/* Meta Description */}
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
               <Textarea
                 id="metaDescription"
                 name="metaDescription"
+                value={seo.metaDescription}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaDescription: e.target.value }))}
                 rows={3}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Meta description for SEO"
               />
-              {errorFor("metaDescription") && (
-                <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
-              )}
             </div>
-
-            {/* Meta Keywords */}
             <div className="space-y-2">
               <Label htmlFor="metaKeywords">Meta Keywords (comma-separated)</Label>
               <Input
                 id="metaKeywords"
                 name="metaKeywords"
+                value={seo.metaKeywords}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaKeywords: e.target.value }))}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="keyword1, keyword2, keyword3"
               />
-              {errorFor("metaKeywords") && (
-                <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
-              )}
             </div>
 
             {/* Social URLs */}
@@ -269,7 +318,6 @@ export default function SettingForm() {
                 )}
               </div>
             </div>
-
 
             {/* General Error */}
             {"message" in (formState.error ?? {}) && (

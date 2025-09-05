@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { createEventAction } from "@/actions/eventActions";
 import { toast } from "@/hooks/use-toast";
+import { fetchLatestSEOAction } from "@/actions/seoActions"; // ✅ added SEO fetch
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -57,6 +58,54 @@ export default function EventCreatePage() {
     setImageFile(null);
     setImagePreview(null);
   };
+
+  /** ---------------- SEO state ---------------- */
+  const [seo, setSeo] = useState({
+    metaTitle: "",
+    metaDescription: "",
+    metaKeywords: "",
+    focusKeywords: "",
+    slug: "",
+  });
+
+  // ✅ Auto SEO update when title changes
+  const updateSEO = async (eventTitle: string) => {
+    const { data: latestSEO } = await fetchLatestSEOAction("events");
+    if (!latestSEO) return;
+
+    const replaceEventTitle = (text: string) =>
+      text.replace(/{{blogTitle}}|s_n/gi, eventTitle); // reuse placeholder
+
+    const slugSource = latestSEO.slug || eventTitle;
+    const processedSlug = replaceEventTitle(slugSource)
+      .toLowerCase()
+      .replace(/\s+/g, "_");
+
+    setSeo({
+      metaTitle: replaceEventTitle(latestSEO.metaTitle || ""),
+      metaDescription: replaceEventTitle(latestSEO.metaDescription || ""),
+      metaKeywords: (latestSEO.metaKeywords || [])
+        .map(replaceEventTitle)
+        .join(", "),
+      focusKeywords: (latestSEO.focusKeywords || [])
+        .map(replaceEventTitle)
+        .join(", "),
+      slug: processedSlug,
+    });
+  };
+
+  useEffect(() => {
+    const titleInput = document.getElementById("title") as HTMLInputElement | null;
+    if (!titleInput) return;
+
+    const listener = () => {
+      const eventTitle = titleInput.value.trim();
+      if (eventTitle) updateSEO(eventTitle);
+    };
+
+    titleInput.addEventListener("input", listener);
+    return () => titleInput.removeEventListener("input", listener);
+  }, []);
 
   /** ---------------- Error helper ---------------- */
   const errorFor = (field: string) => {
@@ -101,6 +150,13 @@ export default function EventCreatePage() {
     if (eventDate) formData.set("date", eventDate.toISOString());
     formData.set("description", descriptionHtml);
 
+    // ✅ attach SEO fields
+    formData.set("metaTitle", seo.metaTitle);
+    formData.set("metaDescription", seo.metaDescription);
+    formData.set("metaKeywords", seo.metaKeywords);
+    formData.set("focusKeywords", seo.focusKeywords);
+    formData.set("slug", seo.slug);
+
     startTransition(() => dispatch(formData));
   };
 
@@ -125,7 +181,14 @@ export default function EventCreatePage() {
             {/* Slug */}
             <div className="space-y-2">
               <Label htmlFor="slug">Slug (optional)</Label>
-              <Input id="slug" name="slug" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="example-event-slug" />
+              <Input
+                id="slug"
+                name="slug"
+                value={seo.slug}
+                onChange={(e) => setSeo((prev) => ({ ...prev, slug: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="example-event-slug"
+              />
               {errorFor("slug") && <p className="text-sm text-red-500">{errorFor("slug")}</p>}
             </div>
 
@@ -178,19 +241,48 @@ export default function EventCreatePage() {
             {/* SEO */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
-              <Input id="metaTitle" name="metaTitle" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="SEO meta title" />
+              <Input
+                id="metaTitle"
+                name="metaTitle"
+                value={seo.metaTitle}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaTitle: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="SEO meta title"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
-              <Textarea id="metaDescription" name="metaDescription" rows={3} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="SEO meta description" />
+              <Textarea
+                id="metaDescription"
+                name="metaDescription"
+                value={seo.metaDescription}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaDescription: e.target.value }))}
+                rows={3}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="SEO meta description"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="metaKeywords">Meta Keywords (comma separated)</Label>
-              <Input id="metaKeywords" name="metaKeywords" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="keyword1, keyword2, keyword3" />
+              <Input
+                id="metaKeywords"
+                name="metaKeywords"
+                value={seo.metaKeywords}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaKeywords: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="keyword1, keyword2, keyword3"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="focusKeywords">Focus Keywords (comma separated)</Label>
-              <Input id="focusKeywords" name="focusKeywords" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="focus1, focus2" />
+              <Input
+                id="focusKeywords"
+                name="focusKeywords"
+                value={seo.focusKeywords}
+                onChange={(e) => setSeo((prev) => ({ ...prev, focusKeywords: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="focus1, focus2"
+              />
             </div>
 
             {/* General Error */}

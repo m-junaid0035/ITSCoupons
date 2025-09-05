@@ -40,7 +40,7 @@ export default function RelatedStores({ stores, perPage = 12 }: RelatedStoresPro
         {paginatedStores.map((store) => (
           <Link
             key={store._id}
-            href={`/stores/${store._id}`}
+            href={`/stores/${store._id}/${store.slug}`}
             className="flex flex-col items-center justify-center bg-white overflow-hidden transition hover:scale-105 border border-gray-200 p-4"
             style={{ width: "178px", height: "178px" }} // square box
           >

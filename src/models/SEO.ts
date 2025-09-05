@@ -8,6 +8,7 @@ export interface ISEO extends Document {
   metaKeywords: string[];           // Optional meta keywords
   focusKeywords: string[];          // Optional focus keywords
   slug: string;                     // URL-friendly slug (unique)
+  templateType: "settings" | "blogs" | "events" | "stores"; // Template type
   createdAt: Date;
   updatedAt: Date;
 }
@@ -46,6 +47,12 @@ const seoSchema = new Schema<ISEO>(
       required: [true, "Slug is required"],
       trim: true,
       unique: true,
+    },
+
+    templateType: {
+      type: String,
+      enum: ["settings", "blogs", "events", "stores"],
+      required: [true, "Template type is required"],
     },
   },
   {

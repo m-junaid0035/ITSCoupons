@@ -12,7 +12,7 @@ export default function LoadingSkeleton() {
       </div>
 
       {/* Form Fields */}
-      <div className="space-y-6 max-w-2xl mx-auto px-6 pb-6">
+      <div className="space-y-6 w-full px-6 pb-6">
         {/* Title */}
         <div className="space-y-2">
           <div className="h-4 w-24 bg-gray-300 dark:bg-gray-700 rounded"></div>

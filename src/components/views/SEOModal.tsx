@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 export interface ISEO {
   _id: string;
   metaTitle: string;
+  templateType: string;
   metaDescription?: string;
   metaKeywords?: string[];
   focusKeywords?: string[];

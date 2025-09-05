@@ -17,12 +17,17 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 import { fetchEventByIdAction, updateEventAction } from "@/actions/eventActions";
+import { fetchLatestSEOAction } from "@/actions/seoActions"; // ✅ added
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/RichTextEditor";
 
+interface FieldErrors {
+  [key: string]: string[];
+}
+
 interface FormState {
-  error?: Record<string, string[]> | { message?: string[] };
+  error?: FieldErrors | { message?: string[] };
   data?: any;
 }
 
@@ -49,19 +54,72 @@ export default function EditEventForm() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+  // ✅ SEO State
+  const [seo, setSeo] = useState({
+    metaTitle: "",
+    metaDescription: "",
+    metaKeywords: "",
+    focusKeywords: "",
+    slug: "",
+  });
+
+  const [title, setTitle] = useState("");
+
   useEffect(() => {
     async function loadEvent() {
       const res = await fetchEventByIdAction(eventId);
       if (res?.data) {
         setEvent(res.data);
         setDescriptionHtml(res.data.description || "");
+        setTitle(res.data.title || "");
         if (res.data.date) setEventDate(new Date(res.data.date));
-        if (res.data.image) setImagePreview(res.data.image); // show existing image
+        if (res.data.image) setImagePreview(res.data.image);
+
+        // ✅ Populate SEO state
+        setSeo({
+          metaTitle: res.data.metaTitle || "",
+          metaDescription: res.data.metaDescription || "",
+          metaKeywords: res.data.metaKeywords || "",
+          focusKeywords: res.data.focusKeywords || "",
+          slug: res.data.slug || "",
+        });
       }
       setLoading(false);
     }
     loadEvent();
   }, [eventId]);
+
+  // ✅ Auto SEO update when title changes
+  const updateSEO = async (eventTitle: string) => {
+    const { data: latestSEO } = await fetchLatestSEOAction("events");
+    if (!latestSEO) return;
+
+    const replaceEventTitle = (text: string) =>
+      text.replace(/{{blogTitle}}|s_n/gi, eventTitle);
+
+    const slugSource = latestSEO.slug || eventTitle;
+    const processedSlug = replaceEventTitle(slugSource)
+      .toLowerCase()
+      .replace(/\s+/g, "_");
+
+    setSeo({
+      metaTitle: replaceEventTitle(latestSEO.metaTitle || ""),
+      metaDescription: replaceEventTitle(latestSEO.metaDescription || ""),
+      metaKeywords: (latestSEO.metaKeywords || [])
+        .map(replaceEventTitle)
+        .join(", "),
+      focusKeywords: (latestSEO.focusKeywords || [])
+        .map(replaceEventTitle)
+        .join(", "),
+      slug: processedSlug,
+    });
+  };
+
+  useEffect(() => {
+    if (title.trim()) {
+      updateSEO(title);
+    }
+  }, [title]);
 
   useEffect(() => {
     if (formState.data && !formState.error) {
@@ -78,8 +136,8 @@ export default function EditEventForm() {
 
   const errorFor = (field: string) =>
     formState.error &&
-      typeof formState.error === "object" &&
-      field in formState.error
+    typeof formState.error === "object" &&
+    field in formState.error
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
 
@@ -106,12 +164,20 @@ export default function EditEventForm() {
     const formData = new FormData(e.currentTarget);
     if (eventDate) formData.set("date", eventDate.toISOString());
     formData.set("description", descriptionHtml);
+    formData.set("title", title);
 
     if (imageFile) {
-      formData.set("imageFile", imageFile); // send new file
+      formData.set("imageFile", imageFile);
     } else if (imagePreview) {
-      formData.set("image", imagePreview); // keep existing url
+      formData.set("image", imagePreview);
     }
+
+    // ✅ attach SEO fields
+    formData.set("metaTitle", seo.metaTitle);
+    formData.set("metaDescription", seo.metaDescription);
+    formData.set("metaKeywords", seo.metaKeywords);
+    formData.set("focusKeywords", seo.focusKeywords);
+    formData.set("slug", seo.slug);
 
     startTransition(() => dispatch(formData));
   };
@@ -120,8 +186,10 @@ export default function EditEventForm() {
     <>
       <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
-          <CardTitle className="text-lg sm:text-xl font-semibold">Create Event</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/events")}>Back to Events</Button>
+          <CardTitle className="text-lg sm:text-xl font-semibold">Edit Event</CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/events")}>
+            Back to Events
+          </Button>
         </CardHeader>
 
         <CardContent>
@@ -129,14 +197,27 @@ export default function EditEventForm() {
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
-              <Input id="title" name="title" defaultValue={event.title} required className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input
+                id="title"
+                name="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
               {errorFor("title") && <p className="text-sm text-red-500">{errorFor("title")}</p>}
             </div>
 
             {/* Slug */}
             <div className="space-y-2">
               <Label htmlFor="slug">Slug</Label>
-              <Input id="slug" name="slug" defaultValue={event.slug} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input
+                id="slug"
+                name="slug"
+                value={seo.slug}
+                onChange={(e) => setSeo((prev) => ({ ...prev, slug: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
               {errorFor("slug") && <p className="text-sm text-red-500">{errorFor("slug")}</p>}
             </div>
 
@@ -165,20 +246,29 @@ export default function EditEventForm() {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label>
-                Description
-              </Label>
+              <Label>Description</Label>
               <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
             </div>
 
             {/* Image Upload */}
             <div className="space-y-2">
               <Label htmlFor="imageFile">Event Image</Label>
-              <Input id="imageFile" name="imageFile" type="file" accept="image/*" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" onChange={handleImageChange} />
+              <Input
+                id="imageFile"
+                name="imageFile"
+                type="file"
+                accept="image/*"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                onChange={handleImageChange}
+              />
               {imagePreview && (
                 <div className="relative mt-2 max-h-40 w-fit">
                   <img src={imagePreview} alt="Preview" className="rounded shadow-md max-h-40" />
-                  <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full">
+                  <button
+                    type="button"
+                    onClick={removeImage}
+                    className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
+                  >
                     <X className="h-4 w-4" />
                   </button>
                 </div>
@@ -189,22 +279,47 @@ export default function EditEventForm() {
             {/* SEO Fields */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
-              <Input id="metaTitle" name="metaTitle" defaultValue={event.metaTitle} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input
+                id="metaTitle"
+                name="metaTitle"
+                value={seo.metaTitle}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaTitle: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
-              <Textarea id="metaDescription" name="metaDescription" rows={3} defaultValue={event.metaDescription} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Textarea
+                id="metaDescription"
+                name="metaDescription"
+                value={seo.metaDescription}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaDescription: e.target.value }))}
+                rows={3}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="metaKeywords">Meta Keywords (comma separated)</Label>
-              <Input id="metaKeywords" name="metaKeywords" defaultValue={event.metaKeywords} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input
+                id="metaKeywords"
+                name="metaKeywords"
+                value={seo.metaKeywords}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaKeywords: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="focusKeywords">Focus Keywords (comma separated)</Label>
-              <Input id="focusKeywords" name="focusKeywords" defaultValue={event.focusKeywords} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              <Input
+                id="focusKeywords"
+                name="focusKeywords"
+                value={seo.focusKeywords}
+                onChange={(e) => setSeo((prev) => ({ ...prev, focusKeywords: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
             </div>
 
             {/* General Error */}

@@ -157,7 +157,7 @@ export default function EditStoreForm() {
 
   /** ---------------- SEO Auto-fill ---------------- */
   const updateSEO = async (storeName: string) => {
-    const { data: latestSEO } = await fetchLatestSEOAction();
+    const { data: latestSEO } = await fetchLatestSEOAction("stores");
     if (!latestSEO) return;
 
     const replaceStoreName = (text: string) =>

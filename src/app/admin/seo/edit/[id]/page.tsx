@@ -3,13 +3,11 @@
 import { useState, useEffect } from "react";
 import { useActionState } from "react";
 import { useParams, useRouter } from "next/navigation";
-
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
-
 import {
   Card,
   CardHeader,
@@ -17,7 +15,6 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import LoadingSkeleton from "./loading";
 import { toast } from "@/hooks/use-toast";
 
 import {
@@ -32,6 +29,7 @@ import {
   fetchSEOByIdAction,
   updateSEOAction,
 } from "@/actions/seoActions";
+import LoadingSkeleton from "./loading";
 
 interface FieldErrors {
   [key: string]: string[];
@@ -103,19 +101,30 @@ export default function EditSEOForm() {
     <>
       <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
-          <CardTitle className="text-lg sm:text-xl font-semibold">Edit SEO Entry</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/seo")}>Back to SEO List</Button>
+          <CardTitle className="text-lg sm:text-xl font-semibold">
+            Edit SEO Entry
+          </CardTitle>
+          <Button
+            variant="secondary"
+            onClick={() => router.push("/admin/seo")}
+          >
+            Back to SEO List
+          </Button>
         </CardHeader>
+
         <CardContent>
           <form action={dispatch} className="space-y-6">
             {/* Meta Title */}
             <div className="space-y-2">
-              <Label htmlFor="metaTitle">Meta Title <span className="text-red-500">*</span></Label>
+              <Label htmlFor="metaTitle">
+                Meta Title <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="metaTitle"
                 name="metaTitle"
                 required
                 defaultValue={seo.metaTitle}
+                placeholder="Enter meta title (add s_n where you want to add the standard notation)"
               />
               {errorFor("metaTitle") && (
                 <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
@@ -124,15 +133,20 @@ export default function EditSEOForm() {
 
             {/* Meta Description */}
             <div className="space-y-2">
-              <Label htmlFor="metaDescription">Meta Description <span className="text-red-500">*</span></Label>
+              <Label htmlFor="metaDescription">
+                Meta Description <span className="text-red-500">*</span>
+              </Label>
               <Textarea
                 id="metaDescription"
                 name="metaDescription"
                 rows={3}
                 defaultValue={seo.metaDescription}
+                placeholder="Enter meta description (add s_n where you want to add the standard notation)"
               />
               {errorFor("metaDescription") && (
-                <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
+                <p className="text-sm text-red-500">
+                  {errorFor("metaDescription")}
+                </p>
               )}
             </div>
 
@@ -143,6 +157,7 @@ export default function EditSEOForm() {
                 id="metaKeywords"
                 name="metaKeywords"
                 defaultValue={Array.isArray(seo.metaKeywords) ? seo.metaKeywords.join(", ") : ""}
+                placeholder="keyword1, keyword2 (add s_n where you want to add the standard notation)"
               />
               {errorFor("metaKeywords") && (
                 <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
@@ -151,11 +166,14 @@ export default function EditSEOForm() {
 
             {/* Focus Keywords */}
             <div className="space-y-2">
-              <Label htmlFor="focusKeywords">Focus Keywords (comma-separated)</Label>
+              <Label htmlFor="focusKeywords">
+                Focus Keywords (comma-separated)
+              </Label>
               <Input
                 id="focusKeywords"
                 name="focusKeywords"
                 defaultValue={Array.isArray(seo.focusKeywords) ? seo.focusKeywords.join(", ") : ""}
+                placeholder="focus1, focus2 (add s_n where you want to add the standard notation)"
               />
               {errorFor("focusKeywords") && (
                 <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>
@@ -164,15 +182,43 @@ export default function EditSEOForm() {
 
             {/* Slug */}
             <div className="space-y-2">
-              <Label htmlFor="slug">Slug <span className="text-red-500">*</span></Label>
+              <Label htmlFor="slug">
+                Slug <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="slug"
                 name="slug"
                 required
                 defaultValue={seo.slug}
+                placeholder="seo-entry-slug (add s_n where you want to add the standard notation)"
               />
               {errorFor("slug") && (
                 <p className="text-sm text-red-500">{errorFor("slug")}</p>
+              )}
+            </div>
+
+            {/* Template Type */}
+            <div className="space-y-2">
+              <Label htmlFor="templateType">
+                Template Type <span className="text-red-500">*</span>
+              </Label>
+              <select
+                id="templateType"
+                name="templateType"
+                required
+                defaultValue={seo.templateType || ""}
+                className="w-full rounded-md border border-gray-300 bg-white dark:bg-gray-900 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">-- Select Template Type --</option>
+                <option value="settings">Settings</option>
+                <option value="blogs">Blogs</option>
+                <option value="events">Events</option>
+                <option value="stores">Stores</option>
+              </select>
+              {errorFor("templateType") && (
+                <p className="text-sm text-red-500">
+                  {errorFor("templateType")}
+                </p>
               )}
             </div>
 

@@ -17,6 +17,7 @@ import { toast } from "@/hooks/use-toast";
 
 import { createBlogAction } from "@/actions/blogActions";
 import { fetchCategoryNamesAction } from "@/actions/categoryActions";
+import { fetchLatestSEOAction } from "@/actions/seoActions"; // ✅ added SEO action
 import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/RichTextEditor";
 
@@ -46,6 +47,15 @@ export default function BlogCreatePage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
+  // ✅ SEO state
+  const [seo, setSeo] = useState({
+    metaTitle: "",
+    metaDescription: "",
+    metaKeywords: "",
+    focusKeywords: "",
+    slug: "",
+  });
+
   const errorFor = (field: string) => {
     return formState.error &&
       typeof formState.error === "object" &&
@@ -66,6 +76,45 @@ export default function BlogCreatePage() {
         });
       }
     });
+  }, []);
+
+  // ✅ Auto SEO update when title changes
+  const updateSEO = async (blogTitle: string) => {
+    const { data: latestSEO } = await fetchLatestSEOAction("blogs");
+    if (!latestSEO) return;
+
+    const replaceBlogTitle = (text: string) =>
+      text.replace(/{{blogTitle}}|s_n/gi, blogTitle);
+
+    const slugSource = latestSEO.slug || blogTitle;
+    const processedSlug = replaceBlogTitle(slugSource)
+      .toLowerCase()
+      .replace(/\s+/g, "_");
+
+    setSeo({
+      metaTitle: replaceBlogTitle(latestSEO.metaTitle || ""),
+      metaDescription: replaceBlogTitle(latestSEO.metaDescription || ""),
+      metaKeywords: (latestSEO.metaKeywords || [])
+        .map(replaceBlogTitle)
+        .join(", "),
+      focusKeywords: (latestSEO.focusKeywords || [])
+        .map(replaceBlogTitle)
+        .join(", "),
+      slug: processedSlug,
+    });
+  };
+
+  useEffect(() => {
+    const titleInput = document.getElementById("title") as HTMLInputElement | null;
+    if (!titleInput) return;
+
+    const listener = () => {
+      const blogTitle = titleInput.value.trim();
+      if (blogTitle) updateSEO(blogTitle);
+    };
+
+    titleInput.addEventListener("input", listener);
+    return () => titleInput.removeEventListener("input", listener);
   }, []);
 
   // Handle success or error messages
@@ -105,6 +154,13 @@ export default function BlogCreatePage() {
     formData.set("category", selectedCategory);
     formData.set("writer", writer);
     formData.set("description", descriptionHtml);
+
+    // ✅ attach SEO fields
+    formData.set("metaTitle", seo.metaTitle);
+    formData.set("metaDescription", seo.metaDescription);
+    formData.set("metaKeywords", seo.metaKeywords);
+    formData.set("focusKeywords", seo.focusKeywords);
+    formData.set("slug", seo.slug);
 
     if (imageFile) {
       formData.set("imageFile", imageFile); // attach the file
@@ -176,6 +232,8 @@ export default function BlogCreatePage() {
               <Input
                 id="slug"
                 name="slug"
+                value={seo.slug}
+                onChange={(e) => setSeo((prev) => ({ ...prev, slug: e.target.value }))}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="example-blog-slug"
               />
@@ -238,22 +296,51 @@ export default function BlogCreatePage() {
             {/* SEO Fields */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
-              <Input id="metaTitle" name="metaTitle" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="SEO meta title" />
+              <Input
+                id="metaTitle"
+                name="metaTitle"
+                value={seo.metaTitle}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaTitle: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="SEO meta title"
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
-              <Textarea id="metaDescription" name="metaDescription" rows={3} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="SEO meta description" />
+              <Textarea
+                id="metaDescription"
+                name="metaDescription"
+                value={seo.metaDescription}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaDescription: e.target.value }))}
+                rows={3}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="SEO meta description"
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="metaKeywords">Meta Keywords (comma separated)</Label>
-              <Input id="metaKeywords" name="metaKeywords" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="keyword1, keyword2, keyword3" />
+              <Input
+                id="metaKeywords"
+                name="metaKeywords"
+                value={seo.metaKeywords}
+                onChange={(e) => setSeo((prev) => ({ ...prev, metaKeywords: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="keyword1, keyword2, keyword3"
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="focusKeywords">Focus Keywords (comma separated)</Label>
-              <Input id="focusKeywords" name="focusKeywords" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="keyword1, keyword2" />
+              <Input
+                id="focusKeywords"
+                name="focusKeywords"
+                value={seo.focusKeywords}
+                onChange={(e) => setSeo((prev) => ({ ...prev, focusKeywords: e.target.value }))}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                placeholder="keyword1, keyword2"
+              />
             </div>
 
             {/* General Error */}
@@ -270,8 +357,6 @@ export default function BlogCreatePage() {
           </form>
         </CardContent>
       </Card>
-
-
 
       {/* Success Confirmation Dialog */}
       <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>

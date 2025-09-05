@@ -32,7 +32,12 @@ export const metadata: Metadata = {
     title: "shadcn/ui sidebar",
     description:
       "A stunning and functional retractable sidebar for Next.js built on top of shadcn/ui complete with desktop and mobile responsiveness."
-  }
+  },
+  icons: {
+    icon: "/logos/ITS-Coupons-FV-Icon-2.png",
+    apple: "/logos/ITS-Coupons-FV-Icon-2.png",
+    shortcut: "/logos/ITS-Coupons-FV-Icon-2.png",
+  },
 };
 
 export default async function RootLayout({

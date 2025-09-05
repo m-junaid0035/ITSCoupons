@@ -123,7 +123,7 @@ export default function StoreForm() {
 
   /** ---------------- Auto SEO Update ---------------- */
 const updateSEO = async (storeName: string) => {
-  const { data: latestSEO } = await fetchLatestSEOAction();
+  const { data: latestSEO } = await fetchLatestSEOAction("stores");
   if (!latestSEO) return;
 
   const replaceStoreName = (text: string) =>

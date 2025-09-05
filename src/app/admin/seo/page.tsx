@@ -56,6 +56,7 @@ function SEOTable({
           <TableRow className="border-b border-muted">
             <TableHead>Meta Title</TableHead>
             <TableHead>Slug</TableHead>
+            <TableHead>Template Type</TableHead>
             <TableHead className="w-[140px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -65,6 +66,7 @@ function SEOTable({
               <TableRow key={seo._id} className="hover:bg-muted/40 transition-colors">
                 <TableCell className="font-medium">{seo.metaTitle}</TableCell>
                 <TableCell>{seo.slug}</TableCell>
+                <TableCell>{seo.templateType}</TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-2">
                     <Button variant="ghost" size="icon" onClick={() => onView(seo)} title="View">

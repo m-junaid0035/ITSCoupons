@@ -133,7 +133,7 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
                 )}
 
                 <Link
-                  href={`/blogs/${blog._id}`}
+                  href={`/blogs/${blog._id}/${blog.slug}`}
                   className="text-purple-700 font-medium hover:underline"
                 >
                   Read More

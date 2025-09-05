@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, startTransition } from "react";
 import { useActionState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
@@ -32,6 +32,7 @@ import {
   fetchSettingByIdAction,
   updateSettingAction,
 } from "@/actions/settingActions";
+import { fetchLatestSEOAction } from "@/actions/seoActions"; // ✅ for auto SEO templates
 
 interface FieldErrors {
   [key: string]: string[];
@@ -62,6 +63,30 @@ export default function EditSettingForm() {
   const [loading, setLoading] = useState(true);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
+  /** ---------------- SEO state ---------------- */
+  const [seo, setSeo] = useState({
+    metaTitle: "",
+    metaDescription: "",
+    metaKeywords: "",
+  });
+
+  // ✅ Auto SEO update when site name changes
+  const updateSEO = async (siteName: string) => {
+    const { data: latestSEO } = await fetchLatestSEOAction("settings");
+    if (!latestSEO) return;
+
+    const replaceSiteName = (text: string) =>
+      text.replace(/{{blogTitle}}|s_n/gi, siteName);
+
+    setSeo({
+      metaTitle: replaceSiteName(latestSEO.metaTitle || ""),
+      metaDescription: replaceSiteName(latestSEO.metaDescription || ""),
+      metaKeywords: (latestSEO.metaKeywords || [])
+        .map(replaceSiteName)
+        .join(", "),
+    });
+  };
+
   const errorFor = (field: string) => {
     return formState.error &&
       typeof formState.error === "object" &&
@@ -75,6 +100,15 @@ export default function EditSettingForm() {
       const res = await fetchSettingByIdAction(settingId);
       if (res.data) {
         setSetting(res.data);
+
+        // ✅ initialize SEO state from DB
+        setSeo({
+          metaTitle: res.data.metaTitle || "",
+          metaDescription: res.data.metaDescription || "",
+          metaKeywords: Array.isArray(res.data.metaKeywords)
+            ? res.data.metaKeywords.join(", ")
+            : res.data.metaKeywords || "",
+        });
       }
       setLoading(false);
     }
@@ -96,6 +130,19 @@ export default function EditSettingForm() {
     }
   }, [formState]);
 
+  /** ---------------- Submit handler ---------------- */
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    // ✅ attach SEO fields
+    formData.set("metaTitle", seo.metaTitle);
+    formData.set("metaDescription", seo.metaDescription);
+    formData.set("metaKeywords", seo.metaKeywords);
+
+    startTransition(() => dispatch(formData));
+  };
+
   if (loading) return <LoadingSkeleton />;
   if (!setting) return <p className="text-red-500">Setting not found.</p>;
 
@@ -103,20 +150,30 @@ export default function EditSettingForm() {
     <>
       <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
-          <CardTitle className="text-lg sm:text-xl font-semibold">Edit Setting</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/settings")}>Back to Settings</Button>
+          <CardTitle className="text-lg sm:text-xl font-semibold">
+            Edit Setting
+          </CardTitle>
+          <Button variant="secondary" onClick={() => router.push("/admin/settings")}>
+            Back to Settings
+          </Button>
         </CardHeader>
 
         <CardContent>
-          <form action={dispatch} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {/* Site Name */}
             <div className="space-y-2">
-              <Label htmlFor="siteName">Site Name <span className="text-red-500">*</span></Label>
+              <Label htmlFor="siteName">
+                Site Name <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="siteName"
                 name="siteName"
                 required
                 defaultValue={setting.siteName}
+                onChange={(e) => {
+                  const name = e.target.value.trim();
+                  if (name) updateSEO(name);
+                }}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("siteName") && (
@@ -202,13 +259,16 @@ export default function EditSettingForm() {
               )}
             </div>
 
-            {/* Meta Title */}
+            {/* SEO (auto-updated) */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
               <Input
                 id="metaTitle"
                 name="metaTitle"
-                defaultValue={setting.metaTitle}
+                value={seo.metaTitle}
+                onChange={(e) =>
+                  setSeo((prev) => ({ ...prev, metaTitle: e.target.value }))
+                }
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("metaTitle") && (
@@ -216,14 +276,19 @@ export default function EditSettingForm() {
               )}
             </div>
 
-            {/* Meta Description */}
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
               <Textarea
                 id="metaDescription"
                 name="metaDescription"
                 rows={3}
-                defaultValue={setting.metaDescription}
+                value={seo.metaDescription}
+                onChange={(e) =>
+                  setSeo((prev) => ({
+                    ...prev,
+                    metaDescription: e.target.value,
+                  }))
+                }
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("metaDescription") && (
@@ -233,16 +298,17 @@ export default function EditSettingForm() {
               )}
             </div>
 
-            {/* Meta Keywords */}
             <div className="space-y-2">
               <Label htmlFor="metaKeywords">Meta Keywords (comma-separated)</Label>
               <Input
                 id="metaKeywords"
                 name="metaKeywords"
-                defaultValue={
-                  Array.isArray(setting.metaKeywords)
-                    ? setting.metaKeywords.join(", ")
-                    : setting.metaKeywords || ""
+                value={seo.metaKeywords}
+                onChange={(e) =>
+                  setSeo((prev) => ({
+                    ...prev,
+                    metaKeywords: e.target.value,
+                  }))
                 }
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
@@ -253,7 +319,6 @@ export default function EditSettingForm() {
               )}
             </div>
 
-            {/* Social URLs */}
             {/* Social URLs */}
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">

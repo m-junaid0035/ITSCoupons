@@ -11,12 +11,14 @@ const sanitizeSEOData = (data: {
   metaKeywords?: string[];
   focusKeywords?: string[];
   slug: string;
+  templateType: "settings" | "blogs" | "events" | "stores";
 }) => ({
   metaTitle: data.metaTitle.trim(),
   metaDescription: data.metaDescription.trim(),
   metaKeywords: data.metaKeywords ?? [],
   focusKeywords: data.focusKeywords ?? [],
   slug: data.slug.trim().toLowerCase().replace(/\s+/g, "-"),
+  templateType: data.templateType,
 });
 
 /**
@@ -29,6 +31,7 @@ const serializeSEO = (seo: any) => ({
   metaKeywords: seo.metaKeywords ?? [],
   focusKeywords: seo.focusKeywords ?? [],
   slug: seo.slug,
+  templateType: seo.templateType,
   createdAt: seo.createdAt?.toISOString?.(),
   updatedAt: seo.updatedAt?.toISOString?.(),
 });
@@ -42,6 +45,7 @@ export const createSEO = async (data: {
   metaKeywords?: string[];
   focusKeywords?: string[];
   slug: string;
+  templateType: "settings" | "blogs" | "events" | "stores";
 }) => {
   const seoData = sanitizeSEOData(data);
   const seo = await new SEO(seoData).save();
@@ -77,6 +81,7 @@ export const updateSEO = async (
     metaKeywords?: string[];
     focusKeywords?: string[];
     slug: string;
+    templateType: "settings" | "blogs" | "events" | "stores";
   }
 ) => {
   if (!Types.ObjectId.isValid(id)) return null;
@@ -105,9 +110,11 @@ export const getSEOBySlug = async (slug: string) => {
 };
 
 /**
- * Get the latest SEO entry (most recently created).
+ * Get the latest SEO entry for a given template type.
  */
-export const getLatestSEO = async () => {
-  const seo = await SEO.findOne().sort({ createdAt: -1 }).lean();
+export const getLatestSEO = async (templateType: "settings" | "blogs" | "events" | "stores") => {
+  const seo = await SEO.findOne({ templateType })
+    .sort({ createdAt: -1 })
+    .lean();
   return seo ? serializeSEO(seo) : null;
 };
