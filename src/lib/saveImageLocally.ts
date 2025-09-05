@@ -7,7 +7,7 @@ import { randomUUID } from "crypto";
  * @param file The uploaded file (from a form with enctype multipart/form-data)
  * @returns The relative path to the saved image (e.g., /uploads/filename.jpg)
  */
-export async function saveImageLocally(file: File): Promise<string> {
+export async function saveUserProfileImage(file: File): Promise<string> {
   const uploadsDir = path.join(process.cwd(), "public", "uploads");
 
   const arrayBuffer = await file.arrayBuffer();

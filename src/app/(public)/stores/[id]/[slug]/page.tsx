@@ -14,9 +14,10 @@ import { Metadata } from "next";
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: "" }>;
 }): Promise<Metadata> {
-  const storeResult = await fetchStoreWithCouponsByIdAction(params.id);
+  const { id = "" } = await params;
+  const storeResult = await fetchStoreWithCouponsByIdAction(id);
   const store: StoreWithCouponsData | null = storeResult?.data ?? null;
 
   if (!store) {
@@ -64,15 +65,15 @@ export default async function StorePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: "" }>;
   searchParams: Promise<{ couponId?: ""}>
 }) {
   // Await params to get the store ID
-  const { id: storeId } = await params;
+  const { id = "" } = await params;
   const { couponId = "" } = await searchParams;
 
   // Fetch the store with coupons
-  const storeResult = await fetchStoreWithCouponsByIdAction(storeId);
+  const storeResult = await fetchStoreWithCouponsByIdAction(id);
   const store: StoreWithCouponsData | null = storeResult?.data ?? null;
 
   if (!store) {
