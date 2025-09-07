@@ -438,6 +438,7 @@ export default function AllCouponsPage({
         storeName={selectedCoupon?.store?.name}
         storeImageUrl={selectedCoupon?.store?.image}
         title={selectedCoupon?.title}
+        discount={selectedCoupon?.discount}
         code={selectedCoupon?.couponCode}
         redeemUrl={selectedCoupon?.couponUrl}
         open={isModalOpen}

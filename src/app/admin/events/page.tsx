@@ -75,12 +75,7 @@ function EventsTable({
           <TableRow>
             <TableHead>Title</TableHead>
             <TableHead>Date</TableHead>
-            <TableHead>Description</TableHead>
             <TableHead>Image</TableHead>
-            <TableHead>Meta Title</TableHead>
-            <TableHead>Meta Desc</TableHead>
-            <TableHead>Meta Keywords</TableHead>
-            <TableHead>Focus Keywords</TableHead>
             <TableHead>Slug</TableHead>
             <TableHead className="w-[140px] text-right">Actions</TableHead>
           </TableRow>
@@ -92,16 +87,6 @@ function EventsTable({
                 <TableCell>{event.title}</TableCell>
                 <TableCell>
                   {new Date(event.date).toLocaleDateString()}
-                </TableCell>
-                <TableCell className="max-w-[200px]">
-                  {event.description ? (
-                    <div
-                      className="truncate max-w-[200px] overflow-hidden"
-                      dangerouslySetInnerHTML={{ __html: event.description }}
-                    />
-                  ) : (
-                    "-"
-                  )}
                 </TableCell>
                 <TableCell>
                   {event.image ? (
@@ -116,12 +101,6 @@ function EventsTable({
                     "-"
                   )}
                 </TableCell>
-                <TableCell>{event.metaTitle || "-"}</TableCell>
-                <TableCell className="max-w-[200px] truncate">
-                  {event.metaDescription || "-"}
-                </TableCell>
-                <TableCell>{event.metaKeywords || "-"}</TableCell>
-                <TableCell>{event.focusKeywords || "-"}</TableCell>
                 <TableCell>{event.slug || "-"}</TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-1.5">

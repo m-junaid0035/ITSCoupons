@@ -318,6 +318,7 @@ export default function StorePage({
       <CouponModal
         storeName={store.name}
         title={selectedCoupon?.title}
+        discount={selectedCoupon?.discount}
         code={selectedCoupon?.couponCode}
         redeemUrl={selectedCoupon?.couponUrl}
         open={isModalOpen}

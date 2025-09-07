@@ -11,6 +11,7 @@ export type CouponModalProps = {
   onClose: () => void;
   storeName?: string;
   title?: string;
+  discount?: string;
   code?: string;
   redeemUrl?: string;
   storeImageUrl?: string;
@@ -21,6 +22,7 @@ export default function CouponModal({
   onClose,
   storeName = 'Udemy',
   title = 'Udemy Coupon: 85% Off',
+  discount = '85%',
   code = 'COUPON123',
   redeemUrl = 'https://udemy.com',
   storeImageUrl,
@@ -252,7 +254,7 @@ export default function CouponModal({
                 <div>
                   <h3 className="font-semibold text-gray-900 text-lg mb-2">Offer Details</h3>
                   <p className="text-sm text-gray-700 leading-relaxed">
-                    Receive 85% off your order with {storeName}'s promo code. Redeem on checkout. Offer valid for a limited time only.
+                    Receive {discount} off your order with {storeName}'s promo code. Redeem on checkout. Offer valid for a limited time only.
                   </p>
                 </div>
 

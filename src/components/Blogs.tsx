@@ -149,7 +149,7 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
         <h3 className="text-lg sm:text-xl font-semibold mb-6">Recent Blogs</h3>
         <div className="flex flex-col gap-6">
           {recent.map((blog) => (
-            <Link key={blog._id} href={`/blogs/${blog._id}`}>
+            <Link key={blog._id} href={`/blogs/${blog._id}/${blog.slug}`}>
               <div className="flex flex-col sm:flex-row items-start sm:items-center border-l-4 border-purple-600 pl-4 pb-4 hover:bg-gray-50 transition rounded-md cursor-pointer gap-2">
                 <div className="text-sm sm:text-base flex-1">
                   <p className="font-medium text-purple-700 mb-1">{blog.category || "Uncategorized"}</p>

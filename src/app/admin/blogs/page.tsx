@@ -61,12 +61,7 @@ function BlogsTable({
             <TableHead>Writer</TableHead>
             <TableHead>Category</TableHead>
             <TableHead>Date</TableHead>
-            <TableHead>Description</TableHead>
             <TableHead>Image</TableHead>
-            <TableHead>Meta Title</TableHead>
-            <TableHead>Meta Description</TableHead>
-            <TableHead>Meta Keywords</TableHead>
-            <TableHead>Focus Keywords</TableHead>
             <TableHead>Slug</TableHead>
             <TableHead className="w-[140px] text-right">Actions</TableHead>
           </TableRow>
@@ -79,26 +74,11 @@ function BlogsTable({
                 <TableCell>{blog.writer || "-"}</TableCell>
                 <TableCell>{blog.category || "-"}</TableCell>
                 <TableCell>{new Date(blog.date).toLocaleDateString()}</TableCell>
-                <TableCell className="line-clamp-2 max-w-xs">
-                  {blog.description ? (
-                    <div
-                      className="line-clamp-2 max-w-xs"
-                      dangerouslySetInnerHTML={{ __html: blog.description }}
-                    />
-                  ) : (
-                    "-"
-                  )}
-                </TableCell>
-
                 <TableCell>
                   {blog.image ? (
                     <img src={blog.image} alt="Blog" className="h-10 w-10 object-cover rounded" />
                   ) : "-"}
                 </TableCell>
-                <TableCell>{blog.metaTitle || "-"}</TableCell>
-                <TableCell className="line-clamp-2 max-w-xs">{blog.metaDescription || "-"}</TableCell>
-                <TableCell>{blog.metaKeywords || "-"}</TableCell>
-                <TableCell>{blog.focusKeywords || "-"}</TableCell>
                 <TableCell>{blog.slug || "-"}</TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-2">

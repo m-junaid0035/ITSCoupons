@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider
+  TooltipProvider,
 } from "@/components/ui/tooltip";
 import {
   DropdownMenu,
@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 import {
@@ -26,7 +26,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter
+  DialogFooter,
 } from "@/components/ui/dialog";
 
 import { getCurrentUserAction, logoutAction } from "@/actions/authActions";
@@ -44,6 +44,7 @@ export function UserNav() {
   const [user, setUser] = useState<UserData | null>(null);
   const [roles, setRoles] = useState<IRole[]>([]);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false); // ✅ controlled menu
 
   // Fetch current user
   useEffect(() => {
@@ -52,7 +53,7 @@ export function UserNav() {
       if (currentUser) {
         setUser({
           ...currentUser,
-          role: currentUser.role ?? undefined,  // convert null → undefined
+          role: currentUser.role ?? undefined, // convert null → undefined
           createdAt: currentUser.createdAt ?? null,
           updatedAt: currentUser.updatedAt ?? null,
         });
@@ -87,11 +88,14 @@ export function UserNav() {
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
         <TooltipProvider disableHoverableContent>
           <Tooltip delayDuration={100}>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="relative h-8 w-8 rounded-full">
+              <Button
+                variant="outline"
+                className="relative h-8 w-8 rounded-full"
+              >
                 <Avatar className="h-8 w-8">
                   {user?.image ? (
                     <AvatarImage src={user.image} alt={user.name} />
@@ -110,8 +114,12 @@ export function UserNav() {
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user?.name || "John Doe"}</p>
-              <p className="text-xs leading-none text-muted-foreground">{user?.email || "johndoe@example.com"}</p>
+              <p className="text-sm font-medium leading-none">
+                {user?.name || "John Doe"}
+              </p>
+              <p className="text-xs leading-none text-muted-foreground">
+                {user?.email || "johndoe@example.com"}
+              </p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -124,13 +132,25 @@ export function UserNav() {
             </DropdownMenuItem>
 
             {/* Open Account Dialog instead of link */}
-            <DropdownMenuItem onClick={() => setAccountDialogOpen(true)}>
+            <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault(); // ✅ prevent Radix default select behavior
+                setMenuOpen(false); // ✅ close menu first
+                setAccountDialogOpen(true); // ✅ then open dialog
+              }}
+            >
               <User className="w-4 h-4 mr-3 text-muted-foreground" />
               Account
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout}>
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              setMenuOpen(false);
+              handleLogout();
+            }}
+          >
             <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
             Sign out
           </DropdownMenuItem>
@@ -160,7 +180,9 @@ export function UserNav() {
 
             <div>
               <p className="text-sm font-medium">Role:</p>
-              <p className="text-xs text-muted-foreground">{getRoleName(user?.role)}</p>
+              <p className="text-xs text-muted-foreground">
+                {getRoleName(user?.role)}
+              </p>
             </div>
 
             <div>

@@ -131,6 +131,7 @@ export default function PromoCodesSection({ coupons, couponId}: PromoCodesSectio
         storeImageUrl={selectedCoupon?.store?.image}
         title={selectedCoupon?.title}
         code={selectedCoupon?.couponCode}
+        discount={selectedCoupon?.discount}
         redeemUrl={selectedCoupon?.couponUrl}
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}

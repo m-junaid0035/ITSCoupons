@@ -111,6 +111,7 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
         storeName={selectedDeal?.store?.name}
         storeImageUrl={selectedDeal?.store?.image}
         title={selectedDeal?.title}
+        discount={selectedDeal?.discount}
         code={selectedDeal?.couponCode}
         redeemUrl={selectedDeal?.couponUrl}
         open={isModalOpen}
