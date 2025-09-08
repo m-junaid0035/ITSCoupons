@@ -22,9 +22,9 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
   }, [isModalOpen]);
 
   // Auto-open modal if couponId is in URL (new tab)
- useEffect(() => {
+  useEffect(() => {
     if (couponId) {
-      const coupon = deals.find(c => c._id === couponId);
+      const coupon = deals.find((c) => c._id === couponId);
       if (coupon) {
         setSelectedDeal(coupon);
         setIsModalOpen(true);
@@ -90,7 +90,7 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
                 <h3 className="font-bold text-sm text-gray-900 line-clamp-2">
                   {deal.title}
                 </h3>
-                <p className="text-xs text-gray-700 mt-1 line-clamp-2">{deal.description}</p>
+                <DescriptionWithToggle text={deal.description} />
               </div>
 
               {deal.couponCode && (
@@ -117,6 +117,33 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
+    </div>
+  );
+};
+
+/**
+ * Renders description with "Show more / Show less" toggle.
+ * Supports HTML content safely.
+ */
+const DescriptionWithToggle: React.FC<{ text?: string }> = ({ text }) => {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!text) return null;
+
+  return (
+    <div>
+      <div
+        className={`text-xs text-gray-700 mt-1 ${expanded ? "" : "line-clamp-2"}`}
+        dangerouslySetInnerHTML={{ __html: text }}
+      />
+      {text.length > 60 && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-blue-600 text-xs mt-1 font-medium hover:underline"
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
     </div>
   );
 };
