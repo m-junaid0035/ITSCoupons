@@ -14,7 +14,8 @@ const BravoDealInfo: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
+  <div className="max-w-[1090px] mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
+
       {/* Introduction Section */}
       <section className="mb-10">
         <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold mb-4 text-blue-800">

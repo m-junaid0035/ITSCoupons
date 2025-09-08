@@ -59,6 +59,14 @@ export default function StorePage({
   // Mobile dropdown state
   const [showStoreInfo, setShowStoreInfo] = useState(false);
 
+  // Expanded coupon details
+  const [expandedCoupons, setExpandedCoupons] = useState<string[]>([]);
+  const toggleDetails = (couponId: string) => {
+    setExpandedCoupons((prev) =>
+      prev.includes(couponId) ? prev.filter((id) => id !== couponId) : [...prev, couponId]
+    );
+  };
+
   const coupons: CouponData[] = store.coupons || [];
   const filteredCoupons = coupons.filter((coupon) => {
     switch (activeTab) {
@@ -110,137 +118,133 @@ export default function StorePage({
     }
   };
 
+  // Dynamic subheading
+  const today = new Date().toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const verifiedCount = coupons.filter((c) => c.verified).length;
+
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-10 text-gray-800">
-      <div className="flex flex-col md:flex-row gap-10">
-        {/* Sidebar for desktop */}
-        <aside className="hidden md:block w-full md:w-1/4 space-y-8">
-          <div className="text-left">
-            {imageLoaded && (
-              <div className="relative mx-auto w-36 h-24 mb-4 rounded-lg overflow-hidden">
-                <Image
-                  src={store.image || "/placeholder.png"}
-                  alt={store.name || "Store Image"}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
-            <div
-              className="text-sm text-gray-600 prose max-w-none"
-              dangerouslySetInnerHTML={{ __html: store.description || "" }}
-            />
-          </div>
-
-          <div className="space-y-4">
-            <Stat icon={<FaTags />} value={coupons.length} label="Total Coupons" />
-            <Stat
-              icon={<FaHandshake />}
-              value={coupons.filter((c) => c.couponType === "coupon").length}
-              label="Promo Codes"
-            />
-            <Stat
-              icon={<FaHandshake />}
-              value={coupons.filter((c) => c.couponType === "deal").length}
-              label="Deals"
-            />
-            <Stat
-              icon={<FaClock />}
-              value={coupons.filter(isExpired).length}
-              label="Expired Coupons"
-            />
-          </div>
-        </aside>
-
-        {/* Mobile dropdown for store info */}
-        <div className="block md:hidden mb-6">
-          <button
-            onClick={() => setShowStoreInfo((prev) => !prev)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-purple-100 rounded-lg text-purple-700 font-semibold"
-          >
-            Store Info
-            {showStoreInfo ? <IoChevronUp /> : <IoChevronDown />}
-          </button>
-          {showStoreInfo && (
-            <div className="mt-4 p-4 border rounded-lg bg-white shadow space-y-6">
-              <div className="text-center">
-                {imageLoaded && (
-                  <div className="relative mx-auto w-28 h-20 mb-4 rounded-lg overflow-hidden">
-                    <Image
-                      src={store.image || "/placeholder.png"}
-                      alt={store.name || "Store Image"}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                )}
-                <div
-                  className="text-sm text-gray-600 prose max-w-none"
-                  dangerouslySetInnerHTML={{ __html: store.description || "" }}
-                />
-              </div>
-
-              <div className="space-y-4">
-                <Stat icon={<FaTags />} value={coupons.length} label="Total Coupons" />
-                <Stat
-                  icon={<FaHandshake />}
-                  value={coupons.filter((c) => c.couponType === "coupon").length}
-                  label="Promo Codes"
-                />
-                <Stat
-                  icon={<FaHandshake />}
-                  value={coupons.filter((c) => c.couponType === "deal").length}
-                  label="Deals"
-                />
-                <Stat
-                  icon={<FaClock />}
-                  value={coupons.filter(isExpired).length}
-                  label="Expired Coupons"
-                />
-              </div>
+  <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 text-gray-800">
+    <div className="flex flex-col md:flex-row gap-10">
+      {/* Sidebar for desktop */}
+      <aside className="hidden md:block w-full md:w-1/4 space-y-8">
+        <div className="text-center">
+          {imageLoaded && (
+            <div className="relative mx-auto w-36 h-36 mb-6 rounded-full overflow-hidden border-4 border-purple-200 shadow-lg">
+              <Image
+                src={store.image || "/placeholder.png"}
+                alt={store.name || "Store Image"}
+                fill
+                className="object-cover"
+              />
             </div>
           )}
+          <div
+            className="text-sm text-gray-600 prose max-w-none text-left"
+            dangerouslySetInnerHTML={{ __html: store.description || "" }}
+          />
         </div>
 
-        {/* Main Content */}
-        <div className="w-full md:w-3/4">
-          {/* Tabs */}
-          <div className="flex gap-8 border-b text-sm font-medium mb-6">
-            {(["all", "promo", "deal"] as const).map((tab) => (
-              <button
-                key={tab}
-                className={`pb-2 ${
-                  activeTab === tab
-                    ? "border-b-2 border-purple-700 text-purple-700"
-                    : "hover:text-purple-600"
-                }`}
-                onClick={() => setActiveTab(tab)}
+        <div className="space-y-4">
+          <Stat icon={<FaTags />} value={coupons.length} label="Total Coupons" />
+          <Stat
+            icon={<FaHandshake />}
+            value={coupons.filter((c) => c.couponType === "coupon").length}
+            label="Promo Codes"
+          />
+          <Stat
+            icon={<FaHandshake />}
+            value={coupons.filter((c) => c.couponType === "deal").length}
+            label="Deals"
+          />
+          <Stat
+            icon={<FaClock />}
+            value={coupons.filter(isExpired).length}
+            label="Expired Coupons"
+          />
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="w-full md:w-3/4">
+        {/* 🔹 Mobile: Logo + Heading in one row */}
+        {/* 🔹 Mobile: Logo + Heading in one row */}
+{/* 🔹 Mobile: Logo + Heading in one row */}
+<div className="block md:hidden mb-6">
+  <div className="flex items-center gap-4">
+    {imageLoaded && (
+      <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-purple-200 shadow shrink-0">
+        <Image
+          src={store.image || "/placeholder.png"}
+          alt={store.name || "Store Image"}
+          className="object-cover w-full h-full rounded-full"
+          width={80}
+          height={80}
+        />
+      </div>
+    )}
+    <h1 className="text-xl font-extrabold text-gray-900">
+      {store.name} Coupon & Discount Code
+    </h1>
+  </div>
+  <p className="mt-3 text-gray-600 font-medium text-sm">
+    {verifiedCount} VERIFIED OFFERS ON {today}
+  </p>
+</div>
+
+
+        {/* 🔹 Desktop: Heading Section */}
+        <div className="hidden md:block mb-10 text-left">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
+            {store.name} Coupon & Discount Code
+          </h1>
+          <p className="text-gray-600 font-medium">
+            {verifiedCount} VERIFIED OFFERS ON {today}
+          </p>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-8 border-b text-sm font-medium mb-6">
+          {(["all", "promo", "deal"] as const).map((tab) => (
+            <button
+              key={tab}
+              className={`pb-2 ${
+                activeTab === tab
+                  ? "border-b-2 border-purple-700 text-purple-700"
+                  : "hover:text-purple-600"
+              }`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab === "all" && `All Coupons (${coupons.length})`}
+              {tab === "promo" &&
+                `Promo Codes (${coupons.filter((c) => c.couponType === "coupon").length})`}
+              {tab === "deal" &&
+                `Deals (${coupons.filter((c) => c.couponType === "deal").length})`}
+            </button>
+          ))}
+        </div>
+
+        {/* Coupons List */}
+        <div className="space-y-6">
+          {paginatedCoupons.length === 0 && (
+            <p className="text-center text-gray-500">No coupons found.</p>
+          )}
+
+          {paginatedCoupons.map((coupon) => {
+            const percent = extractPercent(coupon.discount);
+            const userSaved = (percent / 100) * 100;
+            const avgSavings = (percent / 100) * 50;
+
+            return (
+              <div
+                key={coupon._id}
+                className="flex flex-col border border-gray-200 rounded-xl bg-white shadow-md overflow-hidden"
               >
-                {tab === "all" && `All Coupons (${coupons.length})`}
-                {tab === "promo" &&
-                  `Promo Codes (${coupons.filter((c) => c.couponType === "coupon").length})`}
-                {tab === "deal" &&
-                  `Deals (${coupons.filter((c) => c.couponType === "deal").length})`}
-              </button>
-            ))}
-          </div>
-
-          {/* Coupons List */}
-          <div className="space-y-6">
-            {paginatedCoupons.length === 0 && (
-              <p className="text-center text-gray-500">No coupons found.</p>
-            )}
-
-            {paginatedCoupons.map((coupon) => {
-              const percent = extractPercent(coupon.discount);
-              const userSaved = (percent / 100) * 100;
-              const avgSavings = (percent / 100) * 50;
-
-              return (
-                <div
-                  key={coupon._id}
-                  className="flex items-stretch border border-gray-200 rounded-xl bg-white shadow-md overflow-hidden"
-                >
+                <div className="flex items-stretch">
                   {/* Left Discount Section */}
                   <div className="flex flex-col items-center justify-center min-w-[90px] md:min-w-[120px] p-3 md:p-6 text-purple-700 font-bold">
                     <span className="text-[10px] md:text-sm uppercase">Up To</span>
@@ -280,50 +284,89 @@ export default function StorePage({
                       Show Code
                       <span className="absolute top-0 right-0 w-4 h-4 md:w-5 md:h-5 bg-gradient-to-br from-white to-purple-700 rounded-tr-md"></span>
                     </button>
-                    <button className="text-xs md:text-sm text-gray-500 mt-2 md:mt-3 hover:underline">
-                      See Details +
+                    <button
+                      onClick={() => toggleDetails(coupon._id)}
+                      className="text-xs md:text-sm text-purple-700 mt-2 md:mt-3 font-medium hover:underline"
+                    >
+                      {expandedCoupons.includes(coupon._id) ? "Hide Details -" : "See Details +"}
                     </button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-6">
-              <button
-                onClick={handlePrev}
-                disabled={currentPage === 1}
-                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-              >
-                Prev
-              </button>
-              <span>
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={handleNext}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
-          )}
+                {/* Expanded Description (HTML) */}
+                {expandedCoupons.includes(coupon._id) && coupon.description && (
+                  <div
+                    className="px-4 md:px-6 pb-4 text-sm text-gray-600 border-t prose max-w-none"
+                    dangerouslySetInnerHTML={{ __html: coupon.description }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-6">
+            <button
+              onClick={handlePrev}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Prev
+            </button>
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={handleNext}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
+
+        {/* 🔹 Mobile: Store info moved below coupons */}
+        <div className="block md:hidden mt-10 space-y-6 text-center">
+          <div
+            className="text-sm text-gray-600 prose max-w-none"
+            dangerouslySetInnerHTML={{ __html: store.description || "" }}
+          />
+          <div className="space-y-4">
+            <Stat icon={<FaTags />} value={coupons.length} label="Total Coupons" />
+            <Stat
+              icon={<FaHandshake />}
+              value={coupons.filter((c) => c.couponType === "coupon").length}
+              label="Promo Codes"
+            />
+            <Stat
+              icon={<FaHandshake />}
+              value={coupons.filter((c) => c.couponType === "deal").length}
+              label="Deals"
+            />
+            <Stat
+              icon={<FaClock />}
+              value={coupons.filter(isExpired).length}
+              label="Expired Coupons"
+            />
+          </div>
         </div>
       </div>
-
-      {/* Coupon Modal */}
-      <CouponModal
-        storeName={store.name}
-        title={selectedCoupon?.title}
-        discount={selectedCoupon?.discount}
-        code={selectedCoupon?.couponCode}
-        redeemUrl={selectedCoupon?.couponUrl}
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
     </div>
-  );
+
+    {/* Coupon Modal */}
+    <CouponModal
+      storeName={store.name}
+      title={selectedCoupon?.title}
+      discount={selectedCoupon?.discount}
+      code={selectedCoupon?.couponCode}
+      redeemUrl={selectedCoupon?.couponUrl}
+      open={isModalOpen}
+      onClose={() => setIsModalOpen(false)}
+    />
+  </div>
+);
+
 }
