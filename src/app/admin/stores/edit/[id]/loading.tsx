@@ -2,7 +2,7 @@
 
 export default function LoadingSkeleton() {
   return (
-    <div className="w-full min-h-screen shadow-lg bg-white dark:bg-gray-800 p-6 animate-pulse rounded-md space-y-6">
+    <div className="w-full shadow-lg bg-white dark:bg-gray-800 p-6 animate-pulse rounded-md space-y-6">
       {/* Title */}
       <div className="h-8 w-48 bg-gray-300 dark:bg-gray-700 rounded"></div>
 
