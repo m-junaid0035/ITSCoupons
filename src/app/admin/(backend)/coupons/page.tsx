@@ -9,9 +9,9 @@ import { fetchAllStoresAction } from "@/actions/storeActions";
 export default async function CouponsPage({
   searchParams,
 }: {
-  searchParams?: { storeId?: string };
+  searchParams: Promise<{ storeId?: string }>;
 }) {
-  const storeId = searchParams?.storeId || "";
+  const { storeId } = await searchParams;
 
   // Fetch data on server
   let couponsResult;

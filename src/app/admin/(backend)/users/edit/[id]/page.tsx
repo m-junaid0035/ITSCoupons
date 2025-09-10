@@ -3,9 +3,10 @@ import { fetchUserByIdAction } from "@/actions/userActions";
 import { fetchAllRolesAction } from "@/actions/roleActions";
 import EditUserForm from "./EditUserForm";
 
-export default async function EditUserPage({ params }: { params: { id: string } }) {
+export default async function EditUserPage({ params }: { params: Promise<{ id: "" }> }) {
+  const { id = "" } = await params;
   const [userRes, rolesRes] = await Promise.all([
-    fetchUserByIdAction(params.id),
+    fetchUserByIdAction(id),
     fetchAllRolesAction(),
   ]);
 

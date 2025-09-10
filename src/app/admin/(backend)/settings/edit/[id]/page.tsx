@@ -3,13 +3,9 @@ import { fetchSettingByIdAction } from "@/actions/settingActions";
 import { fetchLatestSEOAction } from "@/actions/seoActions";
 import EditSettingFormClient from "./EditSettingFormClient";
 
-interface Props {
-  params: { id: string };
-}
 
-export default async function EditSettingPage({ params }: Props) {
-  const { id } = params;
-
+export default async function EditSettingPage({ params }: { params: Promise<{ id: "" }>}) {
+  const { id = "" } = await params;
   // ✅ fetch in parallel
   const [settingResult, seoResult] = await Promise.allSettled([
     fetchSettingByIdAction(id),

@@ -2,12 +2,9 @@
 import { fetchStaticPageByIdAction } from "@/actions/staticPagesActions";
 import EditStaticPageFormClient from "./EditStaticPageFormClient";
 
-interface Props {
-  params: { id: string };
-}
 
-export default async function EditStaticPagePage({ params }: Props) {
-  const { id } = params;
+export default async function EditStaticPagePage({ params }: { params: Promise<{ id: "" }>}) {
+  const { id = "" } = await params;
 
   const res = await fetchStaticPageByIdAction(id);
   const page = res?.data || null;

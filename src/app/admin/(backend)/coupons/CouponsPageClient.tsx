@@ -154,7 +154,7 @@ export default function CouponsPageClient({
 }: {
   initialCoupons: ICoupon[];
   initialStores: { _id: string; name: string }[];
-  storeId: string;
+  storeId: string | undefined;
 }) {
   const router = useRouter();
   const [coupons, setCoupons] = useState<ICoupon[]>(initialCoupons);

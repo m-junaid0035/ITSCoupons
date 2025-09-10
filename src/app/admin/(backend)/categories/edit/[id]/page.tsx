@@ -4,9 +4,10 @@ import EditCategoryForm from "./EditCategoryForm";
 export default async function EditCategoryPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: "" }>
 }) {
-  const res = await fetchCategoryByIdAction(params.id);
+  const { id = "" } = await params;
+  const res = await fetchCategoryByIdAction(id);
 
   if (!res?.data) {
     return (
