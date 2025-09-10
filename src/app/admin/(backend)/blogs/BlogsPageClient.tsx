@@ -56,22 +56,12 @@ function BlogsTable({
   onView,
   onEdit,
   onDelete,
-  loading,
 }: {
   blogs: IBlog[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  loading: boolean;
 }) {
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-8 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        Loading blogs...
-      </div>
-    );
-  }
 
   return (
     <div className="overflow-x-auto">
@@ -164,7 +154,6 @@ function BlogsTable({
 export default function BlogsPageClient({ initialBlogs }: { initialBlogs: IBlog[] }) {
   const router = useRouter();
   const [blogs, setBlogs] = useState<IBlog[]>(initialBlogs);
-  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -231,9 +220,6 @@ export default function BlogsPageClient({ initialBlogs }: { initialBlogs: IBlog[
         </CardHeader>
 
         <CardContent>
-          <Suspense
-            fallback={<p className="p-4 text-muted-foreground">Loading blogs...</p>}
-          >
             <BlogsTable
               blogs={paginatedBlogs}
               onView={(id) => {
@@ -245,10 +231,7 @@ export default function BlogsPageClient({ initialBlogs }: { initialBlogs: IBlog[
               }}
               onEdit={(id) => router.push(`/admin/blogs/edit/${id}`)}
               onDelete={(id) => setConfirmDeleteId(id)}
-              loading={loading}
             />
-          </Suspense>
-
           {totalPages > 1 && (
             <div className="mt-4 flex justify-center">
               <Pagination>

@@ -22,20 +22,10 @@ export interface ISubscriber {
 function SubscribersTable({
   subscribers,
   onDelete,
-  loading,
 }: {
   subscribers: ISubscriber[];
   onDelete: (id: string) => void;
-  loading: boolean;
 }) {
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-8 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        Loading subscribers...
-      </div>
-    );
-  }
 
   return (
     <div className="overflow-x-auto">
@@ -143,20 +133,10 @@ export default function SubscribersPageClient({
       </CardHeader>
 
       <CardContent>
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center py-8 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              Loading subscribers...
-            </div>
-          }
-        >
           <SubscribersTable
             subscribers={paginatedSubs}
             onDelete={(id) => setConfirmDeleteId(id)}
-            loading={false}
           />
-        </Suspense>
       </CardContent>
 
       {totalPages > 1 && (

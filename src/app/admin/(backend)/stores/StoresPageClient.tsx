@@ -43,7 +43,6 @@ function StoresTable({
     onEdit,
     onDelete,
     onCouponsClick,
-    loading,
     onInlineUpdate,
 }: {
     stores: IStore[];
@@ -52,22 +51,12 @@ function StoresTable({
     onEdit: (id: string) => void;
     onDelete: (id: string) => void;
     onCouponsClick: (id: string) => void;
-    loading: boolean;
     onInlineUpdate: (id: string, field: string, value: string) => void;
 }) {
     const [editingNetworkId, setEditingNetworkId] = useState<string | null>(null);
     const [editingNameId, setEditingNameId] = useState<string | null>(null);
     const [tempName, setTempName] = useState("");
     const [networkSearch, setNetworkSearch] = useState(""); // 🔍 added state
-
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center py-8 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                Loading stores...
-            </div>
-        );
-    }
 
     return (
         <div className="overflow-x-auto">
@@ -274,7 +263,6 @@ export default function StoresPageClient({
     const router = useRouter();
     const [stores, setStores] = useState<IStore[]>(initialStores);
     const [networks, setNetworks] = useState<INetwork[]>(initialNetworks);
-    const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -376,14 +364,6 @@ export default function StoresPageClient({
             </CardHeader>
 
             <CardContent>
-                <Suspense
-                    fallback={
-                        <div className="flex justify-center items-center py-8 text-muted-foreground">
-                            <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                            Loading stores...
-                        </div>
-                    }
-                >
                     <StoresTable
                         stores={paginatedStores}
                         networks={networks}
@@ -391,11 +371,9 @@ export default function StoresPageClient({
                         onEdit={(id) => router.push(`/admin/stores/edit/${id}`)}
                         onDelete={(id) => setConfirmDeleteId(id)}
                         onCouponsClick={(id) => router.push(`/admin/coupons?storeId=${id}`)}
-                        loading={loading}
                         onInlineUpdate={handleInlineUpdate}
                     />
 
-                </Suspense>
 
                 {totalPages > 1 && (
                     <div className="mt-4 flex justify-center">

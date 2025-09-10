@@ -57,22 +57,12 @@ function StaticPagesTable({
   onView,
   onEdit,
   onDelete,
-  loading,
 }: {
   pages: IStaticPage[];
   onView: (page: IStaticPage) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  loading: boolean;
 }) {
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-8 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        Loading pages...
-      </div>
-    );
-  }
 
   if (!pages.length) {
     return (
@@ -219,22 +209,12 @@ export default function StaticPagesPageClient({
       </CardHeader>
 
       <CardContent>
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center py-8 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              Loading pages...
-            </div>
-          }
-        >
           <StaticPagesTable
             pages={paginatedPages}
             onView={(page) => setViewPage(page)}
             onEdit={(id) => router.push(`/admin/staticpages/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
-            loading={false}
           />
-        </Suspense>
 
         {totalPages > 1 && (
           <div className="mt-4 flex justify-center">

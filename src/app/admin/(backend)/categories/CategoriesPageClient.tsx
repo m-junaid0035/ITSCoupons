@@ -1,15 +1,14 @@
 "use client";
 
-import {
-  Suspense,
-  useState,
-  useOptimistic,
-  startTransition,
-} from "react";
+import { Suspense, useState, useOptimistic, startTransition } from "react";
 import { useRouter } from "next/navigation";
-import { deleteSettingAction } from "@/actions/settingActions";
-
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { deleteCategoryAction } from "@/actions/categoryActions";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,13 +21,6 @@ import {
 } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -36,70 +28,71 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import CategoryModal from "@/components/views/CategoryModal";
 
-import SettingModal from "@/components/views/SettingModal";
-
-export interface ISetting {
+export interface ICategory {
   _id: string;
-  siteName: string;
-  contactEmail?: string;
-  contactPhone?: string;
-  metaTitle?: string;
-  metaKeywords?: string[];
+  name: string;
+  slug: string;
+  description: string | null;
+  isPopular: boolean;
+  isTrending: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
-// ====================== Table ======================
-function SettingsTable({
-  settings,
+function CategoriesTable({
+  categories,
   onView,
   onEdit,
   onDelete,
-  loading,
 }: {
-  settings: ISetting[];
-  onView: (setting: ISetting) => void;
+  categories: ICategory[];
+  onView: (category: ICategory) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  loading: boolean;
 }) {
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-8 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        Loading settings...
-      </div>
-    );
-  }
 
   return (
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow className="border-b border-muted">
-            <TableHead>Site Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Phone</TableHead>
-            <TableHead>Meta Title</TableHead>
-            <TableHead>Keywords</TableHead>
-            <TableHead className="w-[140px] text-right">Actions</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Slug</TableHead>
+            <TableHead>Popular</TableHead>
+            <TableHead>Trending</TableHead>
+            <TableHead className="w-[160px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {settings.length > 0 ? (
-            settings.map((setting) => (
+          {categories.length > 0 ? (
+            categories.map((category) => (
               <TableRow
-                key={setting._id}
+                key={category._id}
                 className="hover:bg-muted/40 transition-colors"
               >
-                <TableCell className="font-medium">{setting.siteName}</TableCell>
-                <TableCell>{setting.contactEmail || "-"}</TableCell>
-                <TableCell>{setting.contactPhone || "-"}</TableCell>
-                <TableCell>{setting.metaTitle || "-"}</TableCell>
+                <TableCell className="font-medium">{category.name}</TableCell>
+                <TableCell>{category.slug}</TableCell>
                 <TableCell>
-                  {setting.metaKeywords?.length
-                    ? setting.metaKeywords.join(", ")
-                    : "-"}
+                  {category.isPopular ? (
+                    <span className="text-green-600 font-semibold">Yes</span>
+                  ) : (
+                    <span className="text-gray-400">No</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {category.isTrending ? (
+                    <span className="text-green-600 font-semibold">Yes</span>
+                  ) : (
+                    <span className="text-gray-400">No</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-1.5">
@@ -107,7 +100,7 @@ function SettingsTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onView(setting)}
+                      onClick={() => onView(category)}
                       title="View"
                     >
                       <Eye className="h-4 w-4" />
@@ -116,7 +109,7 @@ function SettingsTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onEdit(setting._id)}
+                      onClick={() => onEdit(category._id)}
                       title="Edit"
                     >
                       <Pencil className="h-4 w-4" />
@@ -125,7 +118,7 @@ function SettingsTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => onDelete(setting._id)}
+                      onClick={() => onDelete(category._id)}
                       title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -137,10 +130,10 @@ function SettingsTable({
           ) : (
             <TableRow>
               <TableCell
-                colSpan={6}
+                colSpan={5}
                 className="text-center text-muted-foreground py-6"
               >
-                No settings found.
+                No categories found.
               </TableCell>
             </TableRow>
           )}
@@ -150,51 +143,51 @@ function SettingsTable({
   );
 }
 
-// ====================== Client Page ======================
-export default function SettingsPageClient({
-  initialSettings,
+export default function CategoriesPageClient({
+  initialCategories,
 }: {
-  initialSettings: ISetting[];
+  initialCategories: ICategory[];
 }) {
   const router = useRouter();
-  const [settings, setSettings] = useState<ISetting[]>(initialSettings);
+  const [categories, setCategories] = useState<ICategory[]>(initialCategories);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [viewSetting, setViewSetting] = useState<ISetting | null>(null);
+  const [viewCategory, setViewCategory] = useState<ICategory | null>(null);
   const pageSize = 8;
 
-  const [optimisticSettings, deleteOptimistic] = useOptimistic(
-    settings,
-    (state, id: string) => state.filter((s) => s._id !== id)
+  const [optimisticCategories, deleteOptimistic] = useOptimistic(
+    categories,
+    (state, id: string) => state.filter((cat) => cat._id !== id)
   );
 
   const handleDelete = async (id: string) => {
-    startTransition(() => deleteOptimistic(id));
+    startTransition(() => {
+      deleteOptimistic(id);
+    });
 
-    const result = await deleteSettingAction(id);
+    const result = await deleteCategoryAction(id);
     if (result?.error) {
       toast({
         title: "Error",
-        description: result.error.message || "Failed to delete setting",
+        description: result.error.message || "Failed to delete category",
         variant: "destructive",
       });
-      setSettings(initialSettings); // rollback
+      setCategories(initialCategories); // rollback
     } else {
-      setSettings((prev) => prev.filter((s) => s._id !== id));
+      setCategories((prev) => prev.filter((cat) => cat._id !== id));
       toast({
         title: "Deleted",
-        description: "Setting deleted successfully.",
+        description: "Category deleted successfully.",
       });
     }
   };
 
-  // Filter and paginate
-  const filteredSettings = optimisticSettings.filter((s) =>
-    s.siteName.toLowerCase().includes(search.toLowerCase())
+  const filteredCategories = optimisticCategories.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase())
   );
-  const totalPages = Math.ceil(filteredSettings.length / pageSize);
-  const paginatedSettings = filteredSettings.slice(
+  const totalPages = Math.ceil(filteredCategories.length / pageSize);
+  const paginatedCategories = filteredCategories.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
@@ -202,10 +195,10 @@ export default function SettingsPageClient({
   return (
     <Card className="w-full border-none shadow-none">
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <CardTitle className="text-lg font-semibold">Settings</CardTitle>
+        <CardTitle className="text-lg font-semibold">Categories</CardTitle>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <Input
-            placeholder="Search settings..."
+            placeholder="Search categories..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -213,29 +206,19 @@ export default function SettingsPageClient({
             }}
             className="sm:w-64"
           />
-          <Button onClick={() => router.push("/admin/settings/new")}>
-            Create Setting
+          <Button onClick={() => router.push("/admin/categories/new")}>
+            Create Category
           </Button>
         </div>
       </CardHeader>
 
       <CardContent>
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center py-8 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              Loading settings...
-            </div>
-          }
-        >
-          <SettingsTable
-            settings={paginatedSettings}
-            onView={(s) => setViewSetting(s)}
-            onEdit={(id) => router.push(`/admin/settings/edit/${id}`)}
+          <CategoriesTable
+            categories={paginatedCategories}
+            onView={(category) => setViewCategory(category)}
+            onEdit={(id) => router.push(`/admin/categories/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
-            loading={false}
           />
-        </Suspense>
 
         {totalPages > 1 && (
           <div className="mt-4 flex justify-center">
@@ -243,7 +226,9 @@ export default function SettingsPageClient({
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    onClick={() =>
+                      setCurrentPage((p) => Math.max(1, p - 1))
+                    }
                   />
                 </PaginationItem>
                 {Array.from({ length: totalPages }, (_, i) => (
@@ -275,12 +260,18 @@ export default function SettingsPageClient({
         onOpenChange={() => setConfirmDeleteId(null)}
       >
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-          </DialogHeader>
-          <p>This action cannot be undone. Are you sure?</p>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
+          <DialogTitle className="text-lg font-semibold">
+            Confirm Deletion
+          </DialogTitle>
+          <p className="py-2">
+            Are you sure you want to delete this category? This action cannot be
+            undone.
+          </p>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmDeleteId(null)}
+            >
               Cancel
             </Button>
             <Button
@@ -292,16 +283,16 @@ export default function SettingsPageClient({
             >
               Delete
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* Setting Modal */}
-      {viewSetting && (
-        <SettingModal
-          setting={viewSetting}
-          isOpen={!!viewSetting}
-          onClose={() => setViewSetting(null)}
+      {/* Category View Modal */}
+      {viewCategory && (
+        <CategoryModal
+          category={viewCategory}
+          isOpen={!!viewCategory}
+          onClose={() => setViewCategory(null)}
         />
       )}
     </Card>

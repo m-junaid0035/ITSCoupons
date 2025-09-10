@@ -58,22 +58,12 @@ function RolesTable({
   onView,
   onEdit,
   onDelete,
-  loading,
 }: {
   roles: IRole[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  loading: boolean;
 }) {
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-8 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        Loading roles...
-      </div>
-    );
-  }
 
   return (
     <div className="overflow-x-auto">
@@ -220,14 +210,6 @@ export default function RolesPageClient({
       </CardHeader>
 
       <CardContent>
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center py-8 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              Loading roles...
-            </div>
-          }
-        >
           <RolesTable
             roles={paginatedRoles}
             onView={(roleId) => {
@@ -239,9 +221,7 @@ export default function RolesPageClient({
             }}
             onEdit={(id) => router.push(`/admin/roles/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
-            loading={false}
           />
-        </Suspense>
       </CardContent>
 
       {totalPages > 1 && (

@@ -2,14 +2,13 @@
 
 import {
   Suspense,
+  useEffect,
   useState,
   useOptimistic,
   startTransition,
 } from "react";
 import { useRouter } from "next/navigation";
-import {
-  deleteCouponAction,
-} from "@/actions/couponActions";
+import { deleteEventAction } from "@/actions/eventActions";
 
 import {
   Card,
@@ -42,79 +41,64 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import Image from "next/image";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
-import CouponModal, { ICoupon } from "@/components/views/CouponModal";
+import EventModal, { IEvent } from "@/components/views/EventModal";
 
-function CouponsTable({
-  coupons,
+function EventsTable({
+  events,
   onView,
   onEdit,
   onDelete,
-  loading,
 }: {
-  coupons: ICoupon[];
-  onView: (coupon: ICoupon) => void;
+  events: IEvent[];
+  onView: (event: IEvent) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  loading: boolean;
 }) {
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-8 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        Loading coupons...
-      </div>
-    );
-  }
-
   return (
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
-          <TableRow className="border-b border-muted">
+          <TableRow>
             <TableHead>Title</TableHead>
-            <TableHead>Code</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Expires</TableHead>
-            <TableHead>Store</TableHead>
-            <TableHead>Top One</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Image</TableHead>
+            <TableHead>Slug</TableHead>
             <TableHead className="w-[140px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {coupons.length > 0 ? (
-            coupons.map((coupon) => (
-              <TableRow
-                key={coupon._id}
-                className="hover:bg-muted/40 transition-colors"
-              >
-                <TableCell className="font-medium">{coupon.title}</TableCell>
-                <TableCell>{coupon.couponCode}</TableCell>
-                <TableCell className="capitalize">{coupon.couponType}</TableCell>
-                <TableCell className="capitalize">{coupon.status}</TableCell>
+          {events.length > 0 ? (
+            events.map((event) => (
+              <TableRow key={event._id} className="hover:bg-muted/40">
+                <TableCell className="font-medium">{event.title}</TableCell>
                 <TableCell>
-                  {coupon?.expirationDate && !isNaN(Date.parse(coupon.expirationDate))
-                    ? new Date(coupon.expirationDate).toLocaleDateString()
-                    : "N/A"}
+                  {new Date(event.date).toLocaleDateString()}
                 </TableCell>
-                <TableCell>{coupon.storeName || "-"}</TableCell>
                 <TableCell>
-                  {coupon.isTopOne ? (
-                    <span className="text-green-600 font-semibold">Yes</span>
+                  {event.image ? (
+                    <Image
+                      src={event.image}
+                      alt={event.title}
+                      width={50}
+                      height={50}
+                      className="rounded"
+                    />
                   ) : (
-                    <span className="text-gray-400">No</span>
+                    "-"
                   )}
                 </TableCell>
+                <TableCell>{event.slug || "-"}</TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-2">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onView(coupon)}
+                      onClick={() => onView(event)}
                       title="View"
                     >
                       <Eye className="h-4 w-4" />
@@ -123,7 +107,7 @@ function CouponsTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onEdit(coupon._id)}
+                      onClick={() => onEdit(event._id)}
                       title="Edit"
                     >
                       <Pencil className="h-4 w-4" />
@@ -132,7 +116,7 @@ function CouponsTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => onDelete(coupon._id)}
+                      onClick={() => onDelete(event._id)}
                       title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -144,10 +128,10 @@ function CouponsTable({
           ) : (
             <TableRow>
               <TableCell
-                colSpan={8}
+                colSpan={5}
                 className="text-center text-muted-foreground py-6"
               >
-                No coupons found.
+                No events found.
               </TableCell>
             </TableRow>
           )}
@@ -157,62 +141,53 @@ function CouponsTable({
   );
 }
 
-export default function CouponsPageClient({
-  initialCoupons,
-  initialStores,
-  storeId,
+export default function EventsPage({
+  initialEvents,
 }: {
-  initialCoupons: ICoupon[];
-  initialStores: { _id: string; name: string }[];
-  storeId: string;
+  initialEvents: IEvent[];
 }) {
   const router = useRouter();
-  const [coupons, setCoupons] = useState<ICoupon[]>(initialCoupons);
+  const [events, setEvents] = useState<IEvent[]>(initialEvents);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [viewCoupon, setViewCoupon] = useState<ICoupon | null>(null);
+  const [viewEvent, setViewEvent] = useState<IEvent | null>(null);
 
   const pageSize = 8;
 
-  const [optimisticCoupons, deleteOptimistic] = useOptimistic(
-    coupons,
-    (state, id: string) => state.filter((c) => c._id !== id)
+  const [optimisticEvents, deleteOptimistic] = useOptimistic(
+    events,
+    (state, id: string) => state.filter((e) => e._id !== id)
   );
-
-  const storesMap: Record<string, string> = {};
-  initialStores.forEach((store) => {
-    storesMap[store._id] = store.name;
-  });
 
   const handleDelete = async (id: string) => {
     startTransition(() => {
       deleteOptimistic(id);
     });
-    const result = await deleteCouponAction(id);
+
+    const result = await deleteEventAction(id);
     if (result?.error) {
       toast({
         title: "Error",
-        description: result.error.message || "Failed to delete coupon",
+        description: result.error.message || "Failed to delete event",
         variant: "destructive",
       });
-      setCoupons(initialCoupons); // rollback
+      setEvents(initialEvents); // rollback
     } else {
-      setCoupons((prev) => prev.filter((coupon) => coupon._id !== id));
+      setEvents((prev) => prev.filter((event) => event._id !== id));
       toast({
         title: "Deleted",
-        description: "Coupon deleted successfully.",
+        description: "Event deleted successfully.",
       });
     }
   };
 
-  // Filter and paginate
-  const filteredCoupons = optimisticCoupons.filter((c) =>
-    c.title.toLowerCase().includes(search.toLowerCase())
+  // Filter + paginate
+  const filteredEvents = optimisticEvents.filter((e) =>
+    e.title.toLowerCase().includes(search.toLowerCase())
   );
-  const totalPages = Math.ceil(filteredCoupons.length / pageSize);
-  const paginatedCoupons = filteredCoupons.slice(
+  const totalPages = Math.ceil(filteredEvents.length / pageSize);
+  const paginatedEvents = filteredEvents.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
@@ -220,10 +195,10 @@ export default function CouponsPageClient({
   return (
     <Card className="w-full border-none shadow-none">
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <CardTitle className="text-lg font-semibold">Coupons</CardTitle>
+        <CardTitle className="text-lg font-semibold">Events</CardTitle>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <Input
-            placeholder="Search coupons..."
+            placeholder="Search events..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -231,42 +206,26 @@ export default function CouponsPageClient({
             }}
             className="sm:w-64"
           />
-          <Button onClick={() => router.push("/admin/coupons/new")}>
-            Create Coupon
+          <Button onClick={() => router.push("/admin/events/new")}>
+            Create Event
           </Button>
         </div>
       </CardHeader>
 
       <CardContent>
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center py-8 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              Loading coupons...
-            </div>
-          }
-        >
-          <CouponsTable
-            coupons={paginatedCoupons.map((c) => ({
-              ...c,
-              storeName: storesMap[c.storeId] || "-",
-            }))}
-            onView={(coupon) => setViewCoupon(coupon)}
-            onEdit={(id) => router.push(`/admin/coupons/edit/${id}`)}
+          <EventsTable
+            events={paginatedEvents}
+            onView={(event) => setViewEvent(event)}
+            onEdit={(id) => router.push(`/admin/events/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
-            loading={loading}
           />
-        </Suspense>
-
         {totalPages > 1 && (
           <div className="mt-4 flex justify-center">
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() =>
-                      setCurrentPage((p) => Math.max(1, p - 1))
-                    }
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   />
                 </PaginationItem>
                 {Array.from({ length: totalPages }, (_, i) => (
@@ -292,7 +251,7 @@ export default function CouponsPageClient({
         )}
       </CardContent>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation */}
       <Dialog
         open={!!confirmDeleteId}
         onOpenChange={() => setConfirmDeleteId(null)}
@@ -302,7 +261,7 @@ export default function CouponsPageClient({
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
           <p>
-            Are you sure you want to delete this coupon? This action cannot be
+            Are you sure you want to delete this event? This action cannot be
             undone.
           </p>
           <DialogFooter>
@@ -322,12 +281,12 @@ export default function CouponsPageClient({
         </DialogContent>
       </Dialog>
 
-      {/* Coupon Modal */}
-      {viewCoupon && (
-        <CouponModal
-          coupon={viewCoupon}
-          isOpen={!!viewCoupon}
-          onClose={() => setViewCoupon(null)}
+      {/* Event Modal */}
+      {viewEvent && (
+        <EventModal
+          event={viewEvent}
+          isOpen={!!viewEvent}
+          onClose={() => setViewEvent(null)}
         />
       )}
     </Card>

@@ -116,14 +116,6 @@ export default function UsersPageClient({
       </CardHeader>
 
       <CardContent>
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center py-8 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              Loading users...
-            </div>
-          }
-        >
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -218,8 +210,6 @@ export default function UsersPageClient({
               </TableBody>
             </Table>
           </div>
-        </Suspense>
-
         {totalPages > 1 && (
           <div className="mt-4 flex justify-center">
             <Pagination>

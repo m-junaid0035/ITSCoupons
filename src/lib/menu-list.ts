@@ -13,6 +13,7 @@ import {
   Tag,
   Link,
   FileText,
+  Home,
 } from "lucide-react";
 
 type Submenu = {
@@ -91,8 +92,13 @@ export function getMenuList(pathname: string): Group[] {
       groupLabel: "Static Pages",
       menus: [
         {
+          href: "/admin/home_description",
+          label: "Home Page",
+          icon: Home,
+        },
+        {
           href: "/admin/staticpages",
-          label: "Pages",
+          label: "Other Pages",
           icon: FileText,
         },
       ]

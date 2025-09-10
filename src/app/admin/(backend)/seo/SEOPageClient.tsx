@@ -55,23 +55,12 @@ function SEOTable({
   onView,
   onEdit,
   onDelete,
-  loading,
 }: {
   seoList: ISEO[];
   onView: (seo: ISEO) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  loading: boolean;
 }) {
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-8 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        Loading SEO entries...
-      </div>
-    );
-  }
-
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -212,22 +201,12 @@ export default function SEOPageClient({
       </CardHeader>
 
       <CardContent>
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center py-8 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              Loading SEO entries...
-            </div>
-          }
-        >
           <SEOTable
             seoList={paginatedSEO}
             onView={(seo) => setViewSEO(seo)}
             onEdit={(id) => router.push(`/admin/seo/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
-            loading={false}
           />
-        </Suspense>
       </CardContent>
 
       {totalPages > 1 && (

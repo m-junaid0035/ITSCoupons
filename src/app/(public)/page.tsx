@@ -7,7 +7,7 @@ import StoresComponent from "@/components/StoresComponent";
 import BravoDealInfo from "@/components/BravoDealInfo";
 import BlogSection from "@/components/BlogSection";
 import Newsletter from "@/components/Newsletter";
-
+import { fetchLatestHomeDescriptionAction } from "@/actions/homeDesActions"; // your action
 import {
   fetchAllActiveStoresAction,
   fetchPopularStoresAction,
@@ -31,6 +31,7 @@ export default async function Home({ searchParams } : { searchParams: Promise<{ 
     couponsResult,
     dealsResult,
     blogsResult,
+    homeDescResult,
   ] = await Promise.allSettled([
     fetchAllActiveStoresAction(),
     fetchPopularStoresAction(),
@@ -38,6 +39,7 @@ export default async function Home({ searchParams } : { searchParams: Promise<{ 
     fetchTopCouponsWithStoresAction(),
     fetchTopDealsWithStoresAction(),
     fetchAllBlogsAction(),
+    fetchLatestHomeDescriptionAction(),
   ]);
 
   // Extract data or fallback to empty array
@@ -47,6 +49,8 @@ export default async function Home({ searchParams } : { searchParams: Promise<{ 
   const coupons = couponsResult.status === "fulfilled" ? couponsResult.value?.data ?? [] : [];
   const deals = dealsResult.status === "fulfilled" ? dealsResult.value?.data ?? [] : [];
   const blogs = blogsResult.status === "fulfilled" ? blogsResult.value?.data ?? [] : [];
+  const homeDescription =
+    homeDescResult.status === "fulfilled" ? homeDescResult.value?.data?.description ?? "" : "";
 
   return (
     <main>
@@ -55,7 +59,7 @@ export default async function Home({ searchParams } : { searchParams: Promise<{ 
       <PromoCodesSection coupons={coupons} couponId={couponId} />
       <TopDeals deals={deals} couponId={couponId} />
       <StoresComponent popularStores={popularStores} recentlyUpdatedStores={recentlyUpdatedStores} />
-      <BravoDealInfo />
+      <BravoDealInfo description={homeDescription} /> 
       <BlogSection blogs={blogs} />
       <Newsletter />
     </main>

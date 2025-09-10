@@ -1,8 +1,16 @@
 "use client";
 
-import { Suspense, useState, useOptimistic, startTransition } from "react";
+import {
+  Suspense,
+  useState,
+  useOptimistic,
+  startTransition,
+} from "react";
 import { useRouter } from "next/navigation";
-import { deleteCategoryAction } from "@/actions/categoryActions";
+import {
+  deleteCouponAction,
+} from "@/actions/couponActions";
+
 import {
   Card,
   CardHeader,
@@ -19,7 +27,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { toast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Pagination,
   PaginationContent,
@@ -28,89 +42,69 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
-import CategoryModal from "@/components/views/CategoryModal";
+import { toast } from "@/hooks/use-toast";
 
-export interface ICategory {
-  _id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  isPopular: boolean;
-  isTrending: boolean;
-  createdAt: string | null;
-  updatedAt: string | null;
-}
+import CouponModal, { ICoupon } from "@/components/views/CouponModal";
 
-function CategoriesTable({
-  categories,
+function CouponsTable({
+  coupons,
   onView,
   onEdit,
   onDelete,
-  loading,
 }: {
-  categories: ICategory[];
-  onView: (category: ICategory) => void;
+  coupons: ICoupon[];
+  onView: (coupon: ICoupon) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  loading: boolean;
 }) {
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-8 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        Loading categories...
-      </div>
-    );
-  }
 
   return (
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow className="border-b border-muted">
-            <TableHead>Name</TableHead>
-            <TableHead>Slug</TableHead>
-            <TableHead>Popular</TableHead>
-            <TableHead>Trending</TableHead>
-            <TableHead className="w-[160px] text-right">Actions</TableHead>
+            <TableHead>Title</TableHead>
+            <TableHead>Code</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Expires</TableHead>
+            <TableHead>Store</TableHead>
+            <TableHead>Top One</TableHead>
+            <TableHead className="w-[140px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {categories.length > 0 ? (
-            categories.map((category) => (
+          {coupons.length > 0 ? (
+            coupons.map((coupon) => (
               <TableRow
-                key={category._id}
+                key={coupon._id}
                 className="hover:bg-muted/40 transition-colors"
               >
-                <TableCell className="font-medium">{category.name}</TableCell>
-                <TableCell>{category.slug}</TableCell>
+                <TableCell className="font-medium">{coupon.title}</TableCell>
+                <TableCell>{coupon.couponCode}</TableCell>
+                <TableCell className="capitalize">{coupon.couponType}</TableCell>
+                <TableCell className="capitalize">{coupon.status}</TableCell>
                 <TableCell>
-                  {category.isPopular ? (
+                  {coupon?.expirationDate && !isNaN(Date.parse(coupon.expirationDate))
+                    ? new Date(coupon.expirationDate).toLocaleDateString()
+                    : "N/A"}
+                </TableCell>
+                <TableCell>{coupon.storeName || "-"}</TableCell>
+                <TableCell>
+                  {coupon.isTopOne ? (
                     <span className="text-green-600 font-semibold">Yes</span>
                   ) : (
                     <span className="text-gray-400">No</span>
                   )}
                 </TableCell>
                 <TableCell>
-                  {category.isTrending ? (
-                    <span className="text-green-600 font-semibold">Yes</span>
-                  ) : (
-                    <span className="text-gray-400">No</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-end items-center gap-1.5">
+                  <div className="flex justify-end items-center gap-2">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onView(category)}
+                      onClick={() => onView(coupon)}
                       title="View"
                     >
                       <Eye className="h-4 w-4" />
@@ -119,7 +113,7 @@ function CategoriesTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onEdit(category._id)}
+                      onClick={() => onEdit(coupon._id)}
                       title="Edit"
                     >
                       <Pencil className="h-4 w-4" />
@@ -128,7 +122,7 @@ function CategoriesTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => onDelete(category._id)}
+                      onClick={() => onDelete(coupon._id)}
                       title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -140,10 +134,10 @@ function CategoriesTable({
           ) : (
             <TableRow>
               <TableCell
-                colSpan={5}
+                colSpan={8}
                 className="text-center text-muted-foreground py-6"
               >
-                No categories found.
+                No coupons found.
               </TableCell>
             </TableRow>
           )}
@@ -153,52 +147,61 @@ function CategoriesTable({
   );
 }
 
-export default function CategoriesPageClient({
-  initialCategories,
+export default function CouponsPageClient({
+  initialCoupons,
+  initialStores,
+  storeId,
 }: {
-  initialCategories: ICategory[];
+  initialCoupons: ICoupon[];
+  initialStores: { _id: string; name: string }[];
+  storeId: string;
 }) {
   const router = useRouter();
-  const [categories, setCategories] = useState<ICategory[]>(initialCategories);
-  const [loading, setLoading] = useState(false);
+  const [coupons, setCoupons] = useState<ICoupon[]>(initialCoupons);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [viewCategory, setViewCategory] = useState<ICategory | null>(null);
+  const [viewCoupon, setViewCoupon] = useState<ICoupon | null>(null);
+
   const pageSize = 8;
 
-  const [optimisticCategories, deleteOptimistic] = useOptimistic(
-    categories,
-    (state, id: string) => state.filter((cat) => cat._id !== id)
+  const [optimisticCoupons, deleteOptimistic] = useOptimistic(
+    coupons,
+    (state, id: string) => state.filter((c) => c._id !== id)
   );
+
+  const storesMap: Record<string, string> = {};
+  initialStores.forEach((store) => {
+    storesMap[store._id] = store.name;
+  });
 
   const handleDelete = async (id: string) => {
     startTransition(() => {
       deleteOptimistic(id);
     });
-
-    const result = await deleteCategoryAction(id);
+    const result = await deleteCouponAction(id);
     if (result?.error) {
       toast({
         title: "Error",
-        description: result.error.message || "Failed to delete category",
+        description: result.error.message || "Failed to delete coupon",
         variant: "destructive",
       });
-      setCategories(initialCategories); // rollback
+      setCoupons(initialCoupons); // rollback
     } else {
-      setCategories((prev) => prev.filter((cat) => cat._id !== id));
+      setCoupons((prev) => prev.filter((coupon) => coupon._id !== id));
       toast({
         title: "Deleted",
-        description: "Category deleted successfully.",
+        description: "Coupon deleted successfully.",
       });
     }
   };
 
-  const filteredCategories = optimisticCategories.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
+  // Filter and paginate
+  const filteredCoupons = optimisticCoupons.filter((c) =>
+    c.title.toLowerCase().includes(search.toLowerCase())
   );
-  const totalPages = Math.ceil(filteredCategories.length / pageSize);
-  const paginatedCategories = filteredCategories.slice(
+  const totalPages = Math.ceil(filteredCoupons.length / pageSize);
+  const paginatedCoupons = filteredCoupons.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
@@ -206,10 +209,10 @@ export default function CategoriesPageClient({
   return (
     <Card className="w-full border-none shadow-none">
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <CardTitle className="text-lg font-semibold">Categories</CardTitle>
+        <CardTitle className="text-lg font-semibold">Coupons</CardTitle>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <Input
-            placeholder="Search categories..."
+            placeholder="Search coupons..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -217,29 +220,22 @@ export default function CategoriesPageClient({
             }}
             className="sm:w-64"
           />
-          <Button onClick={() => router.push("/admin/categories/new")}>
-            Create Category
+          <Button onClick={() => router.push("/admin/coupons/new")}>
+            Create Coupon
           </Button>
         </div>
       </CardHeader>
 
       <CardContent>
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center py-8 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              Loading categories...
-            </div>
-          }
-        >
-          <CategoriesTable
-            categories={paginatedCategories}
-            onView={(category) => setViewCategory(category)}
-            onEdit={(id) => router.push(`/admin/categories/edit/${id}`)}
+          <CouponsTable
+            coupons={paginatedCoupons.map((c) => ({
+              ...c,
+              storeName: storesMap[c.storeId] || "-",
+            }))}
+            onView={(coupon) => setViewCoupon(coupon)}
+            onEdit={(id) => router.push(`/admin/coupons/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
-            loading={loading}
           />
-        </Suspense>
 
         {totalPages > 1 && (
           <div className="mt-4 flex justify-center">
@@ -275,24 +271,21 @@ export default function CategoriesPageClient({
         )}
       </CardContent>
 
-      {/* Delete Confirmation */}
+      {/* Delete Confirmation Dialog */}
       <Dialog
         open={!!confirmDeleteId}
         onOpenChange={() => setConfirmDeleteId(null)}
       >
         <DialogContent>
-          <DialogTitle className="text-lg font-semibold">
-            Confirm Deletion
-          </DialogTitle>
-          <p className="py-2">
-            Are you sure you want to delete this category? This action cannot be
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+          </DialogHeader>
+          <p>
+            Are you sure you want to delete this coupon? This action cannot be
             undone.
           </p>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button
-              variant="secondary"
-              onClick={() => setConfirmDeleteId(null)}
-            >
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
               Cancel
             </Button>
             <Button
@@ -304,16 +297,16 @@ export default function CategoriesPageClient({
             >
               Delete
             </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Category View Modal */}
-      {viewCategory && (
-        <CategoryModal
-          category={viewCategory}
-          isOpen={!!viewCategory}
-          onClose={() => setViewCategory(null)}
+      {/* Coupon Modal */}
+      {viewCoupon && (
+        <CouponModal
+          coupon={viewCoupon}
+          isOpen={!!viewCoupon}
+          onClose={() => setViewCoupon(null)}
         />
       )}
     </Card>

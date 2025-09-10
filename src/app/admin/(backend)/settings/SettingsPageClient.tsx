@@ -2,20 +2,14 @@
 
 import {
   Suspense,
-  useEffect,
   useState,
   useOptimistic,
   startTransition,
 } from "react";
 import { useRouter } from "next/navigation";
-import { deleteEventAction } from "@/actions/eventActions";
+import { deleteSettingAction } from "@/actions/settingActions";
 
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -41,75 +36,68 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import Image from "next/image";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
 
-import EventModal, { IEvent } from "@/components/views/EventModal";
+import SettingModal from "@/components/views/SettingModal";
 
-function EventsTable({
-  events,
+export interface ISetting {
+  _id: string;
+  siteName: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  metaTitle?: string;
+  metaKeywords?: string[];
+}
+
+// ====================== Table ======================
+function SettingsTable({
+  settings,
   onView,
   onEdit,
   onDelete,
-  loading,
 }: {
-  events: IEvent[];
-  onView: (event: IEvent) => void;
+  settings: ISetting[];
+  onView: (setting: ISetting) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  loading: boolean;
 }) {
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-8 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        Loading events...
-      </div>
-    );
-  }
 
   return (
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Image</TableHead>
-            <TableHead>Slug</TableHead>
+          <TableRow className="border-b border-muted">
+            <TableHead>Site Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Phone</TableHead>
+            <TableHead>Meta Title</TableHead>
+            <TableHead>Keywords</TableHead>
             <TableHead className="w-[140px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {events.length > 0 ? (
-            events.map((event) => (
-              <TableRow key={event._id} className="hover:bg-muted/40">
-                <TableCell className="font-medium">{event.title}</TableCell>
+          {settings.length > 0 ? (
+            settings.map((setting) => (
+              <TableRow
+                key={setting._id}
+                className="hover:bg-muted/40 transition-colors"
+              >
+                <TableCell className="font-medium">{setting.siteName}</TableCell>
+                <TableCell>{setting.contactEmail || "-"}</TableCell>
+                <TableCell>{setting.contactPhone || "-"}</TableCell>
+                <TableCell>{setting.metaTitle || "-"}</TableCell>
                 <TableCell>
-                  {new Date(event.date).toLocaleDateString()}
+                  {setting.metaKeywords?.length
+                    ? setting.metaKeywords.join(", ")
+                    : "-"}
                 </TableCell>
                 <TableCell>
-                  {event.image ? (
-                    <Image
-                      src={event.image}
-                      alt={event.title}
-                      width={50}
-                      height={50}
-                      className="rounded"
-                    />
-                  ) : (
-                    "-"
-                  )}
-                </TableCell>
-                <TableCell>{event.slug || "-"}</TableCell>
-                <TableCell>
-                  <div className="flex justify-end items-center gap-2">
+                  <div className="flex justify-end items-center gap-1.5">
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onView(event)}
+                      onClick={() => onView(setting)}
                       title="View"
                     >
                       <Eye className="h-4 w-4" />
@@ -118,7 +106,7 @@ function EventsTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => onEdit(event._id)}
+                      onClick={() => onEdit(setting._id)}
                       title="Edit"
                     >
                       <Pencil className="h-4 w-4" />
@@ -127,7 +115,7 @@ function EventsTable({
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => onDelete(event._id)}
+                      onClick={() => onDelete(setting._id)}
                       title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -139,10 +127,10 @@ function EventsTable({
           ) : (
             <TableRow>
               <TableCell
-                colSpan={5}
+                colSpan={6}
                 className="text-center text-muted-foreground py-6"
               >
-                No events found.
+                No settings found.
               </TableCell>
             </TableRow>
           )}
@@ -152,54 +140,51 @@ function EventsTable({
   );
 }
 
-export default function EventsPage({
-  initialEvents,
+// ====================== Client Page ======================
+export default function SettingsPageClient({
+  initialSettings,
 }: {
-  initialEvents: IEvent[];
+  initialSettings: ISetting[];
 }) {
   const router = useRouter();
-  const [events, setEvents] = useState<IEvent[]>(initialEvents);
+  const [settings, setSettings] = useState<ISetting[]>(initialSettings);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [viewEvent, setViewEvent] = useState<IEvent | null>(null);
-
+  const [viewSetting, setViewSetting] = useState<ISetting | null>(null);
   const pageSize = 8;
 
-  const [optimisticEvents, deleteOptimistic] = useOptimistic(
-    events,
-    (state, id: string) => state.filter((e) => e._id !== id)
+  const [optimisticSettings, deleteOptimistic] = useOptimistic(
+    settings,
+    (state, id: string) => state.filter((s) => s._id !== id)
   );
 
   const handleDelete = async (id: string) => {
-    startTransition(() => {
-      deleteOptimistic(id);
-    });
+    startTransition(() => deleteOptimistic(id));
 
-    const result = await deleteEventAction(id);
+    const result = await deleteSettingAction(id);
     if (result?.error) {
       toast({
         title: "Error",
-        description: result.error.message || "Failed to delete event",
+        description: result.error.message || "Failed to delete setting",
         variant: "destructive",
       });
-      setEvents(initialEvents); // rollback
+      setSettings(initialSettings); // rollback
     } else {
-      setEvents((prev) => prev.filter((event) => event._id !== id));
+      setSettings((prev) => prev.filter((s) => s._id !== id));
       toast({
         title: "Deleted",
-        description: "Event deleted successfully.",
+        description: "Setting deleted successfully.",
       });
     }
   };
 
-  // Filter + paginate
-  const filteredEvents = optimisticEvents.filter((e) =>
-    e.title.toLowerCase().includes(search.toLowerCase())
+  // Filter and paginate
+  const filteredSettings = optimisticSettings.filter((s) =>
+    s.siteName.toLowerCase().includes(search.toLowerCase())
   );
-  const totalPages = Math.ceil(filteredEvents.length / pageSize);
-  const paginatedEvents = filteredEvents.slice(
+  const totalPages = Math.ceil(filteredSettings.length / pageSize);
+  const paginatedSettings = filteredSettings.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
@@ -207,10 +192,10 @@ export default function EventsPage({
   return (
     <Card className="w-full border-none shadow-none">
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <CardTitle className="text-lg font-semibold">Events</CardTitle>
+        <CardTitle className="text-lg font-semibold">Settings</CardTitle>
         <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
           <Input
-            placeholder="Search events..."
+            placeholder="Search settings..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -218,29 +203,19 @@ export default function EventsPage({
             }}
             className="sm:w-64"
           />
-          <Button onClick={() => router.push("/admin/events/new")}>
-            Create Event
+          <Button onClick={() => router.push("/admin/settings/new")}>
+            Create Setting
           </Button>
         </div>
       </CardHeader>
 
       <CardContent>
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center py-8 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              Loading events...
-            </div>
-          }
-        >
-          <EventsTable
-            events={paginatedEvents}
-            onView={(event) => setViewEvent(event)}
-            onEdit={(id) => router.push(`/admin/events/edit/${id}`)}
+          <SettingsTable
+            settings={paginatedSettings}
+            onView={(s) => setViewSetting(s)}
+            onEdit={(id) => router.push(`/admin/settings/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
-            loading={loading}
           />
-        </Suspense>
 
         {totalPages > 1 && (
           <div className="mt-4 flex justify-center">
@@ -283,10 +258,7 @@ export default function EventsPage({
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
-          <p>
-            Are you sure you want to delete this event? This action cannot be
-            undone.
-          </p>
+          <p>This action cannot be undone. Are you sure?</p>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
               Cancel
@@ -304,12 +276,12 @@ export default function EventsPage({
         </DialogContent>
       </Dialog>
 
-      {/* Event Modal */}
-      {viewEvent && (
-        <EventModal
-          event={viewEvent}
-          isOpen={!!viewEvent}
-          onClose={() => setViewEvent(null)}
+      {/* Setting Modal */}
+      {viewSetting && (
+        <SettingModal
+          setting={viewSetting}
+          isOpen={!!viewSetting}
+          onClose={() => setViewSetting(null)}
         />
       )}
     </Card>

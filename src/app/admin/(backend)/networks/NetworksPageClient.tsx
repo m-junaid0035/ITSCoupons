@@ -57,23 +57,13 @@ function NetworksTable({
   onEdit,
   onDelete,
   onStoresClick,
-  loading,
 }: {
   networks: INetwork[];
   onView: (network: INetwork) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onStoresClick: (id: string) => void;
-  loading: boolean;
 }) {
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center py-8 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        Loading networks...
-      </div>
-    );
-  }
 
   return (
     <div className="overflow-x-auto">
@@ -225,23 +215,13 @@ export default function NetworksPageClient({
       </CardHeader>
 
       <CardContent>
-        <Suspense
-          fallback={
-            <div className="flex justify-center items-center py-8 text-muted-foreground">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />
-              Loading networks...
-            </div>
-          }
-        >
           <NetworksTable
             networks={paginatedNetworks}
             onView={(network) => setSelectedNetwork(network)}
             onEdit={(id) => router.push(`/admin/networks/edit/${id}`)}
             onDelete={(id) => setConfirmDeleteId(id)}
             onStoresClick={handleStoresClick}
-            loading={false}
           />
-        </Suspense>
 
         {totalPages > 1 && (
           <div className="mt-4 flex justify-center">
