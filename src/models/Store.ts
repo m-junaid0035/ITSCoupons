@@ -16,6 +16,7 @@ export interface IStore extends Document {
   slug: string;
   isPopular: boolean;
   isActive: boolean;
+  content: string; // ✅ required now
   createdAt: Date;
   updatedAt: Date;
 }
@@ -103,6 +104,12 @@ const storeSchema = new Schema<IStore>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+
+    content: {
+      type: String,
+      required: [true, "Content is required"],
+      trim: true,
     },
   },
   {

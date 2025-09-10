@@ -30,6 +30,7 @@ export interface StoreData {
   metaKeywords?: string[];
   focusKeywords?: string[];
   slug: string;
+  content: string;
   isPopular: boolean;
   isActive: boolean;
   createdAt?: string | null;

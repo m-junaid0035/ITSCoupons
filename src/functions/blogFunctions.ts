@@ -100,6 +100,17 @@ export const getBlogById = async (id: string) => {
 };
 
 /**
+ * Get a blog by slug.
+ */
+export const getBlogBySlug = async (slug: string) => {
+  if (!slug) return null;
+
+  const blog = await Blog.findOne({ slug }).lean();
+  return blog ? serializeBlog(blog) : null;
+};
+
+
+/**
  * Update a blog by ID (optionally with new image).
  */
 export const updateBlog = async (

@@ -7,6 +7,7 @@ import {
   deleteBlog,
   getAllBlogs,
   getBlogById,
+  getBlogBySlug,
   updateBlog,
 } from "@/functions/blogFunctions";
 import { saveBlogImage } from "@/lib/uploadBlogImage";
@@ -147,5 +148,24 @@ export async function fetchBlogByIdAction(id: string) {
     return { data: blog };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch blog"] } };
+  }
+}
+
+/* ---------------------------- ✅ FETCH BY SLUG ---------------------------- */
+export async function fetchBlogBySlugAction(slug: string) {
+  await connectToDatabase();
+  try {
+    if (!slug) {
+      return { error: { message: ["Slug is required"] } };
+    }
+
+    const blog = await getBlogBySlug(slug);
+    if (!blog) {
+      return { error: { message: ["Blog not found"] } };
+    }
+
+    return { data: blog };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch blog by slug"] } };
   }
 }

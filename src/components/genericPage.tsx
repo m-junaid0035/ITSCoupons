@@ -10,7 +10,7 @@ interface StaticPage {
 export default function StaticPageView({ page }: { page: StaticPage }) {
   return (
     <div className=" text-gray-800">
-       {/* Hero Section */}
+      {/* Hero Section */}
       <section className="bg-purple-800 text-white py-16 px-4 sm:px-6 lg:px-20 text-center">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">{page.title}</h1>
         <p className="max-w-3xl mx-auto text-base sm:text-lg mb-10">
@@ -32,11 +32,12 @@ export default function StaticPageView({ page }: { page: StaticPage }) {
         </div>
       </section>
 
-      {/* Content (CKEditor HTML) */}
-      <div
-        className=" max-w-4xl mx-auto px-4 sm:px-6 py-12 prose prose-lg dark:prose-invert"
-        dangerouslySetInnerHTML={{ __html: page.content }}
-      />
+      <div className="max-w-[1090px] mx-auto mt-10 mb-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
+        <div
+          className="prose text-gray-800"
+          dangerouslySetInnerHTML={{ __html: page.content }}
+        />
+      </div>
     </div>
   );
 }

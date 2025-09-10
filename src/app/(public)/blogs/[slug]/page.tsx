@@ -1,6 +1,6 @@
 // app/blog/[id]/page.tsx
 import React from "react";
-import { fetchBlogByIdAction } from "@/actions/blogActions";
+import { fetchBlogBySlugAction } from "@/actions/blogActions";
 import type { BlogData } from "@/types/blog";
 import BlogShow from "@/components/BlogShow";
 
@@ -10,11 +10,11 @@ import { Metadata } from "next";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { slug } = await params;
 
-  const result = await fetchBlogByIdAction(id);
+  const result = await fetchBlogBySlugAction(slug);
   const blog: BlogData | null = result?.data ?? null;
 
   if (!blog) {
@@ -65,11 +65,10 @@ export async function generateMetadata({
 export default async function BlogPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
-
-  const result = await fetchBlogByIdAction(id);
+  const { slug } = await params;
+  const result = await fetchBlogBySlugAction(decodeURIComponent(slug));
   const blog: BlogData | null = result.data ?? null;
 
   if (!blog) {

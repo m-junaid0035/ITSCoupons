@@ -15,7 +15,7 @@ function ButtonGrid({ stores }: ButtonGridProps) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-y-6 gap-x-4 sm:gap-x-6 justify-items-center w-full">
       {stores.map((store) => (
-        <Link href={`/stores/${store._id}/${store.slug}`} key={store._id}>
+        <Link href={`/stores/${store.slug}`} key={store._id}>
           <button
             title={store.name} // shows full name on hover
             style={{

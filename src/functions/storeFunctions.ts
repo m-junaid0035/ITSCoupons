@@ -21,6 +21,7 @@ const sanitizeStoreData = (data: {
   slug: string;
   isPopular?: boolean;
   isActive?: boolean;
+  content: string; // ✅ added
 }) => ({
   name: data.name.trim(),
   network: data.network ? new Types.ObjectId(data.network) : undefined,
@@ -36,6 +37,7 @@ const sanitizeStoreData = (data: {
   slug: data.slug.trim().toLowerCase().replace(/\s+/g, "-"),
   isPopular: data.isPopular ?? false,
   isActive: data.isActive ?? true,
+  content: data.content.trim(), // ✅ added
 });
 
 /**
@@ -81,6 +83,7 @@ const serializeStore = (store: any) => ({
   slug: store.slug,
   isPopular: store.isPopular ?? false,
   isActive: store.isActive ?? true,
+  content: store.content, // ✅ added
   createdAt: store.createdAt?.toISOString?.(),
   updatedAt: store.updatedAt?.toISOString?.(),
   coupons: (store.coupons || []).map(serializeCoupon),
@@ -104,6 +107,7 @@ export const createStore = async (data: {
   slug: string;
   isPopular?: boolean;
   isActive?: boolean;
+  content: string; // ✅ added
 }) => {
   const imagePath = await saveStoreImage(data.imageFile);
 
@@ -165,6 +169,7 @@ export const updateStore = async (
     slug: string;
     isPopular?: boolean;
     isActive?: boolean;
+    content: string; // ✅ added
   }
 ) => {
   let imagePath = data.image ?? "";
@@ -299,4 +304,24 @@ export const getStoresByNetwork = async (
     .lean();
 
   return stores.map(serializeStore);
+};
+/**
+ * Get a store with coupons by slug.
+ */
+export const getStoreWithCouponsBySlug = async (slug: string) => {
+  if (!slug) return null;
+
+  const [storeWithCoupons] = await Store.aggregate([
+    { $match: { slug: slug.toLowerCase().trim(), isActive: true } },
+    {
+      $lookup: {
+        from: "coupons",
+        localField: "_id",
+        foreignField: "storeId",
+        as: "coupons",
+      },
+    },
+  ]);
+
+  return storeWithCoupons ? serializeStore(storeWithCoupons) : null;
 };

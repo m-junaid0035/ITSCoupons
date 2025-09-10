@@ -16,6 +16,7 @@ import {
   getStoreWithCouponsById,
   getCouponCountByStoreId,
   getStoresByNetwork,
+  getStoreWithCouponsBySlug,
 } from "@/functions/storeFunctions";
 import { saveStoreImage } from "@/lib/uploadStoreImage";
 
@@ -35,6 +36,7 @@ const storeSchema = z.object({
   slug: z.string().trim().min(3).max(100),
   isPopular: z.coerce.boolean().optional().default(false),
   isActive: z.coerce.boolean().optional().default(true),
+  content: z.string().min(5), // ✅ added required content
 });
 
 type StoreFormData = z.infer<typeof storeSchema>;
@@ -76,6 +78,7 @@ async function parseStoreFormData(formData: FormData): Promise<StoreFormData & {
     slug: String(formData.get("slug") || ""),
     isPopular: ["true", "on", "1"].includes(String(formData.get("isPopular"))),
     isActive: ["true", "on", "1"].includes(String(formData.get("isActive"))),
+    content: String(formData.get("content") || ""), // ✅ added
     imageFile: uploadedFile,
   };
 }
@@ -210,6 +213,7 @@ export type InlineStoreUpdate = Partial<{
   slug: string;
   isPopular: boolean;
   isActive: boolean;
+  content: string; // ✅ added
 }>;
 
 export async function updateStoreInline(id: string, updates: InlineStoreUpdate) {
@@ -250,6 +254,7 @@ export async function updateStoreInline(id: string, updates: InlineStoreUpdate) 
     isPopular: updates.isPopular ?? store.isPopular,
     isActive: updates.isActive ?? store.isActive,
     slug: updates.slug ?? store.slug,
+    content: updates.content ?? store.content, // ✅ added
   };
 
   try {
@@ -277,6 +282,28 @@ export async function fetchStoresByNetworkAction(networkId: string) {
   } catch (error: any) {
     return {
       error: { message: [error.message || "Failed to fetch stores for network"] },
+    };
+  }
+}
+/**
+ * ✅ FETCH STORE WITH COUPONS BY SLUG
+ */
+export async function fetchStoreWithCouponsBySlugAction(slug: string) {
+  await connectToDatabase();
+
+  if (!slug) {
+    return { error: { message: ["Slug is required"] } };
+  }
+
+  try {
+    const store = await getStoreWithCouponsBySlug(slug);
+    if (!store) {
+      return { error: { message: ["Store not found"] } };
+    }
+    return { data: store };
+  } catch (error: any) {
+    return {
+      error: { message: [error.message || "Failed to fetch store with coupons by slug"] },
     };
   }
 }

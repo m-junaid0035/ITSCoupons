@@ -58,9 +58,10 @@ export default function StoreForm() {
   const [categorySearch, setCategorySearch] = useState("");
   const [networkSearch, setNetworkSearch] = useState("");
   const [seoModalOpen, setSeoModalOpen] = useState(false);
-  
+
 
   const [descriptionHtml, setDescriptionHtml] = useState("");
+  const [contentHtml, setContentHtml] = useState("");
   const [seo, setSeo] = useState({
     metaTitle: "",
     metaDescription: "",
@@ -122,25 +123,25 @@ export default function StoreForm() {
   };
 
   /** ---------------- Auto SEO Update ---------------- */
-const updateSEO = async (storeName: string) => {
-  const { data: latestSEO } = await fetchLatestSEOAction("stores");
-  if (!latestSEO) return;
+  const updateSEO = async (storeName: string) => {
+    const { data: latestSEO } = await fetchLatestSEOAction("stores");
+    if (!latestSEO) return;
 
-  const replaceStoreName = (text: string) =>
-    text.replace(/{{storeName}}|s_n/gi, storeName);
+    const replaceStoreName = (text: string) =>
+      text.replace(/{{storeName}}|s_n/gi, storeName);
 
-  // Process slug: either latestSEO.slug or storeName, then replace spaces with _
-  const slugSource = latestSEO.slug || storeName;
-  const processedSlug = replaceStoreName(slugSource).toLowerCase().replace(/\s+/g, "_");
+    // Process slug: either latestSEO.slug or storeName, then replace spaces with _
+    const slugSource = latestSEO.slug || storeName;
+    const processedSlug = replaceStoreName(slugSource).toLowerCase().replace(/\s+/g, "_");
 
-  setSeo({
-    metaTitle: replaceStoreName(latestSEO.metaTitle || ""),
-    metaDescription: replaceStoreName(latestSEO.metaDescription || ""),
-    metaKeywords: (latestSEO.metaKeywords || []).map(replaceStoreName).join(", "),
-    focusKeywords: (latestSEO.focusKeywords || []).map(replaceStoreName).join(", "),
-    slug: processedSlug,
-  });
-};
+    setSeo({
+      metaTitle: replaceStoreName(latestSEO.metaTitle || ""),
+      metaDescription: replaceStoreName(latestSEO.metaDescription || ""),
+      metaKeywords: (latestSEO.metaKeywords || []).map(replaceStoreName).join(", "),
+      focusKeywords: (latestSEO.focusKeywords || []).map(replaceStoreName).join(", "),
+      slug: processedSlug,
+    });
+  };
 
 
   /** ---------------- Listen Store Name Changes ---------------- */
@@ -200,9 +201,26 @@ const updateSEO = async (storeName: string) => {
       return;
     }
 
+    if (!contentHtml) {
+      toast({ title: "Validation Error", description: "Content is required atleast 5 words", variant: "destructive" });
+      return;
+    }
+    const directUrl = formData.get("directUrl")?.toString().trim();
+    if (!directUrl && !selectedNetwork) {
+      toast({
+        title: "Validation Error",
+        description: "You must provide either a Direct URL or select a Network.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+
+
     // Attach image, SEO/description, network, and categories
     formData.set("imageFile", imageFile);
     formData.set("description", descriptionHtml);
+    formData.set("content", contentHtml);
     formData.set("metaTitle", seo.metaTitle);
     formData.set("metaDescription", seo.metaDescription);
     formData.set("metaKeywords", seo.metaKeywords);
@@ -259,7 +277,7 @@ const updateSEO = async (storeName: string) => {
 
             {/* Direct URL */}
             <div className="space-y-2">
-              <Label htmlFor="directUrl">Direct URL</Label>
+              <Label htmlFor="directUrl">Direct URL <span className="block mt-1 text-red-500 italic text-xs">*Select either a Direct URL or a Network</span></Label>
               <Input id="directUrl" name="directUrl" type="url" placeholder="https://example.com/direct" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
               {errorsForField("directUrl").map((err, idx) => <p key={idx} className="text-sm text-red-500">{err}</p>)}
             </div>
@@ -267,7 +285,7 @@ const updateSEO = async (storeName: string) => {
             {/* Network Searchable Dropdown */}
             <div className="relative space-y-2" ref={networkDropdownRef}>
               <Label>
-                Network
+                Network <span className="block mt-1 text-red-500 italic text-xs">*Select either a Direct URL or a Network</span>
               </Label>
               <Input
                 placeholder="Search network..."
@@ -354,7 +372,15 @@ const updateSEO = async (storeName: string) => {
               <Label>
                 Description <span className="text-red-500">*</span>
               </Label>
-              <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} height="400px" />
+              <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} height="200px" />
+            </div>
+
+            {/* Content */}
+            <div className="space-y-2">
+              <Label>
+                Content <span className="text-red-500">*</span>
+              </Label>
+              <RichTextEditor value={contentHtml} onChange={setContentHtml} height="500px" />
             </div>
 
             {/* SEO Modal Trigger */}

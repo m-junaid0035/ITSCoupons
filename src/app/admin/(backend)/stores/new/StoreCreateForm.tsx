@@ -51,6 +51,8 @@ export default function StoreForm({
     const [networkSearch, setNetworkSearch] = useState("");
     const [seoModalOpen, setSeoModalOpen] = useState(false);
     const [descriptionHtml, setDescriptionHtml] = useState("");
+    const [contentHtml, setContentHtml] = useState("");
+
 
     const [seo, setSeo] = useState({
         metaTitle: latestSEO?.metaTitle || "",
@@ -151,8 +153,14 @@ export default function StoreForm({
             return;
         }
 
+        if (!contentHtml) {
+            toast({ title: "Validation Error", description: "Content is required atleast 5 words", variant: "destructive" });
+            return;
+        }
+
         formData.set("imageFile", imageFile);
         formData.set("description", descriptionHtml);
+        formData.set("content", contentHtml);
         formData.set("metaTitle", seo.metaTitle);
         formData.set("metaDescription", seo.metaDescription);
         formData.set("metaKeywords", seo.metaKeywords);
@@ -310,6 +318,15 @@ export default function StoreForm({
                             </Label>
                             <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} height="400px" />
                         </div>
+
+                        {/* Content */}
+                        <div className="space-y-2">
+                            <Label>
+                                Content <span className="text-red-500">*</span>
+                            </Label>
+                            <RichTextEditor value={contentHtml} onChange={setContentHtml} height="500px" />
+                        </div>
+
 
                         {/* SEO Modal Trigger */}
                         <div>

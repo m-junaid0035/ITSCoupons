@@ -2,7 +2,7 @@
 import StoreData from "@/components/StoreData";
 import RelatedStores from "@/components/coupons/RelatedStores";
 
-import { fetchStoreWithCouponsByIdAction } from "@/actions/storeActions";
+import { fetchStoreWithCouponsBySlugAction } from "@/actions/storeActions";
 import { fetchStoresByCategoriesAction } from "@/actions/storeActions";
 
 import type { StoreData as StoreType } from "@/types/store";
@@ -14,10 +14,10 @@ import { Metadata } from "next";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: "" }>;
+  params: Promise<{ slug: "" }>;
 }): Promise<Metadata> {
-  const { id = "" } = await params;
-  const storeResult = await fetchStoreWithCouponsByIdAction(id);
+  const { slug = "" } = await params;
+  const storeResult = await fetchStoreWithCouponsBySlugAction(slug);
   const store: StoreWithCouponsData | null = storeResult?.data ?? null;
 
   if (!store) {
@@ -65,15 +65,15 @@ export default async function StorePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: "" }>;
+  params: Promise<{ slug: "" }>;
   searchParams: Promise<{ couponId?: ""}>
 }) {
   // Await params to get the store ID
-  const { id = "" } = await params;
+  const { slug = "" } = await params;
   const { couponId = "" } = await searchParams;
 
   // Fetch the store with coupons
-  const storeResult = await fetchStoreWithCouponsByIdAction(id);
+  const storeResult = await fetchStoreWithCouponsBySlugAction(decodeURIComponent(slug));
   const store: StoreWithCouponsData | null = storeResult?.data ?? null;
 
   if (!store) {

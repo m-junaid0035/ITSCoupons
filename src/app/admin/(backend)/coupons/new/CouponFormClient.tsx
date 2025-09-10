@@ -41,6 +41,7 @@ interface Store {
   _id: string;
   name: string;
   network?: string;
+  directUrl?: string;
 }
 
 interface FieldErrors {
@@ -96,8 +97,8 @@ export default function CouponFormClient({ stores }: CouponFormClientProps) {
 
   const errorFor = (field: string) =>
     formState.error &&
-    typeof formState.error === "object" &&
-    field in formState.error
+      typeof formState.error === "object" &&
+      field in formState.error
       ? (formState.error as FieldErrors)[field]?.[0]
       : null;
 
@@ -132,7 +133,10 @@ export default function CouponFormClient({ stores }: CouponFormClientProps) {
       if (netRes?.data?.storeNetworkUrl) {
         setCouponUrl(netRes.data.storeNetworkUrl);
       }
+    } else if (store?.directUrl) {
+      setCouponUrl(store?.directUrl);
     }
+
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -351,8 +355,8 @@ export default function CouponFormClient({ stores }: CouponFormClientProps) {
                     {stores.filter((s) =>
                       s.name.toLowerCase().includes(storeSearch.toLowerCase())
                     ).length === 0 && (
-                      <div className="px-4 py-2 text-gray-500">No stores found</div>
-                    )}
+                        <div className="px-4 py-2 text-gray-500">No stores found</div>
+                      )}
                   </div>
                 )}
               </div>

@@ -47,6 +47,7 @@ interface Store {
   _id: string;
   name: string;
   network?: string; // store network id
+  directUrl?: string;
 }
 
 const initialState: FormState = { error: {} };
@@ -167,6 +168,8 @@ export default function EditCouponForm() {
       if (netRes?.data?.storeNetworkUrl) {
         setCouponUrl(netRes.data.storeNetworkUrl);
       }
+    } else if (store?.directUrl) {
+      setCouponUrl(store?.directUrl);
     }
   };
 

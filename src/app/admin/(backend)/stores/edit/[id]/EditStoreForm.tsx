@@ -67,6 +67,7 @@ export default function EditStoreForm({
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(storeData?.image || null);
     const [descriptionHtml, setDescriptionHtml] = useState(storeData?.description || "");
+    const [contentHtml, setContentHtml] = useState(storeData?.content || "");
     const [seo, setSeo] = useState({
         metaTitle: storeData?.metaTitle || "",
         metaDescription: storeData?.metaDescription || "",
@@ -155,6 +156,15 @@ export default function EditStoreForm({
                 return;
             }
         }
+        const directUrl = formData.get("directUrl")?.toString().trim();
+        if (!directUrl && !selectedNetwork) {
+            toast({
+                title: "Validation Error",
+                description: "You must provide either a Direct URL or select a Network.",
+                variant: "destructive",
+            });
+            return;
+        }
 
         async function urlToFile(url: string, filename: string, mimeType: string) {
             const res = await fetch(url);
@@ -173,6 +183,7 @@ export default function EditStoreForm({
         }
 
         formData.set("description", descriptionHtml);
+        formData.set("content", contentHtml);
         formData.set("metaTitle", seo.metaTitle);
         formData.set("metaDescription", seo.metaDescription);
         formData.set("metaKeywords", seo.metaKeywords);
@@ -249,14 +260,14 @@ export default function EditStoreForm({
 
                         {/* Direct URL */}
                         <div className="space-y-2">
-                            <Label htmlFor="directUrl">Direct URL</Label>
+                            <Label htmlFor="directUrl">Direct URL <span className="block mt-1 text-red-500 italic text-xs">*Select either a Direct URL or a Network</span></Label>
                             <Input id="directUrl" name="directUrl" defaultValue={store?.directUrl || ""} type="url" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
                         </div>
 
                         {/* Network Dropdown */}
                         <div className="relative space-y-2" ref={networkDropdownRef}>
                             <Label>
-                                Network
+                                Network <span className="block mt-1 text-red-500 italic text-xs">*Select either a Direct URL or a Network</span>
                             </Label>
                             <Input
                                 placeholder="Search network..."
@@ -319,6 +330,14 @@ export default function EditStoreForm({
                                 Description <span className="text-red-500">*</span>
                             </Label>
                             <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
+                        </div>
+
+                        {/* Content */}
+                        <div className="space-y-2">
+                            <Label>
+                                Content <span className="text-red-500">*</span>
+                            </Label>
+                            <RichTextEditor value={contentHtml} onChange={setContentHtml} height="500px" />
                         </div>
 
 

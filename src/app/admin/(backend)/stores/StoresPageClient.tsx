@@ -190,7 +190,7 @@ function StoresTable({
                                 <TableCell>
                                     {store.slug ? (
                                         <a
-                                            href={`/stores/${store._id}`}
+                                            href={`/stores/${store.slug}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-blue-600 hover:underline flex items-center gap-1"
