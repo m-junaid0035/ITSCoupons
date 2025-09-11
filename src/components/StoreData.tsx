@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
 import { FaTags, FaHandshake, FaClock } from "react-icons/fa";
 import type { StoreWithCouponsData } from "@/types/storesWithCouponsData";
 import type { CouponData } from "@/types/coupon";
@@ -51,10 +50,6 @@ export default function StorePage({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // Client-only image
-  const [imageLoaded, setImageLoaded] = useState(false);
-  useEffect(() => setImageLoaded(true), []);
-
   // Expanded coupon details
   const [expandedCoupons, setExpandedCoupons] = useState<string[]>([]);
   const toggleDetails = (couponId: string) => {
@@ -62,6 +57,18 @@ export default function StorePage({
       prev.includes(couponId) ? prev.filter((id) => id !== couponId) : [...prev, couponId]
     );
   };
+
+  // Description expand state for mobile
+  const [expandedDesc, setExpandedDesc] = useState(false);
+
+  // Plain text description for single-line preview
+  const plainDescription = store.description
+    ? store.description.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+    : "";
+
+  // Threshold for "Read More"
+  const NEEDS_READ_MORE_THRESHOLD = 80; // characters
+  const needsReadMore = plainDescription.length > NEEDS_READ_MORE_THRESHOLD;
 
   const coupons: CouponData[] = store.coupons || [];
   const filteredCoupons = coupons.filter((coupon) => {
@@ -129,16 +136,13 @@ export default function StorePage({
         {/* Sidebar for desktop */}
         <aside className="hidden md:block w-full md:w-1/4 space-y-8">
           <div className="text-center">
-            {imageLoaded && (
-              <div className="relative mx-auto w-36 h-36 mb-6 rounded-full overflow-hidden border-4 border-purple-200 shadow-lg">
-                <Image
-                  src={store.image || "/placeholder.png"}
-                  alt={store.name || "Store Image"}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            )}
+            <div className="relative mx-auto w-36 h-36 mb-6 rounded-full overflow-hidden border-4 border-purple-200 shadow-lg bg-white">
+              <img
+                src={store.image || "/placeholder-store.png"}
+                alt={store.name}
+                className="w-full h-full object-contain rounded-full p-6 transition-transform duration-300 hover:scale-110 hover:brightness-105"
+              />
+            </div>
             <div
               className="text-sm text-gray-600 prose max-w-none text-left"
               dangerouslySetInnerHTML={{ __html: store.description || "" }}
@@ -167,30 +171,62 @@ export default function StorePage({
 
         {/* Main Content */}
         <div className="w-full md:w-3/4">
-          {/* 🔹 Mobile: Logo + Heading */}
+          {/* 🔹 Mobile: Logo + Heading + Description */}
           <div className="block md:hidden mb-6">
-            <div className="flex items-center gap-4">
-              {imageLoaded && (
-                <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-purple-200 shadow shrink-0">
-                  <Image
-                    src={store.image || "/placeholder.png"}
-                    alt={store.name || "Store Image"}
-                    className="object-cover w-full h-full rounded-full"
-                    width={80}
-                    height={80}
-                  />
-                </div>
-              )}
-              <h1 className="text-xl font-extrabold text-gray-900">
-                {store.name} Coupon & Discount Code
+            <div className="flex items-center gap-3">
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border border-purple-200 bg-white shadow-sm shrink-0">
+                <img
+                  src={store.image || "/placeholder-store.png"}
+                  alt={store.name}
+                  className="w-full h-full object-contain rounded-full p-2 transition-transform duration-300 hover:scale-110 hover:brightness-105"
+                />
+              </div>
+              <h1 className="text-lg font-bold text-gray-900 leading-snug">
+                {store.name}
+                <br />
+                <span className="text-sm font-medium text-gray-700">
+                  Coupon & Discount Code
+                </span>
               </h1>
             </div>
-            <p className="mt-3 text-gray-600 font-medium text-sm">
+
+            <p className="mt-2 text-gray-600 font-medium text-xs">
               {verifiedCount} VERIFIED OFFERS ON {today}
             </p>
+
+            {/* Mobile description */}
+            {store.description && (
+              <div className="mt-3 text-sm text-gray-600">
+                {expandedDesc ? (
+                  <div
+                    id="store-description"
+                    className="prose text-gray-600 max-w-none"
+                    dangerouslySetInnerHTML={{ __html: store.content }}
+                  />
+                ) : (
+                  <div
+                    className="truncate"
+                    title={plainDescription}
+                  >
+                    {plainDescription}
+                  </div>
+                )}
+
+                {needsReadMore && (
+                  <button
+                    onClick={() => setExpandedDesc((p) => !p)}
+                    className="mt-1 text-purple-700 font-medium text-xs underline"
+                    aria-expanded={expandedDesc}
+                    aria-controls="store-description"
+                  >
+                    {expandedDesc ? "Read Less" : "Read More"}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* 🔹 Desktop: Heading */}
+          {/* 🔹 Desktop Heading */}
           <div className="hidden md:block mb-10 text-left">
             <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
               {store.name} Coupon & Discount Code
@@ -323,39 +359,15 @@ export default function StorePage({
         </div>
       </div>
 
-      {/* 🔹 Store Content BELOW sidebar & coupons (full width) */}
-      <div className="max-w-[1090px] mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
-        <div
-          className="prose text-gray-800 max-w-none"
-          dangerouslySetInnerHTML={{ __html: store.content || "" }}
-        />
-      </div>
-
-      {/* 🔹 Mobile: Stats below content */}
-      <div className="block md:hidden mt-10 space-y-6 text-center">
-        <div
-          className="text-sm text-gray-600 prose max-w-none"
-          dangerouslySetInnerHTML={{ __html: store.description || "" }}
-        />
-        <div className="space-y-4">
-          <Stat icon={<FaTags />} value={coupons.length} label="Total Coupons" />
-          <Stat
-            icon={<FaHandshake />}
-            value={coupons.filter((c) => c.couponType === "coupon").length}
-            label="Promo Codes"
-          />
-          <Stat
-            icon={<FaHandshake />}
-            value={coupons.filter((c) => c.couponType === "deal").length}
-            label="Deals"
-          />
-          <Stat
-            icon={<FaClock />}
-            value={coupons.filter(isExpired).length}
-            label="Expired Coupons"
+      {/* 🔹 Store Content BELOW sidebar & coupons (full width, aligned) */}
+      {store.content && (
+        <div className="max-w-4xl mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
+          <div
+            className="prose text-gray-800 max-w-none"
+            dangerouslySetInnerHTML={{ __html: store.content }}
           />
         </div>
-      </div>
+      )}
 
       {/* Coupon Modal */}
       <CouponModal

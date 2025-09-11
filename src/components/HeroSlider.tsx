@@ -43,9 +43,13 @@ export default function HeroSlider() {
         {slides.map((slide, index) => (
           <SwiperSlide key={index}>
             <div
-              className="relative bg-cover bg-center text-white min-h-[280px] sm:min-h-[350px] md:min-h-[450px] lg:min-h-[550px] px-4 sm:px-8 md:px-16 flex items-center"
-              style={{ backgroundImage: `url(${slide.bgImage})` }}
-            >
+  className="relative bg-cover bg-center text-white 
+  min-h-[160px] sm:min-h-[220px] md:min-h-[280px] lg:min-h-[340px] 
+  px-4 sm:px-8 md:px-16 flex items-center"
+  style={{ backgroundImage: `url(${slide.bgImage})` }}
+>
+
+
               {/* dark overlay */}
               <div className="absolute inset-0 bg-black/40 z-0" />
 
