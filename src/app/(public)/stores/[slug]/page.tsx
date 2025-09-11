@@ -17,7 +17,7 @@ export async function generateMetadata({
   params: Promise<{ slug: "" }>;
 }): Promise<Metadata> {
   const { slug = "" } = await params;
-  const storeResult = await fetchStoreWithCouponsBySlugAction(slug);
+  const storeResult = await fetchStoreWithCouponsBySlugAction(decodeURIComponent(slug));
   const store: StoreWithCouponsData | null = storeResult?.data ?? null;
 
   if (!store) {

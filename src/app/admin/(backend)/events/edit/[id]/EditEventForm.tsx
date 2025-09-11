@@ -54,7 +54,6 @@ export default function EditEventForm({
     const [descriptionHtml, setDescriptionHtml] = useState(initialEvent?.description || "");
     const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
-    // --- Image State
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(initialEvent?.image || null);
 
@@ -68,6 +67,7 @@ export default function EditEventForm({
     });
 
     const [title, setTitle] = useState(initialEvent?.title || "");
+
 
     // ✅ Auto SEO update when title changes
     useEffect(() => {
@@ -107,6 +107,8 @@ export default function EditEventForm({
             ? (formState.error as Record<string, string[]>)[field]?.[0]
             : null;
 
+
+    /** ---------------- Image Handling ---------------- */
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] || null;
         setImageFile(file);
@@ -114,25 +116,31 @@ export default function EditEventForm({
             const reader = new FileReader();
             reader.onload = () => setImagePreview(reader.result as string);
             reader.readAsDataURL(file);
-        }
+        } else setImagePreview(null);
     };
+    const removeImage = () => { setImageFile(null); setImagePreview(null); };
 
-    const removeImage = () => {
-        setImageFile(null);
-        setImagePreview(null);
-    };
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         if (eventDate) formData.set("date", eventDate.toISOString());
         formData.set("description", descriptionHtml);
         formData.set("title", title);
 
-        if (imageFile) {
+        async function urlToFile(url: string, filename: string, mimeType: string) {
+            const res = await fetch(url);
+            const blob = await res.blob();
+            return new File([blob], filename, { type: mimeType });
+        }
+        if (!imageFile && imagePreview) {
+            const existingFile = await urlToFile(imagePreview, "existing.jpg", "image/jpeg");
+            formData.set("imageFile", existingFile);
+        } else if (imageFile) {
             formData.set("imageFile", imageFile);
-        } else if (imagePreview) {
-            formData.set("image", imagePreview);
+        } else {
+            toast({ title: "Validation Error", description: "Store image is required", variant: "destructive" });
+            return;
         }
 
         // ✅ attach SEO fields
@@ -207,7 +215,7 @@ export default function EditEventForm({
                                 </PopoverContent>
                             </Popover>
                             {errorFor("date") && <p className="text-sm text-red-500">{errorFor("date")}</p>}
-                        </div>
+                        </div> 
 
                         {/* Description */}
                         <div className="space-y-2">
@@ -215,30 +223,26 @@ export default function EditEventForm({
                             <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
                         </div>
 
-                        {/* Image Upload */}
+                        {/* Hidden field for existing image */}
+                        {!imageFile && initialEvent?.image && (
+                            <input type="hidden" name="existingImage" value={initialEvent.image} />
+                        )}
+
+
+                        {/* Image */}
                         <div className="space-y-2">
-                            <Label htmlFor="imageFile">Event Image</Label>
-                            <Input
-                                id="imageFile"
-                                name="imageFile"
-                                type="file"
-                                accept="image/*"
-                                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                                onChange={handleImageChange}
-                            />
+                            <Label htmlFor="imageFile">
+                                Store Image <span className="text-red-500">*</span>
+                            </Label>
+                            <Input id="imageFile" name="imageFile" type="file" accept="image/*" onChange={handleImageChange} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
                             {imagePreview && (
                                 <div className="relative mt-2 max-h-40 w-fit">
                                     <img src={imagePreview} alt="Preview" className="rounded shadow-md max-h-40" />
-                                    <button
-                                        type="button"
-                                        onClick={removeImage}
-                                        className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
-                                    >
+                                    <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full">
                                         <X className="h-4 w-4" />
                                     </button>
                                 </div>
                             )}
-                            {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
                         </div>
 
                         {/* SEO Fields */}

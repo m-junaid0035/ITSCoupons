@@ -2,46 +2,51 @@
 
 export default function LoadingSkeleton() {
   return (
-    <div className="w-full shadow-lg bg-white dark:bg-gray-800 p-6 animate-pulse rounded-md space-y-6">
-      {/* Title */}
-      <div className="h-8 w-48 bg-gray-300 dark:bg-gray-700 rounded"></div>
+    <div className="w-full min-h-screen shadow-lg bg-white dark:bg-gray-800 p-4 sm:p-6 lg:p-8 animate-pulse rounded-md space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="h-6 sm:h-8 w-40 bg-gray-300 dark:bg-gray-700 rounded"></div>
+        <div className="h-10 w-32 bg-gray-300 dark:bg-gray-700 rounded"></div>
+      </div>
 
-      {/* Network Name Dropdown */}
-      <div className="h-10 w-48 bg-gray-300 dark:bg-gray-700 rounded"></div>
-
-      {/* Conditional Store Network URL */}
+      {/* Store Name */}
       <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
 
-      {/* Categories Popover */}
-      <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded flex items-center justify-between px-2">
-        <div className="h-6 w-24 bg-gray-400 dark:bg-gray-600 rounded"></div>
-        <div className="h-6 w-6 bg-gray-400 dark:bg-gray-600 rounded"></div>
-      </div>
-
-      {/* Image preview */}
+      {/* Image */}
       <div className="h-40 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
 
-      {/* Description editor button */}
-      <div className="h-10 w-48 bg-gray-300 dark:bg-gray-700 rounded"></div>
+      {/* Direct URL */}
+      <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
 
-      {/* Text Inputs / Meta fields */}
-      {[...Array(5)].map((_, i) => (
-        <div key={`input-${i}`} className="h-10 bg-gray-300 dark:bg-gray-700 rounded"></div>
-      ))}
+      {/* Network Dropdown */}
+      <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
 
-      {/* Textareas / Meta Description */}
-      {[...Array(3)].map((_, i) => (
-        <div key={`textarea-${i}`} className="h-24 bg-gray-300 dark:bg-gray-700 rounded"></div>
-      ))}
+      {/* Network URL (conditional) */}
+      <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
 
-      {/* Checkboxes for Is Popular / Is Active */}
+      {/* Categories */}
+      <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
+
+      {/* Description editor */}
+      <div className="h-40 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
+
+      {/* Content editor */}
+      <div className="h-60 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
+
+      {/* SEO Modal trigger */}
+      <div className="h-10 w-40 bg-gray-300 dark:bg-gray-700 rounded"></div>
+
+      {/* Popular & Active checkboxes */}
       <div className="flex space-x-6">
-        <div className="h-4 w-4 bg-gray-300 dark:bg-gray-700 rounded"></div>
-        <div className="h-4 w-4 bg-gray-300 dark:bg-gray-700 rounded"></div>
+        <div className="h-4 w-20 bg-gray-300 dark:bg-gray-700 rounded"></div>
+        <div className="h-4 w-20 bg-gray-300 dark:bg-gray-700 rounded"></div>
       </div>
 
+      {/* Slug */}
+      <div className="h-10 w-full bg-gray-300 dark:bg-gray-700 rounded"></div>
+
       {/* Submit button */}
-      <div className="h-10 w-40 bg-gray-300 dark:bg-gray-700 rounded mx-auto mt-4"></div>
+      <div className="h-10 w-40 bg-gray-300 dark:bg-gray-700 rounded ml-auto"></div>
     </div>
   );
 }

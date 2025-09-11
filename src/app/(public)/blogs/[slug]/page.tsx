@@ -14,7 +14,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
 
-  const result = await fetchBlogBySlugAction(slug);
+  const result = await fetchBlogBySlugAction(decodeURIComponent(slug));
   const blog: BlogData | null = result?.data ?? null;
 
   if (!blog) {

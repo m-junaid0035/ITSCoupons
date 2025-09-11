@@ -7,7 +7,7 @@ import LoadingSkeleton from "./loading";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, X } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -57,6 +57,8 @@ export default function EditBlogForm({
   const [writer, setWriter] = useState(blog?.writer || "");
   const [descriptionHtml, setDescriptionHtml] = useState(blog?.description || "");
   const [title, setTitle] = useState(blog?.title || "");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(blog?.image || null);
 
   // ✅ SEO state
   const [seo, setSeo] = useState({
@@ -66,6 +68,19 @@ export default function EditBlogForm({
     focusKeywords: blog?.focusKeywords?.join(", ") || "",
     slug: blog?.slug || "",
   });
+
+  /** ---------------- Image Handling ---------------- */
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setImageFile(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => setImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    } else setImagePreview(null);
+  };
+  const removeImage = () => { setImageFile(null); setImagePreview(null); };
+
 
   // ✅ Auto SEO update when title changes
   const updateSEO = (blogTitle: string) => {
@@ -117,18 +132,32 @@ export default function EditBlogForm({
 
   if (loading) return <LoadingSkeleton />;
   if (!blog) return <p className="text-red-500">Blog not found</p>;
-
+ 
   const errorFor = (field: string) =>
     formState.error &&
-    typeof formState.error === "object" &&
-    field in formState.error
+      typeof formState.error === "object" &&
+      field in formState.error
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     if (date) formData.set("date", date.toISOString());
+    async function urlToFile(url: string, filename: string, mimeType: string) {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      return new File([blob], filename, { type: mimeType });
+    }
+    if (!imageFile && imagePreview) {
+      const existingFile = await urlToFile(imagePreview, "existing.jpg", "image/jpeg");
+      formData.set("imageFile", existingFile);
+    } else if (imageFile) {
+      formData.set("imageFile", imageFile);
+    } else {
+      toast({ title: "Validation Error", description: "Store image is required", variant: "destructive" });
+      return;
+    }
     formData.set("category", selectedCategory);
     formData.set("writer", writer);
     formData.set("description", descriptionHtml);
@@ -284,29 +313,28 @@ export default function EditBlogForm({
               />
             </div>
 
-            {/* Image Upload */}
+            {/* Hidden field for existing image */}
+            {!imageFile && blog?.image && (
+              <input type="hidden" name="existingImage" value={blog.image} />
+            )}
+
+
+            {/* Image */}
             <div className="space-y-2">
               <Label htmlFor="imageFile">
-                Blog Image <span className="text-red-500">*</span>
+                Store Image <span className="text-red-500">*</span>
               </Label>
-              {blog.image && (
-                <img
-                  src={blog.image}
-                  alt="Current Blog"
-                  className="w-40 h-28 object-cover rounded mb-2"
-                />
-              )}
-              <Input
-                id="imageFile"
-                name="imageFile"
-                type="file"
-                accept="image/*"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-              {errorFor("imageFile") && (
-                <p className="text-sm text-red-500">{errorFor("imageFile")}</p>
+              <Input id="imageFile" name="imageFile" type="file" accept="image/*" onChange={handleImageChange} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+              {imagePreview && (
+                <div className="relative mt-2 max-h-40 w-fit">
+                  <img src={imagePreview} alt="Preview" className="rounded shadow-md max-h-40" />
+                  <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               )}
             </div>
+
 
             {/* SEO Fields */}
             <div className="space-y-2">

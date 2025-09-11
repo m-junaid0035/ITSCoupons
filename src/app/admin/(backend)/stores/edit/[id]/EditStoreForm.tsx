@@ -69,7 +69,7 @@ export default function EditStoreForm({
     const [descriptionHtml, setDescriptionHtml] = useState(storeData?.description || "");
     const [contentHtml, setContentHtml] = useState(storeData?.content || "");
     const [seo, setSeo] = useState({
-        metaTitle: storeData?.metaTitle || "",
+        metaTitle: storeData?.metaTitle || "", 
         metaDescription: storeData?.metaDescription || "",
         metaKeywords: storeData?.metaKeywords || "",
         focusKeywords: storeData?.focusKeywords || "",

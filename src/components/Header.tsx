@@ -40,11 +40,11 @@ export default function Header({ allStores }: HeaderProps) {
     setFilteredStores(filtered);
   }, [searchTerm, allStores]);
 
-  function handleSelectStore(storeId: string, storeSlug: string) {
+  function handleSelectStore(storeSlug: string) {
     setSearchTerm("");
     setFilteredStores([]);
     setMobileMenuOpen(false);
-    router.push(`/stores/${storeId}/${storeSlug}`);
+    router.push(`/stores/${storeSlug}`);
   }
 
   return (
@@ -121,7 +121,7 @@ export default function Header({ allStores }: HeaderProps) {
                     <li
                       key={store._id}
                       className="px-4 py-2 hover:bg-purple-50 cursor-pointer"
-                      onClick={() => handleSelectStore(store._id, store.slug)}
+                      onClick={() => handleSelectStore(store.slug)}
                     >
                       {store.name}
                     </li>
@@ -197,7 +197,7 @@ export default function Header({ allStores }: HeaderProps) {
                   <li
                     key={store._id}
                     className="px-4 py-2 hover:bg-purple-50 cursor-pointer"
-                    onClick={() => handleSelectStore(store._id, store.slug)}
+                    onClick={() => handleSelectStore(store.slug)}
                   >
                     {store.name}
                   </li>

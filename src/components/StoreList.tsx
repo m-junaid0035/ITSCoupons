@@ -84,7 +84,7 @@ export default function StoreList({ stores, selectedLetter = "" }: StoreListProp
                 {group.map((store) => (
                   <li key={store._id}>
                     <Link
-                      href={`/stores/${store._id}/${store.slug}`}
+                      href={`/stores/${store.slug}`}
                       className="text-gray-900 hover:text-blue-600 text-lg"
                     >
                       {store.name}
