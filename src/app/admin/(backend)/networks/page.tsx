@@ -11,7 +11,6 @@ export default async function NetworksPage() {
   let networks: {
     _id: string;
     networkName: string;
-    storeNetworkUrl: string;
     totalStores?: number;
   }[] = [];
 

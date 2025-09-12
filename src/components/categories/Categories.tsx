@@ -48,7 +48,7 @@ export default function Categories({
     <div className="max-w-7xl mx-auto px-4 py-10">
       {/* Header with filters */}
       <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-        <h1 className="text-3xl font-bold">All Categories</h1>
+        <h2 className="text-3xl font-bold">All Categories</h2>
         <div className="flex gap-2">
           {filterOptions.map((filter) => (
             <button

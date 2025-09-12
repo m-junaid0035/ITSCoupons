@@ -3,8 +3,10 @@ import React from "react";
 import { fetchBlogBySlugAction } from "@/actions/blogActions";
 import type { BlogData } from "@/types/blog";
 import BlogShow from "@/components/BlogShow";
-
+import { Button } from "@/components/ui/button";
+import { Rocket } from "lucide-react";
 import { Metadata } from "next";
+import BlogNotFound from "./BlogNotFound";
 
 /* ---------------------- Generate Metadata Dynamically ---------------------- */
 export async function generateMetadata({
@@ -72,14 +74,7 @@ export default async function BlogPage({
   const blog: BlogData | null = result.data ?? null;
 
   if (!blog) {
-    return (
-      <div className="py-16 text-center text-red-600">
-        <h2 className="text-3xl font-bold mb-4">Oops! Something went wrong</h2>
-        <p className="text-lg">
-          {result.error?.message || "Failed to load the blog."}
-        </p>
-      </div>
-    );
+    return <BlogNotFound />;
   }
 
   return <BlogShow blog={blog} />;

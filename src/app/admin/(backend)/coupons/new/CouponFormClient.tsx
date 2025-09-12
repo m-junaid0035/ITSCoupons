@@ -35,12 +35,12 @@ import RichTextEditor from "@/components/RichTextEditor";
 import { toast } from "@/hooks/use-toast";
 
 import { createCouponAction } from "@/actions/couponActions";
-import { fetchNetworkByIdAction } from "@/actions/networkActions";
 
 interface Store {
   _id: string;
   name: string;
   network?: string;
+  storeNetworkUrl?: string;
   directUrl?: string;
 }
 
@@ -129,10 +129,7 @@ export default function CouponFormClient({ stores }: CouponFormClientProps) {
   const handleStoreChange = async (storeId: string) => {
     const store = stores.find((s) => s._id === storeId);
     if (store?.network) {
-      const netRes = await fetchNetworkByIdAction(store.network);
-      if (netRes?.data?.storeNetworkUrl) {
-        setCouponUrl(netRes.data.storeNetworkUrl);
-      }
+        setCouponUrl(store?.storeNetworkUrl ?? "");
     } else if (store?.directUrl) {
       setCouponUrl(store?.directUrl);
     }

@@ -12,18 +12,13 @@ import {
   getStoreCountByNetworkId,
 } from "@/functions/networkFunctions";
 
-// ✅ Network Validation Schema
+// ✅ Network Validation Schema (only networkName now)
 const networkSchema = z.object({
   networkName: z
     .string()
     .trim()
     .min(2, "Network name must be at least 2 characters")
     .max(100, "Network name must be less than 100 characters"),
-  storeNetworkUrl: z
-    .string()
-    .trim()
-    .url("Must be a valid URL")
-    .max(200, "Network URL must be less than 200 characters"),
 });
 
 type NetworkFormData = z.infer<typeof networkSchema>;
@@ -37,7 +32,6 @@ export type NetworkFormState = {
 function parseNetworkFormData(formData: FormData): NetworkFormData {
   return {
     networkName: String(formData.get("networkName") || ""),
-    storeNetworkUrl: String(formData.get("storeNetworkUrl") || ""),
   };
 }
 
@@ -85,6 +79,9 @@ export async function updateNetworkAction(
 
   try {
     const updated = await updateNetwork(id, result.data);
+    if (!updated) {
+      return { error: { message: ["Network not found or update failed"] } };
+    }
     return { data: updated };
   } catch (error: any) {
     return {
@@ -98,6 +95,9 @@ export async function deleteNetworkAction(id: string) {
   await connectToDatabase();
   try {
     const deleted = await deleteNetwork(id);
+    if (!deleted) {
+      return { error: { message: ["Network not found or delete failed"] } };
+    }
     return { data: deleted };
   } catch (error: any) {
     return {
@@ -147,12 +147,16 @@ export async function fetchNetworkNamesAction() {
     };
   }
 }
+
+// ✅ FETCH STORE COUNT BY NETWORK ID
 export async function fetchStoreCountByNetworkIdAction(networkId: string) {
   await connectToDatabase();
   try {
     const count = await getStoreCountByNetworkId(networkId);
     return { data: count };
   } catch (error: any) {
-    return { error: { message: [error.message || "Failed to fetch store count"] } };
+    return {
+      error: { message: [error.message || "Failed to fetch store count"] },
+    };
   }
 }

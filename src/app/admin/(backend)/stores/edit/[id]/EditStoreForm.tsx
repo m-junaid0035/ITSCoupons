@@ -15,7 +15,13 @@ import {
     CardContent,
     CardFooter,
 } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 
 import { updateStoreAction } from "@/actions/storeActions";
@@ -29,8 +35,14 @@ interface FormState {
     data?: any;
 }
 
-interface Category { _id: string; name: string; }
-interface Network { _id: string; networkName: string; storeNetworkUrl: string; }
+interface Category {
+    _id: string;
+    name: string;
+}
+interface Network {
+    _id: string;
+    networkName: string;
+}
 
 const initialState: FormState = { error: {} };
 
@@ -61,15 +73,28 @@ export default function EditStoreForm({
     const [networks] = useState<Network[]>(networksData);
 
     const [storeName, setStoreName] = useState(storeData?.name || "");
-    const [selectedCategories, setSelectedCategories] = useState<string[]>(storeData?.categories || []);
-    const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(selectedNetworkData);
-    const [networkUrl, setNetworkUrl] = useState(selectedNetworkData?.storeNetworkUrl || "");
+    const [selectedCategories, setSelectedCategories] = useState<string[]>(
+        storeData?.categories || []
+    );
+    const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(
+        selectedNetworkData
+    );
+
+    // ✅ use store.storeNetworkUrl (NOT network)
+    const [storeNetworkUrl, setStoreNetworkUrl] = useState(
+        storeData?.storeNetworkUrl || ""
+    );
+
     const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(storeData?.image || null);
-    const [descriptionHtml, setDescriptionHtml] = useState(storeData?.description || "");
+    const [imagePreview, setImagePreview] = useState<string | null>(
+        storeData?.image || null
+    );
+    const [descriptionHtml, setDescriptionHtml] = useState(
+        storeData?.description || ""
+    );
     const [contentHtml, setContentHtml] = useState(storeData?.content || "");
     const [seo, setSeo] = useState({
-        metaTitle: storeData?.metaTitle || "", 
+        metaTitle: storeData?.metaTitle || "",
         metaDescription: storeData?.metaDescription || "",
         metaKeywords: storeData?.metaKeywords || "",
         focusKeywords: storeData?.focusKeywords || "",
@@ -80,7 +105,9 @@ export default function EditStoreForm({
     const [seoModalOpen, setSeoModalOpen] = useState(false);
     const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
-    const [networkSearch, setNetworkSearch] = useState(selectedNetworkData?.networkName || "");
+    const [networkSearch, setNetworkSearch] = useState(
+        selectedNetworkData?.networkName || ""
+    );
     const [categorySearch, setCategorySearch] = useState("");
     const [networkDropdownOpen, setNetworkDropdownOpen] = useState(false);
     const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
@@ -91,9 +118,15 @@ export default function EditStoreForm({
     /** ---------------- Click Outside Dropdowns ---------------- */
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
-            if (networkDropdownRef.current && !networkDropdownRef.current.contains(event.target as Node))
+            if (
+                networkDropdownRef.current &&
+                !networkDropdownRef.current.contains(event.target as Node)
+            )
                 setNetworkDropdownOpen(false);
-            if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node))
+            if (
+                categoryDropdownRef.current &&
+                !categoryDropdownRef.current.contains(event.target as Node)
+            )
                 setCategoryDropdownOpen(false);
         }
         document.addEventListener("mousedown", handleClickOutside);
@@ -117,7 +150,10 @@ export default function EditStoreForm({
             reader.readAsDataURL(file);
         } else setImagePreview(null);
     };
-    const removeImage = () => { setImageFile(null); setImagePreview(null); };
+    const removeImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+    };
 
     /** ---------------- SEO Auto-fill ---------------- */
     const updateSEO = async (storeName: string) => {
@@ -128,13 +164,19 @@ export default function EditStoreForm({
             text.replace(/{{storeName}}|s_n/gi, storeName);
 
         const slugSource = latestSEO.slug || storeName;
-        const processedSlug = replaceStoreName(slugSource).toLowerCase().replace(/\s+/g, "_");
+        const processedSlug = replaceStoreName(slugSource)
+            .toLowerCase()
+            .replace(/\s+/g, "_");
 
         setSeo({
             metaTitle: replaceStoreName(latestSEO.metaTitle || ""),
             metaDescription: replaceStoreName(latestSEO.metaDescription || ""),
-            metaKeywords: (latestSEO.metaKeywords || []).map(replaceStoreName).join(", "),
-            focusKeywords: (latestSEO.focusKeywords || []).map(replaceStoreName).join(", "),
+            metaKeywords: (latestSEO.metaKeywords || [])
+                .map(replaceStoreName)
+                .join(", "),
+            focusKeywords: (latestSEO.focusKeywords || [])
+                .map(replaceStoreName)
+                .join(", "),
             slug: processedSlug,
         });
     };
@@ -152,10 +194,15 @@ export default function EditStoreForm({
         const requiredFields = ["name", "slug"];
         for (const field of requiredFields) {
             if (!formData.get(field)?.toString().trim()) {
-                toast({ title: "Validation Error", description: `${field} is required`, variant: "destructive" });
+                toast({
+                    title: "Validation Error",
+                    description: `${field} is required`,
+                    variant: "destructive",
+                });
                 return;
             }
         }
+
         const directUrl = formData.get("directUrl")?.toString().trim();
         if (!directUrl && !selectedNetwork) {
             toast({
@@ -173,12 +220,20 @@ export default function EditStoreForm({
         }
 
         if (!imageFile && imagePreview) {
-            const existingFile = await urlToFile(imagePreview, "existing.jpg", "image/jpeg");
+            const existingFile = await urlToFile(
+                imagePreview,
+                "existing.jpg",
+                "image/jpeg"
+            );
             formData.set("imageFile", existingFile);
         } else if (imageFile) {
             formData.set("imageFile", imageFile);
         } else {
-            toast({ title: "Validation Error", description: "Store image is required", variant: "destructive" });
+            toast({
+                title: "Validation Error",
+                description: "Store image is required",
+                variant: "destructive",
+            });
             return;
         }
 
@@ -190,21 +245,33 @@ export default function EditStoreForm({
         formData.set("focusKeywords", seo.focusKeywords);
         formData.set("slug", seo.slug);
         formData.set("network", selectedNetwork?._id || "");
-        formData.set("networkUrl", networkUrl);
-        selectedCategories.forEach(catId => formData.append("categories", catId));
+        formData.set("storeNetworkUrl", storeNetworkUrl); // ✅ FIXED
+
+        selectedCategories.forEach((catId) =>
+            formData.append("categories", catId)
+        );
 
         startTransition(() => dispatch(formData));
     };
 
     /** ---------------- Filtered Lists ---------------- */
-    const filteredCategories = categories.filter(c => c.name.toLowerCase().includes(categorySearch.toLowerCase()));
-    const filteredNetworks = networks.filter(n => n.networkName.toLowerCase().includes(networkSearch.toLowerCase()));
+    const filteredCategories = categories.filter((c) =>
+        c.name.toLowerCase().includes(categorySearch.toLowerCase())
+    );
+    const filteredNetworks = networks.filter((n) =>
+        n.networkName.toLowerCase().includes(networkSearch.toLowerCase())
+    );
 
     /** ---------------- Success / Error Handling ---------------- */
     useEffect(() => {
         if (formState.data && !formState.error) setSuccessDialogOpen(true);
         if (formState.error && "message" in formState.error) {
-            toast({ title: "Error", description: (formState.error as any).message?.[0] || "Something went wrong", variant: "destructive" });
+            toast({
+                title: "Error",
+                description:
+                    (formState.error as any).message?.[0] || "Something went wrong",
+                variant: "destructive",
+            });
         }
     }, [formState]);
 
@@ -212,13 +279,24 @@ export default function EditStoreForm({
         <>
             <Card className="w-full min-h-screen shadow-lg bg-white dark:bg-gray-800 p-4 sm:p-6 lg:p-8">
                 <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
-                    <CardTitle className="text-lg sm:text-xl font-semibold">Edit Store</CardTitle>
-                    <Button variant="secondary" onClick={() => router.push("/admin/stores")}>Back to Stores</Button>
+                    <CardTitle className="text-lg sm:text-xl font-semibold">
+                        Edit Store
+                    </CardTitle>
+                    <Button
+                        variant="secondary"
+                        onClick={() => router.push("/admin/stores")}
+                    >
+                        Back to Stores
+                    </Button>
                 </CardHeader>
 
                 <CardContent>
-                    <form id="store-form" className="space-y-6 w-full" onSubmit={handleSubmit} encType="multipart/form-data">
-
+                    <form
+                        id="store-form"
+                        className="space-y-6 w-full"
+                        onSubmit={handleSubmit}
+                        encType="multipart/form-data"
+                    >
                         {/* Store Name */}
                         <div className="space-y-2">
                             <Label htmlFor="name">
@@ -233,25 +311,33 @@ export default function EditStoreForm({
                                 value={storeName}
                                 onChange={(e) => setStoreName(e.target.value)}
                             />
-                            {errorsForField("name").map((err, idx) => <p key={idx} className="text-sm text-red-500">{err}</p>)}
                         </div>
-
-                        {/* Hidden field for existing image */}
-                        {!imageFile && store?.image && (
-                            <input type="hidden" name="existingImage" value={store.image} />
-                        )}
-
 
                         {/* Image */}
                         <div className="space-y-2">
                             <Label htmlFor="imageFile">
                                 Store Image <span className="text-red-500">*</span>
                             </Label>
-                            <Input id="imageFile" name="imageFile" type="file" accept="image/*" onChange={handleImageChange} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+                            <Input
+                                id="imageFile"
+                                name="imageFile"
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                            />
                             {imagePreview && (
                                 <div className="relative mt-2 max-h-40 w-fit">
-                                    <img src={imagePreview} alt="Preview" className="rounded shadow-md max-h-40" />
-                                    <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full">
+                                    <img
+                                        src={imagePreview}
+                                        alt="Preview"
+                                        className="rounded shadow-md max-h-40"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={removeImage}
+                                        className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
+                                    >
                                         <X className="h-4 w-4" />
                                     </button>
                                 </div>
@@ -260,40 +346,71 @@ export default function EditStoreForm({
 
                         {/* Direct URL */}
                         <div className="space-y-2">
-                            <Label htmlFor="directUrl">Direct URL <span className="block mt-1 text-red-500 italic text-xs">*Select either a Direct URL or a Network</span></Label>
-                            <Input id="directUrl" name="directUrl" defaultValue={store?.directUrl || ""} type="url" className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+                            <Label htmlFor="directUrl">
+                                Direct URL{" "}
+                                <span className="block mt-1 text-red-500 italic text-xs">
+                                    *Select either a Direct URL or a Network
+                                </span>
+                            </Label>
+                            <Input
+                                id="directUrl"
+                                name="directUrl"
+                                defaultValue={store?.directUrl || ""}
+                                type="url"
+                                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                            />
                         </div>
 
                         {/* Network Dropdown */}
                         <div className="relative space-y-2" ref={networkDropdownRef}>
                             <Label>
-                                Network <span className="block mt-1 text-red-500 italic text-xs">*Select either a Direct URL or a Network</span>
+                                Network{" "}
+                                <span className="block mt-1 text-red-500 italic text-xs">
+                                    *Select either a Direct URL or a Network
+                                </span>
                             </Label>
                             <Input
                                 placeholder="Search network..."
                                 value={networkSearch}
                                 onFocus={() => setNetworkDropdownOpen(true)}
-                                onChange={e => setNetworkSearch(e.target.value)}
+                                onChange={(e) => setNetworkSearch(e.target.value)}
                                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                             />
                             {networkDropdownOpen && (
                                 <div className="absolute z-10 w-full max-h-40 overflow-y-auto bg-white dark:bg-gray-700 border rounded mt-1">
-                                    {filteredNetworks.map(net => (
-                                        <div key={net._id} className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
-                                            onClick={() => { setSelectedNetwork(net); setNetworkSearch(net.networkName); setNetworkUrl(net.storeNetworkUrl); setNetworkDropdownOpen(false); }}>
+                                    {filteredNetworks.map((net) => (
+                                        <div
+                                            key={net._id}
+                                            className="px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                                            onClick={() => {
+                                                setSelectedNetwork(net);
+                                                setNetworkSearch(net.networkName);
+                                                setNetworkDropdownOpen(false);
+                                            }}
+                                        >
                                             {net.networkName}
                                         </div>
                                     ))}
-                                    {filteredNetworks.length === 0 && <div className="px-3 py-2 text-gray-500">No networks found</div>}
+                                    {filteredNetworks.length === 0 && (
+                                        <div className="px-3 py-2 text-gray-500">
+                                            No networks found
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
 
-                        {/* Network URL */}
+                        {/* Store Network URL - ✅ belongs to store */}
                         {selectedNetwork && (
                             <div className="space-y-2">
-                                <Label htmlFor="networkUrl">Network URL</Label>
-                                <Input id="networkUrl" name="networkUrl" value={networkUrl} onChange={e => setNetworkUrl(e.target.value)} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+                                <Label htmlFor="storeNetworkUrl">Store Network URL</Label>
+                                <Input
+                                    id="storeNetworkUrl"
+                                    name="storeNetworkUrl"
+                                    value={storeNetworkUrl}
+                                    onChange={(e) => setStoreNetworkUrl(e.target.value)}
+                                    className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                                />
                             </div>
                         )}
 
@@ -306,20 +423,37 @@ export default function EditStoreForm({
                                 placeholder="Search categories..."
                                 value={categorySearch}
                                 onFocus={() => setCategoryDropdownOpen(true)}
-                                onChange={e => setCategorySearch(e.target.value)}
+                                onChange={(e) => setCategorySearch(e.target.value)}
                                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                             />
                             {categoryDropdownOpen && (
                                 <div className="absolute z-10 w-full max-h-40 overflow-y-auto bg-white dark:bg-gray-700 border rounded mt-1 p-2 grid grid-cols-2 gap-2">
-                                    {filteredCategories.map(cat => (
-                                        <label key={cat._id} className="flex items-center space-x-2 cursor-pointer">
-                                            <input type="checkbox" checked={selectedCategories.includes(cat._id)}
-                                                onChange={e => { if (e.target.checked) setSelectedCategories(prev => [...prev, cat._id]); else setSelectedCategories(prev => prev.filter(id => id !== cat._id)); }}
-                                                className="h-4 w-4" />
+                                    {filteredCategories.map((cat) => (
+                                        <label
+                                            key={cat._id}
+                                            className="flex items-center space-x-2 cursor-pointer"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedCategories.includes(cat._id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked)
+                                                        setSelectedCategories((prev) => [...prev, cat._id]);
+                                                    else
+                                                        setSelectedCategories((prev) =>
+                                                            prev.filter((id) => id !== cat._id)
+                                                        );
+                                                }}
+                                                className="h-4 w-4"
+                                            />
                                             <span>{cat.name}</span>
                                         </label>
                                     ))}
-                                    {filteredCategories.length === 0 && <div className="col-span-2 text-gray-500">No categories found</div>}
+                                    {filteredCategories.length === 0 && (
+                                        <div className="col-span-2 text-gray-500">
+                                            No categories found
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -329,7 +463,10 @@ export default function EditStoreForm({
                             <Label>
                                 Description <span className="text-red-500">*</span>
                             </Label>
-                            <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
+                            <RichTextEditor
+                                value={descriptionHtml}
+                                onChange={setDescriptionHtml}
+                            />
                         </div>
 
                         {/* Content */}
@@ -337,23 +474,40 @@ export default function EditStoreForm({
                             <Label>
                                 Content <span className="text-red-500">*</span>
                             </Label>
-                            <RichTextEditor value={contentHtml} onChange={setContentHtml} height="500px" />
+                            <RichTextEditor
+                                value={contentHtml}
+                                onChange={setContentHtml}
+                                height="500px"
+                            />
                         </div>
-
 
                         {/* SEO Modal Trigger */}
                         <div>
-                            <Button type="button" onClick={() => setSeoModalOpen(true)}>Edit SEO Fields</Button>
+                            <Button type="button" onClick={() => setSeoModalOpen(true)}>
+                                Edit SEO Fields
+                            </Button>
                         </div>
 
                         {/* Popular & Active */}
                         <div className="flex space-x-4">
                             <label className="flex items-center space-x-2">
-                                <input type="checkbox" name="isPopular" value="true" defaultChecked={store?.isPopular || false} className="w-4 h-4" />
+                                <input
+                                    type="checkbox"
+                                    name="isPopular"
+                                    value="true"
+                                    defaultChecked={store?.isPopular || false}
+                                    className="w-4 h-4"
+                                />
                                 <span>Popular</span>
                             </label>
                             <label className="flex items-center space-x-2">
-                                <input type="checkbox" name="isActive" value="true" defaultChecked={store?.isActive || false} className="w-4 h-4" />
+                                <input
+                                    type="checkbox"
+                                    name="isActive"
+                                    value="true"
+                                    defaultChecked={store?.isActive || false}
+                                    className="w-4 h-4"
+                                />
                                 <span>Active</span>
                             </label>
                         </div>
@@ -363,15 +517,22 @@ export default function EditStoreForm({
                             <Label htmlFor="slug">
                                 Slug <span className="text-red-500">*</span>
                             </Label>
-                            <Input id="slug" name="slug" value={seo.slug} onChange={e => setSeo(prev => ({ ...prev, slug: e.target.value }))} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+                            <Input
+                                id="slug"
+                                name="slug"
+                                value={seo.slug}
+                                onChange={(e) =>
+                                    setSeo((prev) => ({ ...prev, slug: e.target.value }))
+                                }
+                                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                            />
                         </div>
-
-                        {/* General Errors */}
-                        {Array.isArray((formState.error as any)?.message) && (formState.error as any).message.map((msg: string, idx: number) => <p key={idx} className="text-sm text-red-500">{msg}</p>)}
 
                         <CardFooter className="flex justify-end border-none px-0">
                             <Button type="submit" disabled={isPending} form="store-form">
-                                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isPending && (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                )}
                                 {isPending ? "Updating..." : "Update Store"}
                             </Button>
                         </CardFooter>

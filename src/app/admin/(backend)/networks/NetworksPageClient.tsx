@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Suspense,
   useState,
   useOptimistic,
   startTransition,
@@ -40,13 +39,12 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import NetworkModal from "@/components/views/NetworkModal";
 
 type INetwork = {
   _id: string;
   networkName: string;
-  storeNetworkUrl: string;
   totalStores?: number;
 };
 
@@ -64,14 +62,12 @@ function NetworksTable({
   onDelete: (id: string) => void;
   onStoresClick: (id: string) => void;
 }) {
-
   return (
     <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow className="border-b border-muted">
             <TableHead>Network Name</TableHead>
-            <TableHead>Network URL</TableHead>
             <TableHead>Total Stores</TableHead>
             <TableHead className="w-[160px] text-right">Actions</TableHead>
           </TableRow>
@@ -83,8 +79,9 @@ function NetworksTable({
                 key={network._id}
                 className="hover:bg-muted/40 transition-colors"
               >
-                <TableCell className="font-medium">{network.networkName}</TableCell>
-                <TableCell>{network.storeNetworkUrl}</TableCell>
+                <TableCell className="font-medium">
+                  {network.networkName}
+                </TableCell>
                 <TableCell>
                   <button
                     onClick={() => onStoresClick(network._id)}
@@ -129,7 +126,7 @@ function NetworksTable({
           ) : (
             <TableRow>
               <TableCell
-                colSpan={4}
+                colSpan={3}
                 className="text-center text-muted-foreground py-6"
               >
                 No networks found.
@@ -215,13 +212,13 @@ export default function NetworksPageClient({
       </CardHeader>
 
       <CardContent>
-          <NetworksTable
-            networks={paginatedNetworks}
-            onView={(network) => setSelectedNetwork(network)}
-            onEdit={(id) => router.push(`/admin/networks/edit/${id}`)}
-            onDelete={(id) => setConfirmDeleteId(id)}
-            onStoresClick={handleStoresClick}
-          />
+        <NetworksTable
+          networks={paginatedNetworks}
+          onView={(network) => setSelectedNetwork(network)}
+          onEdit={(id) => router.push(`/admin/networks/edit/${id}`)}
+          onDelete={(id) => setConfirmDeleteId(id)}
+          onStoresClick={handleStoresClick}
+        />
 
         {totalPages > 1 && (
           <div className="mt-4 flex justify-center">
@@ -263,7 +260,8 @@ export default function NetworksPageClient({
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
           <p>
-            Are you sure you want to delete this network? This action cannot be undone.
+            Are you sure you want to delete this network? This action cannot be
+            undone.
           </p>
           <DialogFooter>
             <Button

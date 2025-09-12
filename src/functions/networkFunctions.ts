@@ -6,12 +6,8 @@ import { Types } from "mongoose";
 /**
  * Helper to sanitize and format incoming network data.
  */
-const sanitizeNetworkData = (data: {
-  networkName?: string;
-  storeNetworkUrl?: string;
-}) => ({
+const sanitizeNetworkData = (data: { networkName?: string }) => ({
   networkName: data.networkName?.trim(),
-  storeNetworkUrl: data.storeNetworkUrl?.trim(),
 });
 
 /**
@@ -20,13 +16,11 @@ const sanitizeNetworkData = (data: {
 const serializeNetwork = (network: {
   _id: any;
   networkName: string;
-  storeNetworkUrl: string;
   createdAt?: Date;
   updatedAt?: Date;
 }) => ({
   _id: network._id.toString(),
   networkName: network.networkName,
-  storeNetworkUrl: network.storeNetworkUrl,
   createdAt: network.createdAt?.toISOString?.() ?? null,
   updatedAt: network.updatedAt?.toISOString?.() ?? null,
 });
@@ -36,7 +30,6 @@ const serializeNetwork = (network: {
  */
 export const createNetwork = async (data: {
   networkName: string;
-  storeNetworkUrl: string;
 }): Promise<ReturnType<typeof serializeNetwork>> => {
   const networkData = sanitizeNetworkData(data);
   const network = await new Network(networkData).save();
@@ -68,10 +61,7 @@ export const getNetworkById = async (
  */
 export const updateNetwork = async (
   id: string,
-  data: {
-    networkName?: string;
-    storeNetworkUrl?: string;
-  }
+  data: { networkName?: string }
 ): Promise<ReturnType<typeof serializeNetwork> | null> => {
   const updatedData = sanitizeNetworkData(data);
   const network = await Network.findByIdAndUpdate(
@@ -96,14 +86,18 @@ export const deleteNetwork = async (
  * Get all network names only.
  */
 export const getNetworkNames = async (): Promise<string[]> => {
-  const networks = await Network.find().select("networkName").lean<{ networkName: string }[]>();
+  const networks = await Network.find()
+    .select("networkName")
+    .lean<{ networkName: string }[]>();
   return networks.map((net) => net.networkName);
 };
 
 /**
  * Get the total number of stores under a particular network.
  */
-export const getStoreCountByNetworkId = async (networkId: string): Promise<number> => {
+export const getStoreCountByNetworkId = async (
+  networkId: string
+): Promise<number> => {
   if (!Types.ObjectId.isValid(networkId)) return 0;
 
   const count = await Store.countDocuments({

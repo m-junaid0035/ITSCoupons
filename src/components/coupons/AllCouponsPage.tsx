@@ -40,21 +40,23 @@ export default function AllCouponsPage({
   const [quickFreeShipping, setQuickFreeShipping] = useState(false);
 
   // Sorting & pagination
-  const [sortBy, setSortBy] = useState<"relevance" | "newest" | "discount_desc" | "discount_asc" | "most_used">("relevance");
+  const [sortBy, setSortBy] = useState<
+    "relevance" | "newest" | "discount_desc" | "discount_asc" | "most_used"
+  >("relevance");
   const [perPage, setPerPage] = useState<number>(10);
   const [page, setPage] = useState(1);
 
   // Modal
   const [selectedCoupon, setSelectedCoupon] = useState<CouponWithStoreData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   // Expanded coupon details
   const [expandedCouponId, setExpandedCouponId] = useState<string | null>(null);
 
   // ───────── URL couponId support ─────────
   useEffect(() => {
     if (couponId) {
-      const coupon = coupons.find(c => c._id === couponId);
+      const coupon = coupons.find((c) => c._id === couponId);
       if (coupon) {
         setSelectedCoupon(coupon);
         setIsModalOpen(true);
@@ -77,20 +79,31 @@ export default function AllCouponsPage({
   const filtered = useMemo(() => {
     let arr = coupons.slice();
 
-    if (activeTab === "promo") arr = arr.filter(c => c.couponType === "coupon");
-    if (activeTab === "deal") arr = arr.filter(c => c.couponType === "deal");
+    if (activeTab === "promo") arr = arr.filter((c) => c.couponType === "coupon");
+    if (activeTab === "deal") arr = arr.filter((c) => c.couponType === "deal");
 
     if (selectedCategories.length) {
-      arr = arr.filter(c => c.store?.categories?.some(catId => selectedCategories.includes(catId)));
+      arr = arr.filter((c) =>
+        c.store?.categories?.some((catId) => selectedCategories.includes(catId))
+      );
     }
 
-    if (quickVerified) arr = arr.filter(c => Boolean(c.verified));
-    if (quickCodesOnly) arr = arr.filter(c => c.couponType === "coupon");
-    if (quickDealsOnly) arr = arr.filter(c => c.couponType === "deal");
-    if (quickFreeShipping) arr = arr.filter(c => (c.discount || "").toLowerCase().includes("free ship"));
+    if (quickVerified) arr = arr.filter((c) => Boolean(c.verified));
+    if (quickCodesOnly) arr = arr.filter((c) => c.couponType === "coupon");
+    if (quickDealsOnly) arr = arr.filter((c) => c.couponType === "deal");
+    if (quickFreeShipping)
+      arr = arr.filter((c) => (c.discount || "").toLowerCase().includes("free ship"));
 
     return arr;
-  }, [coupons, activeTab, selectedCategories, quickVerified, quickCodesOnly, quickDealsOnly, quickFreeShipping]);
+  }, [
+    coupons,
+    activeTab,
+    selectedCategories,
+    quickVerified,
+    quickCodesOnly,
+    quickDealsOnly,
+    quickFreeShipping,
+  ]);
 
   // ─── Sorting
   const sorted = useMemo(() => {
@@ -120,7 +133,8 @@ export default function AllCouponsPage({
 
   // ─── Pagination
   const total = sorted.length;
-  const totalPages = perPage === Infinity ? 1 : Math.max(1, Math.ceil(total / perPage));
+  const totalPages =
+    perPage === Infinity ? 1 : Math.max(1, Math.ceil(total / perPage));
   const safePage = Math.min(page, totalPages);
   const paginated = useMemo(() => {
     if (perPage === Infinity) return sorted;
@@ -130,7 +144,16 @@ export default function AllCouponsPage({
 
   useEffect(() => {
     setPage(1);
-  }, [perPage, activeTab, selectedCategories, quickVerified, quickCodesOnly, quickDealsOnly, quickFreeShipping, sortBy]);
+  }, [
+    perPage,
+    activeTab,
+    selectedCategories,
+    quickVerified,
+    quickCodesOnly,
+    quickDealsOnly,
+    quickFreeShipping,
+    sortBy,
+  ]);
 
   // ───────── Open coupon in new tab & modal
   const handleOpenCouponNewTab = (coupon: CouponWithStoreData) => {
@@ -149,7 +172,8 @@ export default function AllCouponsPage({
   // ───────── Render ─────────
   return (
     <div className="px-4 md:px-10 py-10 max-w-7xl mx-auto text-gray-800">
-      <h2 className="text-3xl font-bold mb-6">All Coupons</h2>
+      {/* Changed h2 → h1 for main heading */}
+      <h1 className="text-3xl font-bold mb-6">All Coupons</h1>
 
       {/* Top bar */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between text-sm text-gray-600 mb-6">
@@ -161,7 +185,9 @@ export default function AllCouponsPage({
             <select
               className="border rounded px-2 py-1"
               value={perPage === Infinity ? "all" : String(perPage)}
-              onChange={(e) => setPerPage(e.target.value === "all" ? Infinity : Number(e.target.value))}
+              onChange={(e) =>
+                setPerPage(e.target.value === "all" ? Infinity : Number(e.target.value))
+              }
             >
               <option value="5">5</option>
               <option value="10">10</option>
@@ -174,7 +200,11 @@ export default function AllCouponsPage({
           <div className="flex items-center gap-2">
             <FaSortAmountDown className="opacity-60" />
             <span>Sort by:</span>
-            <select className="border rounded px-2 py-1" value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+            <select
+              className="border rounded px-2 py-1"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+            >
               <option value="relevance">Relevance</option>
               <option value="newest">Newest</option>
               <option value="discount_desc">Discount: High → Low</option>
@@ -190,12 +220,18 @@ export default function AllCouponsPage({
         {(["all", "promo", "deal"] as const).map((tab) => (
           <button
             key={tab}
-            className={`pb-2 ${activeTab === tab ? "border-b-2 border-purple-700 text-purple-700" : "hover:text-purple-600"}`}
+            className={`pb-2 ${
+              activeTab === tab
+                ? "border-b-2 border-purple-700 text-purple-700"
+                : "hover:text-purple-600"
+            }`}
             onClick={() => setActiveTab(tab)}
           >
             {tab === "all" && `All Coupons (${coupons.length})`}
-            {tab === "promo" && `Promo Codes (${coupons.filter((c) => c.couponType === "coupon").length})`}
-            {tab === "deal" && `Deals (${coupons.filter((c) => c.couponType === "deal").length})`}
+            {tab === "promo" &&
+              `Promo Codes (${coupons.filter((c) => c.couponType === "coupon").length})`}
+            {tab === "deal" &&
+              `Deals (${coupons.filter((c) => c.couponType === "deal").length})`}
           </button>
         ))}
       </div>
@@ -210,7 +246,8 @@ export default function AllCouponsPage({
             <div className="p-4 space-y-6 text-sm">
               {/* Categories */}
               <div>
-                <h4 className="font-semibold mb-3">Categories</h4>
+                {/* h4 → h3 for hierarchy */}
+                <h3 className="font-semibold mb-3">Categories</h3>
                 <ul className="space-y-2 max-h-60 overflow-auto pr-1">
                   <li>
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -246,29 +283,50 @@ export default function AllCouponsPage({
 
               {/* Quick Filters */}
               <div>
-                <h4 className="font-semibold mb-3">Quick Filters</h4>
+                {/* h4 → h3 for hierarchy */}
+                <h3 className="font-semibold mb-3">Quick Filters</h3>
                 <ul className="space-y-2">
                   <li>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" className="accent-purple-600" checked={quickVerified} onChange={(e) => setQuickVerified(e.target.checked)} />
+                      <input
+                        type="checkbox"
+                        className="accent-purple-600"
+                        checked={quickVerified}
+                        onChange={(e) => setQuickVerified(e.target.checked)}
+                      />
                       <span>Currently Verified</span>
                     </label>
                   </li>
                   <li>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" className="accent-purple-600" checked={quickCodesOnly} onChange={(e) => setQuickCodesOnly(e.target.checked)} />
+                      <input
+                        type="checkbox"
+                        className="accent-purple-600"
+                        checked={quickCodesOnly}
+                        onChange={(e) => setQuickCodesOnly(e.target.checked)}
+                      />
                       <span>Coupon Codes</span>
                     </label>
                   </li>
                   <li>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" className="accent-purple-600" checked={quickDealsOnly} onChange={(e) => setQuickDealsOnly(e.target.checked)} />
+                      <input
+                        type="checkbox"
+                        className="accent-purple-600"
+                        checked={quickDealsOnly}
+                        onChange={(e) => setQuickDealsOnly(e.target.checked)}
+                      />
                       <span>Offers / Deals</span>
                     </label>
                   </li>
                   <li>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" className="accent-purple-600" checked={quickFreeShipping} onChange={(e) => setQuickFreeShipping(e.target.checked)} />
+                      <input
+                        type="checkbox"
+                        className="accent-purple-600"
+                        checked={quickFreeShipping}
+                        onChange={(e) => setQuickFreeShipping(e.target.checked)}
+                      />
                       <span>Free Shipping</span>
                     </label>
                   </li>
@@ -282,7 +340,7 @@ export default function AllCouponsPage({
         <aside className="hidden md:block w-full md:w-1/4 space-y-6 text-sm">
           {/* Categories */}
           <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
-            <h4 className="font-semibold mb-3">Categories</h4>
+            <h3 className="font-semibold mb-3">Categories</h3>
             <ul className="space-y-2 max-h-72 overflow-auto pr-1">
               <li>
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -318,29 +376,49 @@ export default function AllCouponsPage({
 
           {/* Quick Filters */}
           <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm">
-            <h4 className="font-semibold mb-3">Quick Filters</h4>
+            <h3 className="font-semibold mb-3">Quick Filters</h3>
             <ul className="space-y-2">
               <li>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="accent-purple-600" checked={quickVerified} onChange={(e) => setQuickVerified(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    className="accent-purple-600"
+                    checked={quickVerified}
+                    onChange={(e) => setQuickVerified(e.target.checked)}
+                  />
                   <span>Currently Verified</span>
                 </label>
               </li>
               <li>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="accent-purple-600" checked={quickCodesOnly} onChange={(e) => setQuickCodesOnly(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    className="accent-purple-600"
+                    checked={quickCodesOnly}
+                    onChange={(e) => setQuickCodesOnly(e.target.checked)}
+                  />
                   <span>Coupon Codes</span>
                 </label>
               </li>
               <li>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="accent-purple-600" checked={quickDealsOnly} onChange={(e) => setQuickDealsOnly(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    className="accent-purple-600"
+                    checked={quickDealsOnly}
+                    onChange={(e) => setQuickDealsOnly(e.target.checked)}
+                  />
                   <span>Offers / Deals</span>
                 </label>
               </li>
               <li>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="accent-purple-600" checked={quickFreeShipping} onChange={(e) => setQuickFreeShipping(e.target.checked)} />
+                  <input
+                    type="checkbox"
+                    className="accent-purple-600"
+                    checked={quickFreeShipping}
+                    onChange={(e) => setQuickFreeShipping(e.target.checked)}
+                  />
                   <span>Free Shipping</span>
                 </label>
               </li>
@@ -402,23 +480,24 @@ export default function AllCouponsPage({
                       {coupon.couponType === "coupon" ? "Show Code" : "Get Deal"}
                       <span className="absolute top-0 right-0 w-4 h-4 md:w-5 md:h-5 bg-gradient-to-br from-white to-purple-700 rounded-tr-md"></span>
                     </button>
-                    <button 
+                    <button
                       onClick={() => toggleCouponDetails(coupon._id)}
                       className="text-xs md:text-sm text-gray-500 mt-2 md:mt-3 hover:underline"
                     >
-                      {expandedCouponId === coupon._id ? "Hide Details -" : "See Details +"}
+                      {expandedCouponId === coupon._id
+                        ? "Hide Details -"
+                        : "See Details +"}
                     </button>
                   </div>
                 </div>
-                
+
                 {/* Description Section */}
                 {expandedCouponId === coupon._id && coupon.description && (
-  <div
-    className="border-t border-gray-200 p-4 bg-gray-50 text-sm text-gray-700"
-    dangerouslySetInnerHTML={{ __html: coupon.description }}
-  />
-)}
-
+                  <div
+                    className="border-t border-gray-200 p-4 bg-gray-50 text-sm text-gray-700"
+                    dangerouslySetInnerHTML={{ __html: coupon.description }}
+                  />
+                )}
               </div>
             );
           })}
@@ -429,7 +508,11 @@ export default function AllCouponsPage({
               <button
                 disabled={page === 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className={`px-3 py-1 rounded border ${page === 1 ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-purple-700 border-purple-200 hover:bg-purple-50"}`}
+                className={`px-3 py-1 rounded border ${
+                  page === 1
+                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                    : "text-purple-700 border-purple-200 hover:bg-purple-50"
+                }`}
               >
                 Previous
               </button>
@@ -438,7 +521,11 @@ export default function AllCouponsPage({
                   <button
                     key={n}
                     onClick={() => setPage(n)}
-                    className={`h-8 w-8 rounded border text-sm ${n === page ? "bg-purple-700 text-white border-purple-700" : "border-gray-200 hover:bg-gray-50"}`}
+                    className={`h-8 w-8 rounded border text-sm ${
+                      n === page
+                        ? "bg-purple-700 text-white border-purple-700"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
                   >
                     {n}
                   </button>
@@ -447,7 +534,11 @@ export default function AllCouponsPage({
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className={`px-3 py-1 rounded border ${page === totalPages ? "text-gray-400 border-gray-200 cursor-not-allowed" : "text-purple-700 border-purple-200 hover:bg-purple-50"}`}
+                className={`px-3 py-1 rounded border ${
+                  page === totalPages
+                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                    : "text-purple-700 border-purple-200 hover:bg-purple-50"
+                }`}
               >
                 Next
               </button>

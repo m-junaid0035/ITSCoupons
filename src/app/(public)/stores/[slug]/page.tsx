@@ -9,6 +9,8 @@ import type { StoreData as StoreType } from "@/types/store";
 import { StoreWithCouponsData } from "@/types/storesWithCouponsData";
 
 import { Metadata } from "next";
+import StoreNotFound from "./StoreNotFound";
+
 
 /* ---------------------- Generate Metadata Dynamically ---------------------- */
 export async function generateMetadata({
@@ -66,7 +68,7 @@ export default async function StorePage({
   searchParams,
 }: {
   params: Promise<{ slug: "" }>;
-  searchParams: Promise<{ couponId?: ""}>
+  searchParams: Promise<{ couponId?: "" }>
 }) {
   // Await params to get the store ID
   const { slug = "" } = await params;
@@ -77,12 +79,9 @@ export default async function StorePage({
   const store: StoreWithCouponsData | null = storeResult?.data ?? null;
 
   if (!store) {
-    return (
-      <p className="text-center mt-10 text-red-500">
-        Store not found or failed to load.
-      </p>
-    );
+    return <StoreNotFound />;
   }
+
 
   // Extract category IDs from the current store to fetch related stores
   const storeCategories = store.categories?.map((c: any) => c._id) || [];

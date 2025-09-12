@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { FaTags, FaHandshake, FaClock } from "react-icons/fa";
 import type { StoreWithCouponsData } from "@/types/storesWithCouponsData";
 import type { CouponData } from "@/types/coupon";
@@ -66,7 +67,6 @@ export default function StorePage({
     ? store.description.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
     : "";
 
-  // Threshold for "Read More"
   const NEEDS_READ_MORE_THRESHOLD = 80; // characters
   const needsReadMore = plainDescription.length > NEEDS_READ_MORE_THRESHOLD;
 
@@ -111,7 +111,6 @@ export default function StorePage({
     }
   }, [couponId, coupons]);
 
-  // Handle click
   const handleOpenCouponNewTab = (coupon: CouponData) => {
     const modalUrl = `/stores/${store._id}?couponId=${coupon._id}`;
     window.open(modalUrl, "_blank", "noopener,noreferrer");
@@ -121,7 +120,6 @@ export default function StorePage({
     }
   };
 
-  // Dynamic subheading
   const today = new Date().toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -133,16 +131,19 @@ export default function StorePage({
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 text-gray-800">
       <div className="flex flex-col md:flex-row gap-10">
-        {/* Sidebar for desktop */}
+        {/* Sidebar */}
         <aside className="hidden md:block w-full md:w-1/4 space-y-8">
           <div className="text-center">
-            <div className="relative mx-auto w-36 h-36 mb-6 rounded-full overflow-hidden border-4 border-purple-200 shadow-lg bg-white">
-              <img
+            <div className="relative mx-auto w-44 h-44 mb-6 rounded-full border border-gray-300 shadow-md bg-white flex items-center justify-center overflow-hidden transition hover:scale-105">
+              <Image
                 src={store.image || "/placeholder-store.png"}
                 alt={store.name}
-                className="w-full h-full object-contain rounded-full p-6 transition-transform duration-300 hover:scale-110 hover:brightness-105"
+                width={178}
+                height={178}
+                className="object-contain rounded-full p-6 transition-transform duration-300 hover:scale-110 hover:brightness-105"
               />
             </div>
+
             <div
               className="text-sm text-gray-600 prose max-w-none text-left"
               dangerouslySetInnerHTML={{ __html: store.description || "" }}
@@ -171,43 +172,42 @@ export default function StorePage({
 
         {/* Main Content */}
         <div className="w-full md:w-3/4">
-          {/* 🔹 Mobile: Logo + Heading + Description */}
+          {/* 🔹 Mobile Header */}
           <div className="block md:hidden mb-6">
             <div className="flex items-center gap-3">
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border border-purple-200 bg-white shadow-sm shrink-0">
-                <img
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border border-gray-300 bg-white shadow-md flex items-center justify-center transition hover:scale-105">
+                <Image
                   src={store.image || "/placeholder-store.png"}
                   alt={store.name}
-                  className="w-full h-full object-contain rounded-full p-2 transition-transform duration-300 hover:scale-110 hover:brightness-105"
+                  width={80}
+                  height={80}
+                  className="object-contain rounded-full p-2 transition-transform duration-300 hover:scale-110 hover:brightness-105"
                 />
               </div>
-              <h1 className="text-lg font-bold text-gray-900 leading-snug">
+
+              <h2 className="text-lg font-bold text-gray-900 leading-snug">
                 {store.name}
                 <br />
                 <span className="text-sm font-medium text-gray-700">
                   Coupon & Discount Code
                 </span>
-              </h1>
+              </h2>
             </div>
 
             <p className="mt-2 text-gray-600 font-medium text-xs">
               {verifiedCount} VERIFIED OFFERS ON {today}
             </p>
 
-            {/* Mobile description */}
             {store.description && (
               <div className="mt-3 text-sm text-gray-600">
                 {expandedDesc ? (
                   <div
                     id="store-description"
                     className="prose text-gray-600 max-w-none"
-                    dangerouslySetInnerHTML={{ __html: store.content }}
+                    dangerouslySetInnerHTML={{ __html: store.description }}
                   />
                 ) : (
-                  <div
-                    className="truncate"
-                    title={plainDescription}
-                  >
+                  <div className="truncate" title={plainDescription}>
                     {plainDescription}
                   </div>
                 )}
@@ -226,7 +226,7 @@ export default function StorePage({
             )}
           </div>
 
-          {/* 🔹 Desktop Heading */}
+          {/* 🔹 Desktop Header */}
           <div className="hidden md:block mb-10 text-left">
             <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
               {store.name} Coupon & Discount Code
@@ -241,11 +241,10 @@ export default function StorePage({
             {(["all", "promo", "deal"] as const).map((tab) => (
               <button
                 key={tab}
-                className={`pb-2 ${
-                  activeTab === tab
+                className={`pb-2 ${activeTab === tab
                     ? "border-b-2 border-purple-700 text-purple-700"
                     : "hover:text-purple-600"
-                }`}
+                  }`}
                 onClick={() => setActiveTab(tab)}
               >
                 {tab === "all" && `All Coupons (${coupons.length})`}
@@ -359,9 +358,9 @@ export default function StorePage({
         </div>
       </div>
 
-      {/* 🔹 Store Content BELOW sidebar & coupons (full width, aligned) */}
+      {/* Store content */}
       {store.content && (
-        <div className="max-w-4xl mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
+         <div className="max-w-[1150px] mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
           <div
             className="prose text-gray-800 max-w-none"
             dangerouslySetInnerHTML={{ __html: store.content }}

@@ -8,7 +8,8 @@ import { Coupon } from "@/models/Coupon";
  */
 const sanitizeStoreData = (data: {
   name: string;
-  network?: string; // optional network ID
+  network?: string;
+  storeNetworkUrl?: string; // ✅ added
   directUrl?: string;
   categories: string[];
   totalCouponUsedTimes?: number;
@@ -21,10 +22,11 @@ const sanitizeStoreData = (data: {
   slug: string;
   isPopular?: boolean;
   isActive?: boolean;
-  content: string; // ✅ added
+  content: string;
 }) => ({
   name: data.name.trim(),
   network: data.network ? new Types.ObjectId(data.network) : undefined,
+  storeNetworkUrl: data.storeNetworkUrl?.trim() ?? "", // ✅ sanitize
   directUrl: data.directUrl?.trim() ?? "",
   categories: data.categories.map((id) => new Types.ObjectId(id)),
   totalCouponUsedTimes: data.totalCouponUsedTimes ?? 0,
@@ -37,7 +39,7 @@ const sanitizeStoreData = (data: {
   slug: data.slug.trim().toLowerCase().replace(/\s+/g, "-"),
   isPopular: data.isPopular ?? false,
   isActive: data.isActive ?? true,
-  content: data.content.trim(), // ✅ added
+  content: data.content.trim(),
 });
 
 /**
@@ -68,7 +70,8 @@ const serializeCoupon = (coupon: any) => ({
 const serializeStore = (store: any) => ({
   _id: store._id.toString(),
   name: store.name,
-  network: store.network?._id?.toString() ?? store.network?.toString(), // network ID if populated
+  network: store.network?._id?.toString() ?? store.network?.toString(),
+  storeNetworkUrl: store.storeNetworkUrl ?? "", // ✅ include in serializer
   directUrl: store.directUrl,
   categories: (store.categories || []).map((cat: any) =>
     typeof cat === "object" && cat._id ? cat._id.toString() : cat.toString()
@@ -83,7 +86,7 @@ const serializeStore = (store: any) => ({
   slug: store.slug,
   isPopular: store.isPopular ?? false,
   isActive: store.isActive ?? true,
-  content: store.content, // ✅ added
+  content: store.content,
   createdAt: store.createdAt?.toISOString?.(),
   updatedAt: store.updatedAt?.toISOString?.(),
   coupons: (store.coupons || []).map(serializeCoupon),
@@ -95,6 +98,7 @@ const serializeStore = (store: any) => ({
 export const createStore = async (data: {
   name: string;
   network?: string;
+  storeNetworkUrl?: string; // ✅ added
   directUrl?: string;
   categories: string[];
   totalCouponUsedTimes?: number;
@@ -107,7 +111,7 @@ export const createStore = async (data: {
   slug: string;
   isPopular?: boolean;
   isActive?: boolean;
-  content: string; // ✅ added
+  content: string;
 }) => {
   const imagePath = await saveStoreImage(data.imageFile);
 
@@ -156,6 +160,7 @@ export const updateStore = async (
   data: {
     name: string;
     network?: string;
+    storeNetworkUrl?: string; // ✅ added
     directUrl?: string;
     categories: string[];
     totalCouponUsedTimes?: number;
@@ -169,7 +174,7 @@ export const updateStore = async (
     slug: string;
     isPopular?: boolean;
     isActive?: boolean;
-    content: string; // ✅ added
+    content: string;
   }
 ) => {
   let imagePath = data.image ?? "";
@@ -305,6 +310,7 @@ export const getStoresByNetwork = async (
 
   return stores.map(serializeStore);
 };
+
 /**
  * Get a store with coupons by slug.
  */

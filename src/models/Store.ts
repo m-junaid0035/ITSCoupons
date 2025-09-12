@@ -4,7 +4,8 @@ import { INetwork } from "./Network"; // adjust the path if needed
 export interface IStore extends Document {
   name: string;
   image: string;
-  network?: Types.ObjectId | INetwork; // optional reference
+  network?: Types.ObjectId | INetwork; 
+  storeNetworkUrl?: string; // ✅ no size limit
   directUrl?: string;
   categories: Types.ObjectId[];
   totalCouponUsedTimes: number;
@@ -16,7 +17,7 @@ export interface IStore extends Document {
   slug: string;
   isPopular: boolean;
   isActive: boolean;
-  content: string; // ✅ required now
+  content: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,7 +40,14 @@ const storeSchema = new Schema<IStore>(
     network: {
       type: Schema.Types.ObjectId,
       ref: "Network",
-      required: false, // optional
+      required: false,
+    },
+
+    // ✅ No maxlength here
+    storeNetworkUrl: {
+      type: String,
+      trim: true,
+      default: "",
     },
 
     directUrl: {

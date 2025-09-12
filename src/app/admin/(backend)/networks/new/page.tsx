@@ -61,8 +61,15 @@ export default function NetworkForm() {
     <>
       <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
-          <CardTitle className="text-lg sm:text-xl font-semibold">Create Network</CardTitle>
-          <Button variant="secondary" onClick={() => router.push("/admin/networks")}>Back to Netoworks</Button>
+          <CardTitle className="text-lg sm:text-xl font-semibold">
+            Create Network
+          </CardTitle>
+          <Button
+            variant="secondary"
+            onClick={() => router.push("/admin/networks")}
+          >
+            Back to Networks
+          </Button>
         </CardHeader>
 
         <CardContent>
@@ -72,26 +79,15 @@ export default function NetworkForm() {
           >
             {/* Network Name */}
             <div className="space-y-2">
-              <Label htmlFor="networkName">Network Name <span className="text-red-500">*</span></Label>
+              <Label htmlFor="networkName">
+                Network Name <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="networkName"
                 name="networkName"
                 required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Enter network name"
-              />
-            </div>
-
-            {/* Network URL */}
-            <div className="space-y-2">
-              <Label htmlFor="storeNetworkUrl">Network URL <span className="text-red-500">*</span></Label>
-              <Input
-                id="storeNetworkUrl"
-                name="storeNetworkUrl"
-                required
-                type="url"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="https://example.com"
               />
             </div>
 

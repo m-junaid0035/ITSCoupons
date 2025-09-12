@@ -43,11 +43,11 @@ export default function HeroSlider() {
         {slides.map((slide, index) => (
           <SwiperSlide key={index}>
             <div
-  className="relative bg-cover bg-center text-white 
+              className="relative bg-cover bg-center text-white 
   min-h-[160px] sm:min-h-[220px] md:min-h-[280px] lg:min-h-[340px] 
   px-4 sm:px-8 md:px-16 flex items-center"
-  style={{ backgroundImage: `url(${slide.bgImage})` }}
->
+              style={{ backgroundImage: `url(${slide.bgImage})` }}
+            >
 
 
               {/* dark overlay */}
@@ -56,9 +56,16 @@ export default function HeroSlider() {
               {/* content */}
               <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center">
                 <div className="space-y-4 sm:space-y-5 md:space-y-6 p-4 sm:p-6 rounded-lg text-center md:text-left">
-                  <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold leading-tight drop-shadow-lg">
-                    {slide.title}
-                  </h1>
+                  {index === 0 ? (
+                    <h1 className="text-2xl sm:text-3xl md:text-5xl font-extrabold leading-tight drop-shadow-lg">
+                      {slide.title}
+                    </h1>
+                  ) : (
+                    <h2 className="text-2xl sm:text-3xl md:text-5xl font-extrabold leading-tight drop-shadow-lg">
+                      {slide.title}
+                    </h2>
+                  )}
+
                   <h2 className="text-xl sm:text-2xl md:text-4xl font-bold drop-shadow">
                     {slide.subtitle}
                   </h2>

@@ -47,7 +47,11 @@ export default function RelatedStores({ stores, perPage = 12 }: RelatedStoresPro
             <img
               src={store.image || "/placeholder-store.png"}
               alt={store.name}
-              className="object-cover w-full h-[120px]" // square image, no rounded corners
+              title={`${store.name} Coupons & Deals`}
+              loading="lazy"
+              width={178}
+              height={120}
+              className="object-cover w-full h-[120px]"
             />
             <div className="mt-3 text-sm font-semibold text-purple-800 text-center">
               {store.name}
@@ -62,7 +66,11 @@ export default function RelatedStores({ stores, perPage = 12 }: RelatedStoresPro
           <button
             disabled={page === 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-            className={`px-3 py-1 border rounded ${page === 1 ? "text-gray-400 border-gray-200 cursor-not-allowed" : "border-purple-700 text-purple-700 hover:bg-purple-50"}`}
+            className={`px-3 py-1 border rounded ${
+              page === 1
+                ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                : "border-purple-700 text-purple-700 hover:bg-purple-50"
+            }`}
           >
             Prev
           </button>
@@ -71,7 +79,11 @@ export default function RelatedStores({ stores, perPage = 12 }: RelatedStoresPro
             <button
               key={n}
               onClick={() => setPage(n)}
-              className={`h-8 w-8 rounded border text-sm ${n === page ? "bg-purple-700 text-white border-purple-700" : "border-gray-200 hover:bg-gray-50"}`}
+              className={`h-8 w-8 rounded border text-sm ${
+                n === page
+                  ? "bg-purple-700 text-white border-purple-700"
+                  : "border-gray-200 hover:bg-gray-50"
+              }`}
             >
               {n}
             </button>
@@ -80,7 +92,11 @@ export default function RelatedStores({ stores, perPage = 12 }: RelatedStoresPro
           <button
             disabled={page === totalPages}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            className={`px-3 py-1 border rounded ${page === totalPages ? "text-gray-400 border-gray-200 cursor-not-allowed" : "border-purple-700 text-purple-700 hover:bg-purple-50"}`}
+            className={`px-3 py-1 border rounded ${
+              page === totalPages
+                ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                : "border-purple-700 text-purple-700 hover:bg-purple-50"
+            }`}
           >
             Next
           </button>

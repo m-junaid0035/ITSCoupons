@@ -24,6 +24,7 @@ import { saveStoreImage } from "@/lib/uploadStoreImage";
 const storeSchema = z.object({
   name: z.string().trim().min(3).max(100),
   network: z.string().optional().or(z.literal("")),
+  storeNetworkUrl: z.string().url("Invalid network URL").optional().or(z.literal("")), // ✅ added
   directUrl: z.string().url("Invalid direct URL").optional().or(z.literal("")),
   categories: z.array(z.string().min(1, "Invalid category ID")),
   totalCouponUsedTimes: z.coerce.number().min(0).optional(),
@@ -36,7 +37,7 @@ const storeSchema = z.object({
   slug: z.string().trim().min(3).max(100),
   isPopular: z.coerce.boolean().optional().default(false),
   isActive: z.coerce.boolean().optional().default(true),
-  content: z.string().min(5), // ✅ added required content
+  content: z.string().min(5), // ✅ required
 });
 
 type StoreFormData = z.infer<typeof storeSchema>;
@@ -47,7 +48,9 @@ export type StoreFormState = {
 };
 
 /* ---------------------------- 🛠️ Helper Parser ---------------------------- */
-async function parseStoreFormData(formData: FormData): Promise<StoreFormData & { imageFile: File }> {
+async function parseStoreFormData(
+  formData: FormData
+): Promise<StoreFormData & { imageFile: File }> {
   const categoryIds = formData.getAll("categories") as string[];
 
   const parseCSV = (value: FormDataEntryValue | null) =>
@@ -66,6 +69,7 @@ async function parseStoreFormData(formData: FormData): Promise<StoreFormData & {
   return {
     name: String(formData.get("name") || ""),
     network: String(formData.get("network") || ""),
+    storeNetworkUrl: String(formData.get("storeNetworkUrl") || ""), // ✅ parse
     directUrl: String(formData.get("directUrl") || ""),
     categories: categoryIds,
     totalCouponUsedTimes: Number(formData.get("totalCouponUsedTimes") || 0),
@@ -78,13 +82,16 @@ async function parseStoreFormData(formData: FormData): Promise<StoreFormData & {
     slug: String(formData.get("slug") || ""),
     isPopular: ["true", "on", "1"].includes(String(formData.get("isPopular"))),
     isActive: ["true", "on", "1"].includes(String(formData.get("isActive"))),
-    content: String(formData.get("content") || ""), // ✅ added
+    content: String(formData.get("content") || ""),
     imageFile: uploadedFile,
   };
 }
 
 /* ---------------------------- 🔹 CREATE ---------------------------- */
-export async function createStoreAction(prevState: StoreFormState, formData: FormData): Promise<StoreFormState> {
+export async function createStoreAction(
+  prevState: StoreFormState,
+  formData: FormData
+): Promise<StoreFormState> {
   await connectToDatabase();
 
   try {
@@ -92,7 +99,11 @@ export async function createStoreAction(prevState: StoreFormState, formData: For
     const result = storeSchema.safeParse(parsed);
 
     if (!result.success) return { error: result.error.flatten().fieldErrors };
-    const store = await createStore({ ...result.data, imageFile: parsed.imageFile });
+
+    const store = await createStore({
+      ...result.data,
+      imageFile: parsed.imageFile,
+    });
 
     return { data: store };
   } catch (error: any) {
@@ -101,7 +112,11 @@ export async function createStoreAction(prevState: StoreFormState, formData: For
 }
 
 /* ---------------------------- 🔹 UPDATE ---------------------------- */
-export async function updateStoreAction(prevState: StoreFormState, id: string, formData: FormData): Promise<StoreFormState> {
+export async function updateStoreAction(
+  prevState: StoreFormState,
+  id: string,
+  formData: FormData
+): Promise<StoreFormState> {
   await connectToDatabase();
 
   try {
@@ -110,7 +125,10 @@ export async function updateStoreAction(prevState: StoreFormState, id: string, f
 
     if (!result.success) return { error: result.error.flatten().fieldErrors };
 
-    const updated = await updateStore(id, { ...result.data, imageFile: parsed.imageFile });
+    const updated = await updateStore(id, {
+      ...result.data,
+      imageFile: parsed.imageFile,
+    });
 
     if (!updated) return { error: { message: ["Store not found"] } };
     return { data: updated };
@@ -127,21 +145,33 @@ export async function deleteStoreAction(id: string) {
     if (!deleted) return { error: { message: ["Store not found"] } };
     return { data: deleted };
   } catch (error: any) {
-    return { error: { message: [error.message || "Failed to delete store"] } };
+    return {
+      error: { message: [error.message || "Failed to delete store"] },
+    };
   }
 }
 
 /* ---------------------------- 🔹 FETCHES ---------------------------- */
 export async function fetchAllStoresAction() {
   await connectToDatabase();
-  try { return { data: await getAllStores() }; } 
-  catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores"] } }; }
+  try {
+    return { data: await getAllStores() };
+  } catch (error: any) {
+    return {
+      error: { message: [error.message || "Failed to fetch stores"] },
+    };
+  }
 }
 
 export async function fetchAllActiveStoresAction() {
   await connectToDatabase();
-  try { return { data: await getAllActiveStores() }; } 
-  catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores"] } }; }
+  try {
+    return { data: await getAllActiveStores() };
+  } catch (error: any) {
+    return {
+      error: { message: [error.message || "Failed to fetch stores"] },
+    };
+  }
 }
 
 export async function fetchStoreByIdAction(id: string) {
@@ -150,19 +180,33 @@ export async function fetchStoreByIdAction(id: string) {
     const store = await getStoreById(id);
     if (!store) return { error: { message: ["Store not found"] } };
     return { data: store };
-  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch store"] } }; }
+  } catch (error: any) {
+    return {
+      error: { message: [error.message || "Failed to fetch store"] },
+    };
+  }
 }
 
 export async function fetchPopularStoresAction() {
   await connectToDatabase();
-  try { return { data: await getPopularStores() }; } 
-  catch (error: any) { return { error: { message: [error.message || "Failed to fetch popular stores"] } }; }
+  try {
+    return { data: await getPopularStores() };
+  } catch (error: any) {
+    return {
+      error: { message: [error.message || "Failed to fetch popular stores"] },
+    };
+  }
 }
 
 export async function fetchRecentlyUpdatedStoresAction() {
   await connectToDatabase();
-  try { return { data: await getRecentlyUpdatedStores() }; } 
-  catch (error: any) { return { error: { message: [error.message || "Failed to fetch recently updated stores"] } }; }
+  try {
+    return { data: await getRecentlyUpdatedStores() };
+  } catch (error: any) {
+    return {
+      error: { message: [error.message || "Failed to fetch recently updated stores"] },
+    };
+  }
 }
 
 export async function fetchStoresByCategoriesAction(categories: string[]) {
@@ -170,13 +214,22 @@ export async function fetchStoresByCategoriesAction(categories: string[]) {
   try {
     if (!categories.length) return { data: [] };
     return { data: await getStoresByCategories(categories) };
-  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores by categories"] } }; }
+  } catch (error: any) {
+    return {
+      error: { message: [error.message || "Failed to fetch stores by categories"] },
+    };
+  }
 }
 
 export async function fetchAllStoresWithCouponsAction() {
   await connectToDatabase();
-  try { return { data: await getStoresWithCoupons() }; } 
-  catch (error: any) { return { error: { message: [error.message || "Failed to fetch stores with coupons"] } }; }
+  try {
+    return { data: await getStoresWithCoupons() };
+  } catch (error: any) {
+    return {
+      error: { message: [error.message || "Failed to fetch stores with coupons"] },
+    };
+  }
 }
 
 export async function fetchStoreWithCouponsByIdAction(storeId: string) {
@@ -185,7 +238,11 @@ export async function fetchStoreWithCouponsByIdAction(storeId: string) {
     const store = await getStoreWithCouponsById(storeId);
     if (!store) return { error: { message: ["Store not found"] } };
     return { data: store };
-  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch store"] } }; }
+  } catch (error: any) {
+    return {
+      error: { message: [error.message || "Failed to fetch store"] },
+    };
+  }
 }
 
 export async function fetchCouponCountByStoreIdAction(storeId: string) {
@@ -193,13 +250,18 @@ export async function fetchCouponCountByStoreIdAction(storeId: string) {
   try {
     const count = await getCouponCountByStoreId(storeId);
     return { data: count };
-  } catch (error: any) { return { error: { message: [error.message || "Failed to fetch coupon count"] } }; }
+  } catch (error: any) {
+    return {
+      error: { message: [error.message || "Failed to fetch coupon count"] },
+    };
+  }
 }
 
 /* ---------------------------- 🔹 INLINE UPDATE ---------------------------- */
 export type InlineStoreUpdate = Partial<{
   name: string;
   network: string;
+  storeNetworkUrl: string; // ✅ added
   directUrl: string;
   categories: string[];
   totalCouponUsedTimes: number;
@@ -213,10 +275,13 @@ export type InlineStoreUpdate = Partial<{
   slug: string;
   isPopular: boolean;
   isActive: boolean;
-  content: string; // ✅ added
+  content: string;
 }>;
 
-export async function updateStoreInline(id: string, updates: InlineStoreUpdate) {
+export async function updateStoreInline(
+  id: string,
+  updates: InlineStoreUpdate
+) {
   await connectToDatabase();
 
   const store = await getStoreById(id);
@@ -240,10 +305,12 @@ export async function updateStoreInline(id: string, updates: InlineStoreUpdate) 
 
   const finalUpdates = {
     name: updates.name ?? store.name,
-    categories: updates.categories ?? store.categories,
-    directUrl: updates.directUrl ?? store.directUrl,
     network: updates.network ?? store.network,
-    totalCouponUsedTimes: updates.totalCouponUsedTimes ?? store.totalCouponUsedTimes,
+    storeNetworkUrl: updates.storeNetworkUrl ?? store.storeNetworkUrl, // ✅ added
+    directUrl: updates.directUrl ?? store.directUrl,
+    categories: updates.categories ?? store.categories,
+    totalCouponUsedTimes:
+      updates.totalCouponUsedTimes ?? store.totalCouponUsedTimes,
     imageFile: updates.imageFile,
     image: updates.image ?? store.image,
     description: updates.description ?? store.description,
@@ -251,10 +318,10 @@ export async function updateStoreInline(id: string, updates: InlineStoreUpdate) 
     metaDescription: updates.metaDescription ?? store.metaDescription,
     metaKeywords: updates.metaKeywords ?? store.metaKeywords,
     focusKeywords: updates.focusKeywords ?? store.focusKeywords,
+    slug: updates.slug ?? store.slug,
     isPopular: updates.isPopular ?? store.isPopular,
     isActive: updates.isActive ?? store.isActive,
-    slug: updates.slug ?? store.slug,
-    content: updates.content ?? store.content, // ✅ added
+    content: updates.content ?? store.content,
   };
 
   try {
@@ -262,13 +329,13 @@ export async function updateStoreInline(id: string, updates: InlineStoreUpdate) 
     if (!updated) return { error: { message: ["Failed to update store"] } };
     return { data: updated };
   } catch (error: any) {
-    return { error: { message: [error.message || "Failed to update store"] } };
+    return {
+      error: { message: [error.message || "Failed to update store"] },
+    };
   }
 }
 
-/**
- * ✅ FETCH STORES BY NETWORK
- */
+/* ---------------------------- 🔹 EXTRA FETCHERS ---------------------------- */
 export async function fetchStoresByNetworkAction(networkId: string) {
   await connectToDatabase();
 
@@ -285,9 +352,7 @@ export async function fetchStoresByNetworkAction(networkId: string) {
     };
   }
 }
-/**
- * ✅ FETCH STORE WITH COUPONS BY SLUG
- */
+
 export async function fetchStoreWithCouponsBySlugAction(slug: string) {
   await connectToDatabase();
 
@@ -303,7 +368,11 @@ export async function fetchStoreWithCouponsBySlugAction(slug: string) {
     return { data: store };
   } catch (error: any) {
     return {
-      error: { message: [error.message || "Failed to fetch store with coupons by slug"] },
+      error: {
+        message: [
+          error.message || "Failed to fetch store with coupons by slug",
+        ],
+      },
     };
   }
 }

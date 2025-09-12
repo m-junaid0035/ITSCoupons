@@ -30,6 +30,7 @@ export default function BlogShow({ blog }: BlogShowProps) {
           <Image
             src={`https://itscoupons.com${blog.image}`}
             alt={blog.title}
+            title={blog.title} // ✅ Added title for accessibility
             fill
             className="object-cover object-center transition-transform duration-500 hover:scale-105"
             priority
@@ -43,7 +44,6 @@ export default function BlogShow({ blog }: BlogShowProps) {
           __html: blog.description || "<p>No description available.</p>",
         }}
       />
-
     </section>
   );
 }

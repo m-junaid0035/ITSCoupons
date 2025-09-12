@@ -1,17 +1,32 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { FaWhatsapp, FaFacebookF, FaInstagram } from "react-icons/fa";
 import { SiX } from "react-icons/si";
-import type { SettingData } from "@/types/setting";
 import Link from "next/link";
+import { fetchLatestSettingAction } from "@/actions/settingActions";
+import { fetchLatestStaticPageTitlesAndSlugsAction } from "@/actions/staticPagesActions";
+import type { SettingData } from "@/types/setting";
 
-interface FooterProps {
-  latestSetting: SettingData | null;
-  aboutPages: { title: string; slug: string }[];
-}
+export default function Footer() {
+  const [latestSetting, setLatestSetting] = useState<SettingData | null>(null);
+  const [aboutPages, setAboutPages] = useState<{ title: string; slug: string }[]>([]);
 
-export default function Footer({ latestSetting, aboutPages }: FooterProps) {
+  useEffect(() => {
+    async function fetchFooterData() {
+      try {
+        const settingResult = await fetchLatestSettingAction();
+        setLatestSetting(settingResult?.data || null);
+
+        const pagesResult = await fetchLatestStaticPageTitlesAndSlugsAction();
+        setAboutPages(Array.isArray(pagesResult?.data) ? pagesResult.data : []);
+      } catch (err) {
+        console.error("Failed to fetch footer data:", err);
+      }
+    }
+    fetchFooterData();
+  }, []);
+
   return (
     <footer className="bg-purple-800 text-white px-6 md:px-16 py-16">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-sm">
@@ -72,31 +87,11 @@ export default function Footer({ latestSetting, aboutPages }: FooterProps) {
         <div>
           <h4 className="font-semibold mb-2">Deals & Shop</h4>
           <ul className="space-y-1">
-            <li>
-              <Link href="/coupons" className="hover:underline">
-                Promo Codes
-              </Link>
-            </li>
-            <li>
-              <Link href="/coupons" className="hover:underline">
-                Latest Deals
-              </Link>
-            </li>
-            <li>
-              <Link href="/coupons" className="hover:underline">
-                Exclusives
-              </Link>
-            </li>
-            <li>
-              <Link href="/coupons" className="hover:underline">
-                Product Deals
-              </Link>
-            </li>
-            <li>
-              <Link href="/coupons" className="hover:underline">
-                Stores
-              </Link>
-            </li>
+            <li><Link href="/coupons" className="hover:underline">Promo Codes</Link></li>
+            <li><Link href="/coupons" className="hover:underline">Latest Deals</Link></li>
+            <li><Link href="/coupons" className="hover:underline">Exclusives</Link></li>
+            <li><Link href="/coupons" className="hover:underline">Product Deals</Link></li>
+            <li><Link href="/coupons" className="hover:underline">Stores</Link></li>
           </ul>
         </div>
 
@@ -123,62 +118,40 @@ export default function Footer({ latestSetting, aboutPages }: FooterProps) {
           </ul>
         </div>
 
-        {/* About Section (Latest 4 Static Pages) */}
+        {/* About Section */}
         <div>
           <h4 className="font-semibold mb-2">About</h4>
           <ul className="space-y-1">
-            {/* Static Links First */}
-            <li>
-              <Link href="/aboutus" className="hover:underline">
-                About Us
-              </Link>
-            </li>
-            <li>
-              <Link href="/contactus" className="hover:underline">
-                Contact Us
-              </Link>
-            </li>
-
-            {/* Dynamic Pages */}
+            <li><Link href="/aboutus" className="hover:underline">About Us</Link></li>
+            <li><Link href="/contactus" className="hover:underline">Contact Us</Link></li>
             {aboutPages.length > 0 ? (
               aboutPages.map((page) => (
                 <li key={page.slug}>
-                  <Link
-                    href={`/about?slug=${page.slug}`}
-                    className="hover:underline"
-                  >
+                  <Link href={`/about?slug=${page.slug}`} className="hover:underline">
                     {page.title}
                   </Link>
                 </li>
               ))
             ) : (
-              <li>No pages found</li>
+              <li>Loading pages...</li>
             )}
           </ul>
         </div>
-
 
         {/* Contact Info */}
         <div>
           <h4 className="font-semibold mb-2">Contact Us</h4>
           <ul className="space-y-1">
-            <li className="max-w-full break-words">
-              {latestSetting?.contactEmail || "support@itscoupons.com"}
-            </li>
-            <li className="max-w-full break-words">
-              {latestSetting?.contactPhone || "(+92) 3143328342"}
-            </li>
-            <li className="max-w-full break-words">
-              {latestSetting?.address || "123, street, Discount city, 50050"}
-            </li>
+            <li className="max-w-full break-words">{latestSetting?.contactEmail || "support@itscoupons.com"}</li>
+            <li className="max-w-full break-words">{latestSetting?.contactPhone || "(+92) 3143328342"}</li>
+            <li className="max-w-full break-words">{latestSetting?.address || "123, street, Discount city, 50050"}</li>
           </ul>
         </div>
       </div>
 
       {/* Bottom copyright */}
       <div className="mt-10 text-center text-sm text-white/70">
-        © {new Date().getFullYear()} {latestSetting?.siteName || "ITSCoupons"}.
-        All rights reserved.
+        © {new Date().getFullYear()} {latestSetting?.siteName || "ITSCoupons"}. All rights reserved.
       </div>
     </footer>
   );

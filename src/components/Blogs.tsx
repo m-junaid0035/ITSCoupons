@@ -15,7 +15,6 @@ import {
 import { useActionState } from "react";
 import { createSubscriberAction } from "@/actions/subscriberActions";
 import { BlogListResponse } from "@/types/blog";
-import { IoMdClose } from "react-icons/io";
 
 interface FieldErrors {
   [key: string]: string[];
@@ -30,7 +29,6 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [recentVisible, setRecentVisible] = useState(3);
 
-  // Newsletter
   const [email, setEmail] = useState("");
   const [formState, dispatch, isPending] = useActionState(createSubscriberAction, {});
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -44,7 +42,6 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
       : null;
   };
 
-  // Handle subscription feedback
   useEffect(() => {
     if (formState.data && !formState.error) {
       setDialogMessage("You have been successfully subscribed!");
@@ -58,7 +55,6 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
     }
   }, [formState]);
 
-  // Filter & sort blogs by createdAt
   const filteredBlogs = useMemo(() => {
     const filtered = activeCategory === "All" ? blogs : blogs.filter((b) => b.category === activeCategory);
     return filtered.sort((a, b) => {
@@ -95,7 +91,7 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
                 : "text-purple-700 border-purple-300 hover:bg-purple-100"
                 }`}
             >
-                {tab}
+              {tab}
             </button>
           ))}
         </div>
@@ -109,9 +105,11 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
                   <Image
                     src={`https://itscoupons.com/${blog.image}`}
                     alt={blog.title}
+                    title={blog.title}       // ✅ added title
                     fill
+                    sizes="(max-width: 768px) 100vw, 768px"
                     className="object-cover"
-                    priority
+                    loading="lazy"          // ✅ added loading
                   />
                 </div>
               )}
@@ -150,9 +148,25 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
         <div className="flex flex-col gap-6">
           {recent.map((blog) => (
             <Link key={blog._id} href={`/blogs/${blog.slug}`}>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center border-l-4 border-purple-600 pl-4 pb-4 hover:bg-gray-50 transition rounded-md cursor-pointer gap-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center border-l-4 border-purple-600 pl-4 pb-4 hover:bg-gray-50 transition rounded-md cursor-pointer gap-3">
+                {blog.image && (
+                  <div className="relative w-full sm:w-32 h-24 flex-shrink-0">
+                    <Image
+                      src={`https://itscoupons.com/${blog.image}`}
+                      alt={blog.title}
+                      title={blog.title}        // ✅ added title
+                      fill
+                      sizes="(max-width: 640px) 100vw, 200px"
+                      className="object-cover rounded-md"
+                      loading="lazy"            // ✅ added loading
+                    />
+                  </div>
+                )}
+
                 <div className="text-sm sm:text-base flex-1">
-                  <p className="font-medium text-purple-700 mb-1">{blog.category || "Uncategorized"}</p>
+                  <p className="font-medium text-purple-700 mb-1">
+                    {blog.category || "Uncategorized"}
+                  </p>
                   <p className="font-semibold">{blog.title}</p>
                   {blog.createdAt && (
                     <p className="text-xs sm:text-sm text-gray-500">

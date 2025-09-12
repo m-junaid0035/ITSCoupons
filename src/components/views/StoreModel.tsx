@@ -67,8 +67,6 @@ export default function StoreModal({ store, isOpen, onClose }: StoreModalProps) 
           const res = await fetchNetworkByIdAction(store.network);
           if (res.data?.networkName) {
             setNetworkName(res.data.networkName);
-            console.log()
-            if (res.data.storeNetworkUrl) store.storeNetworkUrl = res.data.storeNetworkUrl;
           }
         } catch {
           setNetworkName("N/A");
@@ -147,7 +145,7 @@ export default function StoreModal({ store, isOpen, onClose }: StoreModalProps) 
 
           {networkName !== "N/A" && store.storeNetworkUrl && (
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Network URL</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Store Network URL</p>
               <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
                 {store.storeNetworkUrl}
               </p>

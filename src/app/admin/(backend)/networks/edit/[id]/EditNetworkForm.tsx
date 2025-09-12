@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useActionState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -68,14 +68,22 @@ export default function EditNetworkForm({ network }: { network: any }) {
   return (
     <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
       <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
-        <CardTitle className="text-lg sm:text-xl font-semibold">Edit Network</CardTitle>
-        <Button variant="secondary" onClick={() => router.push("/admin/networks")}>
+        <CardTitle className="text-lg sm:text-xl font-semibold">
+          Edit Network
+        </CardTitle>
+        <Button
+          variant="secondary"
+          onClick={() => router.push("/admin/networks")}
+        >
           Back to Networks
         </Button>
       </CardHeader>
 
       <CardContent>
-        <form action={(formData: FormData) => dispatch(formData)} className="space-y-6">
+        <form
+          action={(formData: FormData) => dispatch(formData)}
+          className="space-y-6"
+        >
           {/* Network Name */}
           <div className="space-y-2">
             <Label htmlFor="networkName">
@@ -91,25 +99,6 @@ export default function EditNetworkForm({ network }: { network: any }) {
             />
             {errorFor("networkName") && (
               <p className="text-sm text-red-500">{errorFor("networkName")}</p>
-            )}
-          </div>
-
-          {/* Network URL */}
-          <div className="space-y-2">
-            <Label htmlFor="storeNetworkUrl">
-              Network URL <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="storeNetworkUrl"
-              name="storeNetworkUrl"
-              defaultValue={network.storeNetworkUrl}
-              required
-              type="url"
-              className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              placeholder="https://example.com"
-            />
-            {errorFor("storeNetworkUrl") && (
-              <p className="text-sm text-red-500">{errorFor("storeNetworkUrl")}</p>
             )}
           </div>
 

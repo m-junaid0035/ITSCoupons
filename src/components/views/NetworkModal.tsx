@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 export interface INetwork {
   _id: string;
   networkName?: string;
-  storeNetworkUrl?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -69,25 +68,6 @@ export default function NetworkModal({ network, isOpen, onClose }: NetworkModalP
             <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               {network.networkName || "N/A"}
             </p>
-          </div>
-
-          {/* Network URL */}
-          <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Network URL</p>
-            {network.storeNetworkUrl ? (
-              <Badge variant="secondary">
-                <a
-                  href={network.storeNetworkUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 dark:text-blue-400 underline"
-                >
-                  {network.storeNetworkUrl}
-                </a>
-              </Badge>
-            ) : (
-              <span className="text-gray-400">N/A</span>
-            )}
           </div>
 
           {/* Created At */}

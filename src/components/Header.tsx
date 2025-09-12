@@ -7,12 +7,10 @@ import { IoMdClose } from "react-icons/io";
 import { useState, useEffect } from "react";
 import type { StoreData } from "@/types/store";
 import Image from "next/image";
+import { fetchAllStoresAction } from "@/actions/storeActions";
 
-interface HeaderProps {
-  allStores: StoreData[];
-}
-
-export default function Header({ allStores }: HeaderProps) {
+export default function Header() {
+  const [allStores, setAllStores] = useState<StoreData[]>([]);
   const [showAnnouncement, setShowAnnouncement] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,6 +27,20 @@ export default function Header({ allStores }: HeaderProps) {
     { href: "/aboutus", label: "About us" },
   ];
 
+  // ✅ Fetch stores client-side
+  useEffect(() => {
+    async function fetchStores() {
+      try {
+        const result = await fetchAllStoresAction();
+        setAllStores(Array.isArray(result?.data) ? result.data : []);
+      } catch (err) {
+        console.error("Failed to fetch stores:", err);
+      }
+    }
+    fetchStores();
+  }, []);
+
+  // ✅ Filter stores based on search term
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredStores([]);
@@ -64,7 +76,7 @@ export default function Header({ allStores }: HeaderProps) {
 
       {/* Main Header */}
       <div className="bg-white shadow-sm px-4 sm:px-6 lg:px-16 py-4 md:py-6 flex items-center justify-between relative">
-        {/* Logo (absolutely positioned so header height doesn't change) */}
+        {/* Logo */}
         <Link
           href="/"
           className="absolute left-4 sm:left-6 lg:left-16 top-[55%] -translate-y-1/2"
@@ -79,24 +91,22 @@ export default function Header({ allStores }: HeaderProps) {
           />
         </Link>
 
-
-        {/* Right section (nav + search + sidebar toggle) */}
+        {/* Right Section */}
         <div className="flex-1 flex items-center justify-end pl-44 sm:pl-52 md:pl-60">
-          {/* Navbar (visible only when width >= 1201px) */}
           <div className="hidden min-[1201px]:flex items-center w-full max-w-6xl justify-between relative">
             <nav className="flex space-x-6 text-base lg:text-lg font-medium text-gray-700 mx-auto">
               {navLinks.map(({ href, label }) => {
                 const isActive =
-                  pathname === href ||
-                  (href !== "/" && pathname.startsWith(href));
+                  pathname === href || (href !== "/" && pathname.startsWith(href));
                 return (
                   <Link
                     key={href}
                     href={href}
-                    className={`px-1 py-1 ${isActive
+                    className={`px-1 py-1 ${
+                      isActive
                         ? "text-purple-800 font-semibold underline underline-offset-4"
                         : "text-gray-700 hover:text-purple-700"
-                      }`}
+                    }`}
                   >
                     {label}
                   </Link>
@@ -131,7 +141,7 @@ export default function Header({ allStores }: HeaderProps) {
             </div>
           </div>
 
-          {/* Sidebar Toggle (visible only when width <= 1200px) */}
+          {/* Sidebar Toggle */}
           <button
             className="min-[1201px]:hidden text-gray-700 hover:text-purple-700"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
@@ -145,10 +155,11 @@ export default function Header({ allStores }: HeaderProps) {
         </div>
       </div>
 
-      {/* Sidebar (for <=1200px) */}
+      {/* Sidebar */}
       <div
-        className={`fixed inset-0 bg-white z-50 transform transition-transform duration-300 ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"
-          } min-[1201px]:hidden`}
+        className={`fixed inset-0 bg-white z-50 transform transition-transform duration-300 ${
+          mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+        } min-[1201px]:hidden`}
       >
         <div className="flex flex-col h-full p-6">
           <button
@@ -162,17 +173,13 @@ export default function Header({ allStores }: HeaderProps) {
           <nav className="flex flex-col space-y-6 text-lg font-semibold text-gray-800">
             {navLinks.map(({ href, label }) => {
               const isActive =
-                pathname === href ||
-                (href !== "/" && pathname.startsWith(href));
+                pathname === href || (href !== "/" && pathname.startsWith(href));
               return (
                 <Link
                   key={href}
                   href={href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`${isActive
-                      ? "text-purple-800 underline underline-offset-4"
-                      : "hover:text-purple-700"
-                    }`}
+                  className={`${isActive ? "text-purple-800 underline underline-offset-4" : "hover:text-purple-700"}`}
                 >
                   {label}
                 </Link>

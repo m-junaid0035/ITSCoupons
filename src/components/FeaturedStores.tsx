@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import type { StoreData } from "@/types/store";
 
 interface FeaturedStoresProps {
@@ -50,10 +51,12 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
               border: "1px solid #C4C4C4"
             }}
           >
-            <img
+            <Image
               src={store.image || "/placeholder-store.png"}
               alt={store.name}
-              className="w-full h-full object-contain rounded-full p-6 transition-transform duration-300 hover:scale-110 hover:brightness-105"
+              width={178}
+              height={178}
+              className="object-contain rounded-full p-6 transition-transform duration-300 hover:scale-110 hover:brightness-105"
             />
           </Link>
         ))}
