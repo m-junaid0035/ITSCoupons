@@ -9,17 +9,17 @@ export const metadata: Metadata = {
   description:
     "Read the latest blogs, guides, and saving tips from ITSCoupons. Learn how to maximize your discounts with verified coupons and promo codes.",
   alternates: {
-    canonical: "https://itscoupons.com/blogs",
+    canonical: `${process.env.DOMAIN}/blogs`,
   },
   openGraph: {
     title: "All Blogs & Guides - ITSCoupons",
     description:
       "Explore saving tips, shopping hacks, and couponing guides from ITSCoupons. Stay updated with the latest money-saving strategies.",
-    url: "https://itscoupons.com/blogs",
+    url: `${process.env.DOMAIN}/blogs`,
     type: "website",
     images: [
       {
-        url: "https://itscoupons.com/images/og-image.png",
+        url: `${process.env.DOMAIN}/images/og-image.png`,
         width: 1200,
         height: 630,
         alt: "ITSCoupons Blogs Page",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     title: "All Blogs & Guides - ITSCoupons",
     description:
       "Read money-saving blogs, coupon guides, and shopping tips on ITSCoupons. Stay ahead with the latest verified offers and advice.",
-    images: ["https://itscoupons.com/images/og-image.png"],
+    images: [`${process.env.DOMAIN}/images/og-image.png`],
   },
 }
 

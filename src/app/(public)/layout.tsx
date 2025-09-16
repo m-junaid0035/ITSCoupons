@@ -16,17 +16,17 @@ export async function generateMetadata(): Promise<Metadata> {
     latestSetting?.metaDescription ||
     "ITS Coupons brings you hand-picked, verified discount codes and offers from leading brands. Enjoy safe, reliable, and updated coupons to save money on every purchase.";
   const logoUrl = latestSetting?.logo
-    ? `https://itscoupons.com${latestSetting.logo}`
-    : "https://itscoupons.com/images/og-image.jpg";
+    ? `${process.env.DOMAIN}${latestSetting.logo}`
+    : `${process.env.DOMAIN}/images/og-image.jpg`;
 
   return {
     title: metaTitle,
     description: metaDescription,
     alternates: {
-      canonical: "https://itscoupons.com/",
+      canonical: `${process.env.DOMAIN}`,
     },
     openGraph: {
-      url: "https://itscoupons.com/",
+      url: `${process.env.DOMAIN}`,
       title: metaTitle,
       description: metaDescription,
       type: "website",

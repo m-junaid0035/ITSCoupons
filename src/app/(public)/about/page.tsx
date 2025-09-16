@@ -31,16 +31,16 @@ export async function generateMetadata({
     description: metaDescription,
     keywords: metaKeywords,
     alternates: {
-      canonical: `https://itscoupons.com/${page.slug}`,
+      canonical: `${process.env.DOMAIN}/${page.slug}`,
     },
     openGraph: {
       title: metaTitle,
       description: metaDescription,
-      url: `https://itscoupons.com/${page.slug}`,
+      url: `${process.env.DOMAIN}/${page.slug}`,
       type: "article",
       images: [
         {
-          url: "https://itscoupons.com/images/og-image.png",
+          url: `${process.env.DOMAIN}/images/og-image.png`,
           width: 1200,
           height: 630,
           alt: page.title,
@@ -51,7 +51,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: metaTitle,
       description: metaDescription,
-      images: ["https://itscoupons.com/images/og-image.png"],
+      images: [`${process.env.DOMAIN}/images/og-image.png`],
     },
   };
 }

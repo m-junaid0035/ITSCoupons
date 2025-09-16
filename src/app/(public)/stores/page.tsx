@@ -7,16 +7,16 @@ export const metadata: Metadata = {
   title: "All Stores - ITSCoupons",
   description: "Browse all stores with verified coupons and promo codes on ITSCoupons.",
   alternates: {
-    canonical: "https://itscoupons.com/stores",
+    canonical: `${process.env.DOMAIN}/stores`,
   },
   openGraph: {
     title: "All Stores - ITSCoupons",
     description: "Browse all stores with verified coupons and promo codes on ITSCoupons.",
-    url: "https://itscoupons.com/stores",
+    url: `${process.env.DOMAIN}/stores`,
     type: "website",
     images: [
       {
-        url: "https://itscoupons.com/images/og-image.png",
+        url: `${process.env.DOMAIN}/images/og-image.png`,
         width: 1200,
         height: 630,
         alt: "ITSCoupons All Stores",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "All Stores - ITSCoupons",
     description: "Browse all stores with verified coupons and promo codes on ITSCoupons.",
-    images: ["https://itscoupons.com/images/og-image.png"],
+    images: [`${process.env.DOMAIN}/images/og-image.png`],
   },
 };
 

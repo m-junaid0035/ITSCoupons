@@ -16,17 +16,17 @@ export const metadata: Metadata = {
   description:
     "Discover the latest verified coupons, promo codes, and deals from top stores on ITSCoupons. Save money on your favorite brands today.",
   alternates: {
-    canonical: "https://itscoupons.com/coupons",
+    canonical: `${process.env.DOMAIN}/coupons`,
   },
   openGraph: {
     title: "All Coupons & Promo Codes - ITSCoupons",
     description:
       "Discover the latest verified coupons, promo codes, and deals from top stores on ITSCoupons. Save money on your favorite brands today.",
-    url: "https://itscoupons.com/coupons",
+    url: `${process.env.DOMAIN}/coupons`,
     type: "website",
     images: [
       {
-        url: "https://itscoupons.com/images/og-image.png",
+        url: `${process.env.DOMAIN}/images/og-image.png`,
         width: 1200,
         height: 630,
         alt: "ITSCoupons Coupons Page",
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     title: "All Coupons & Promo Codes - ITSCoupons",
     description:
       "Discover the latest verified coupons, promo codes, and deals from top stores on ITSCoupons. Save money on your favorite brands today.",
-    images: ["https://itscoupons.com/images/og-image.png"],
+    images: [`${process.env.DOMAIN}/images/og-image.png`],
   },
 };
 
