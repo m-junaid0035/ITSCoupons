@@ -15,6 +15,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -157,7 +164,7 @@ export default function BlogsPageClient({ initialBlogs }: { initialBlogs: IBlog[
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const pageSize = 8;
+  const [pageSize, setPageSize] = useState(8);
 
   const [optimisticBlogs, deleteOptimistic] = useOptimistic(
     blogs,
@@ -220,18 +227,18 @@ export default function BlogsPageClient({ initialBlogs }: { initialBlogs: IBlog[
         </CardHeader>
 
         <CardContent>
-            <BlogsTable
-              blogs={paginatedBlogs}
-              onView={(id) => {
-                const blog = blogs.find((b) => b._id === id);
-                if (blog) {
-                  setSelectedBlog(blog);
-                  setIsModalOpen(true);
-                }
-              }}
-              onEdit={(id) => router.push(`/admin/blogs/edit/${id}`)}
-              onDelete={(id) => setConfirmDeleteId(id)}
-            />
+          <BlogsTable
+            blogs={paginatedBlogs}
+            onView={(id) => {
+              const blog = blogs.find((b) => b._id === id);
+              if (blog) {
+                setSelectedBlog(blog);
+                setIsModalOpen(true);
+              }
+            }}
+            onEdit={(id) => router.push(`/admin/blogs/edit/${id}`)}
+            onDelete={(id) => setConfirmDeleteId(id)}
+          />
           {totalPages > 1 && (
             <div className="mt-4 flex justify-center">
               <Pagination>
@@ -258,8 +265,34 @@ export default function BlogsPageClient({ initialBlogs }: { initialBlogs: IBlog[
                       }
                     />
                   </PaginationItem>
+                  <Select
+                    value={String(pageSize)}
+                    onValueChange={(value) => setPageSize(Number(value))}
+                  >
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Items per page" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="5">5 per page</SelectItem>
+                      <SelectItem value="8">8 per page</SelectItem>
+                      <SelectItem value="10">10 per page</SelectItem>
+                      <SelectItem value="20">20 per page</SelectItem>
+                    </SelectContent>
+                  </Select>
+
                 </PaginationContent>
               </Pagination>
+              <select
+                value={pageSize}
+                onChange={(e) => setPageSize(Number(e.target.value))}
+                className="border rounded px-2 py-1"
+              >
+                <option value={5}>5 per page</option>
+                <option value={8}>8 per page</option>
+                <option value={10}>10 per page</option>
+                <option value={20}>20 per page</option>
+              </select>
+
             </div>
           )}
         </CardContent>

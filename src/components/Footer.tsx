@@ -46,6 +46,7 @@ export default function Footer() {
                 className="bg-purple-900 p-2 rounded"
                 target="_blank"
                 rel="noreferrer"
+                aria-label="WhatsApp"
               >
                 <FaWhatsapp />
               </Link>
@@ -56,6 +57,7 @@ export default function Footer() {
                 className="bg-purple-900 p-2 rounded"
                 target="_blank"
                 rel="noreferrer"
+                aria-label="Facebook"
               >
                 <FaFacebookF />
               </Link>
@@ -66,6 +68,7 @@ export default function Footer() {
                 className="bg-purple-900 p-2 rounded"
                 target="_blank"
                 rel="noreferrer"
+                aria-label="X / Twitter"
               >
                 <SiX />
               </Link>
@@ -76,6 +79,7 @@ export default function Footer() {
                 className="bg-purple-900 p-2 rounded"
                 target="_blank"
                 rel="noreferrer"
+                aria-label="Instagram"
               >
                 <FaInstagram />
               </Link>
@@ -122,18 +126,23 @@ export default function Footer() {
         <div>
           <h4 className="font-semibold mb-2">About</h4>
           <ul className="space-y-1">
-            <li><Link href="/aboutus" className="hover:underline">About Us</Link></li>
-            <li><Link href="/contactus" className="hover:underline">Contact Us</Link></li>
+            <li>
+              <Link href="/contactus" className="hover:underline">
+                Contact Us
+              </Link>
+            </li>
             {aboutPages.length > 0 ? (
-              aboutPages.map((page) => (
-                <li key={page.slug}>
-                  <Link href={`/about?slug=${page.slug}`} className="hover:underline">
-                    {page.title}
-                  </Link>
-                </li>
-              ))
+              aboutPages
+                .filter((page) => page.slug === "about-us")
+                .map((page) => (
+                  <li key={page.slug}>
+                    <Link href={`/about?slug=${page.slug}`} className="hover:underline">
+                      {page.title}
+                    </Link>
+                  </li>
+                ))
             ) : (
-              <li>Loading pages...</li>
+              <li>Loading Links...</li>
             )}
           </ul>
         </div>

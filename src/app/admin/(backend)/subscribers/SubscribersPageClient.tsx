@@ -11,6 +11,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Trash2, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface ISubscriber {
   _id: string;
@@ -81,7 +88,7 @@ export default function SubscribersPageClient({
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const pageSize = 8;
+  const [pageSize, setPageSize] = useState(8);
 
   const [optimisticSubs, deleteOptimistic] = useOptimistic(
     subscribers,
@@ -133,10 +140,10 @@ export default function SubscribersPageClient({
       </CardHeader>
 
       <CardContent>
-          <SubscribersTable
-            subscribers={paginatedSubs}
-            onDelete={(id) => setConfirmDeleteId(id)}
-          />
+        <SubscribersTable
+          subscribers={paginatedSubs}
+          onDelete={(id) => setConfirmDeleteId(id)}
+        />
       </CardContent>
 
       {totalPages > 1 && (
@@ -163,6 +170,20 @@ export default function SubscribersPageClient({
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                 />
               </PaginationItem>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(value) => setPageSize(Number(value))}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Items per page" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 per page</SelectItem>
+                  <SelectItem value="8">8 per page</SelectItem>
+                  <SelectItem value="10">10 per page</SelectItem>
+                  <SelectItem value="20">20 per page</SelectItem>
+                </SelectContent>
+              </Select>
             </PaginationContent>
           </Pagination>
         </div>

@@ -81,7 +81,7 @@ export default function PromoCodesSection({ coupons, couponId}: PromoCodesSectio
               <div className="w-full h-[150px] bg-gray-100 rounded-[16px] overflow-hidden flex items-center justify-center">
                 {coupon.store?.image ? (
                   <img
-                    src={coupon.store.image}
+                    src={`https://itscoupons.com${coupon.store.image}`}
                     alt={displayStoreName}
                     className="w-full h-full object-cover"
                   />

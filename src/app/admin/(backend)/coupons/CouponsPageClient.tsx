@@ -17,6 +17,13 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"; const [pageSize, setPageSize] = useState(8);
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -163,7 +170,7 @@ export default function CouponsPageClient({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [viewCoupon, setViewCoupon] = useState<ICoupon | null>(null);
 
-  const pageSize = 8;
+  const [pageSize, setPageSize] = useState(8);
 
   const [optimisticCoupons, deleteOptimistic] = useOptimistic(
     coupons,
@@ -227,15 +234,15 @@ export default function CouponsPageClient({
       </CardHeader>
 
       <CardContent>
-          <CouponsTable
-            coupons={paginatedCoupons.map((c) => ({
-              ...c,
-              storeName: storesMap[c.storeId] || "-",
-            }))}
-            onView={(coupon) => setViewCoupon(coupon)}
-            onEdit={(id) => router.push(`/admin/coupons/edit/${id}`)}
-            onDelete={(id) => setConfirmDeleteId(id)}
-          />
+        <CouponsTable
+          coupons={paginatedCoupons.map((c) => ({
+            ...c,
+            storeName: storesMap[c.storeId] || "-",
+          }))}
+          onView={(coupon) => setViewCoupon(coupon)}
+          onEdit={(id) => router.push(`/admin/coupons/edit/${id}`)}
+          onDelete={(id) => setConfirmDeleteId(id)}
+        />
 
         {totalPages > 1 && (
           <div className="mt-4 flex justify-center">
@@ -265,6 +272,20 @@ export default function CouponsPageClient({
                     }
                   />
                 </PaginationItem>
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(value) => setPageSize(Number(value))}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Items per page" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 per page</SelectItem>
+                    <SelectItem value="8">8 per page</SelectItem>
+                    <SelectItem value="10">10 per page</SelectItem>
+                    <SelectItem value="20">20 per page</SelectItem>
+                  </SelectContent>
+                </Select>
               </PaginationContent>
             </Pagination>
           </div>

@@ -11,20 +11,26 @@ import {
   updateSetting,
 } from "@/functions/settingFunctions";
 
+// -------------------------------
 // ✅ Zod Validation Schema
+// -------------------------------
 const settingSchema = z.object({
   siteName: z.string().trim().min(2, "Site name is required"),
-  logo: z.string().url("Invalid logo URL").optional(),
-  favicon: z.string().url("Invalid favicon URL").optional(),
+  logo: z.string().optional(),
+  favicon: z.string().optional(),
   contactEmail: z.string().email("Invalid email").optional(),
   contactPhone: z.string().optional(),
   address: z.string().optional(),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   metaKeywords: z
-    .string()
+    .union([z.string(), z.array(z.string())])
     .optional()
-    .transform((val) => (val ? val.split(",").map((k) => k.trim()) : [])),
+    .transform((val) => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val;
+      return val.split(",").map((k) => k.trim()).filter(Boolean);
+    }),
   facebookUrl: z.string().url("Invalid Facebook URL").optional(),
   XUrl: z.string().url("Invalid X URL").optional(),
   instagramUrl: z.string().url("Invalid Instagram URL").optional(),
@@ -38,48 +44,71 @@ export type SettingFormState = {
   data?: any;
 };
 
-// ✅ Helper: Parse FormData (Don't convert metaKeywords manually!)
-function parseSettingFormData(formData: FormData): Record<string, any> {
+// -------------------------------
+// ✅ PARSE FORMDATA (HELPER)
+// -------------------------------
+async function parseSettingFormData(
+  formData: FormData,
+  requireImages = false
+): Promise<SettingFormData & { logoFile?: File; faviconFile?: File }> {
+  const logoFile = formData.get("logoFile") as File | null;
+  const faviconFile = formData.get("faviconFile") as File | null;
+
+  let logoPath = String(formData.get("logo") || "");
+  let faviconPath = String(formData.get("favicon") || "");
   return {
-    siteName: formData.get("siteName") || "",
-    logo: formData.get("logo") || "",
-    favicon: formData.get("favicon") || "",
-    contactEmail: formData.get("contactEmail") || "",
-    contactPhone: formData.get("contactPhone") || "",
-    address: formData.get("address") || "",
-    metaTitle: formData.get("metaTitle") || "",
-    metaDescription: formData.get("metaDescription") || "",
-    metaKeywords: formData.get("metaKeywords") || "", // Zod will transform this
-    facebookUrl: formData.get("facebookUrl") || "",
-    XUrl: formData.get("XUrl") || "",
-    instagramUrl: formData.get("instagramUrl") || "",
-    whatsappUrl: formData.get("whatsappUrl") || "",
+    siteName: String(formData.get("siteName") || ""),
+    logo: logoPath,
+    favicon: faviconPath,
+    contactEmail: String(formData.get("contactEmail") || ""),
+    contactPhone: String(formData.get("contactPhone") || ""),
+    address: String(formData.get("address") || ""),
+    metaTitle: String(formData.get("metaTitle") || ""),
+    metaDescription: String(formData.get("metaDescription") || ""),
+    metaKeywords: String(formData.get("metaKeywords") || "")
+      .split(",")
+      .map((k) => k.trim())
+      .filter(Boolean),
+    facebookUrl: String(formData.get("facebookUrl") || ""),
+    XUrl: String(formData.get("XUrl") || ""),
+    instagramUrl: String(formData.get("instagramUrl") || ""),
+    whatsappUrl: String(formData.get("whatsappUrl") || ""),
+    logoFile: logoFile || undefined,
+    faviconFile: faviconFile || undefined,
   };
 }
 
-// ✅ CREATE SETTING
+// -------------------------------
+// ✅ ACTIONS
+// -------------------------------
+
+// CREATE SETTING
 export async function createSettingAction(
   prevState: SettingFormState,
   formData: FormData
 ): Promise<SettingFormState> {
   await connectToDatabase();
 
-  const parsed = parseSettingFormData(formData);
-  const result = settingSchema.safeParse(parsed);
-
-  if (!result.success) {
-    return { error: result.error.flatten().fieldErrors };
-  }
-
   try {
-    const setting = await createSetting(result.data);
+    const parsed = await parseSettingFormData(formData, true);
+    const result = settingSchema.safeParse(parsed);
+
+    if (!result.success) return { error: result.error.flatten().fieldErrors };
+
+    // Pass files only if they exist
+    const setting = await createSetting({
+      ...result.data,
+      logoFile: parsed.logoFile!,
+      faviconFile: parsed.faviconFile!,
+    });
+
     return { data: setting };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to create setting"] } };
   }
 }
 
-// ✅ UPDATE SETTING
+// UPDATE SETTING
 export async function updateSettingAction(
   prevState: SettingFormState,
   id: string,
@@ -87,25 +116,28 @@ export async function updateSettingAction(
 ): Promise<SettingFormState> {
   await connectToDatabase();
 
-  const parsed = parseSettingFormData(formData);
-  const result = settingSchema.safeParse(parsed);
-
-  if (!result.success) {
-    return { error: result.error.flatten().fieldErrors };
-  }
-
   try {
-    const updated = await updateSetting(id, result.data);
+    const parsed = await parseSettingFormData(formData);
+    const result = settingSchema.safeParse(parsed);
+
+    if (!result.success) return { error: result.error.flatten().fieldErrors };
+
+    // Only include logoFile/favIconFile if they exist to satisfy TS
+    const payload: any = { ...result.data };
+    if (parsed.logoFile) payload.logoFile = parsed.logoFile;
+    if (parsed.faviconFile) payload.faviconFile = parsed.faviconFile;
+
+    const updated = await updateSetting(id, payload);
+
     return { data: updated };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to update setting"] } };
   }
 }
 
-// ✅ DELETE SETTING
+// DELETE SETTING
 export async function deleteSettingAction(id: string) {
   await connectToDatabase();
-
   try {
     const deleted = await deleteSetting(id);
     return { data: deleted };
@@ -114,10 +146,9 @@ export async function deleteSettingAction(id: string) {
   }
 }
 
-// ✅ FETCH ALL SETTINGS
+// FETCH ALL SETTINGS
 export async function fetchAllSettingsAction() {
   await connectToDatabase();
-
   try {
     const settings = await getAllSettings();
     return { data: settings };
@@ -126,30 +157,24 @@ export async function fetchAllSettingsAction() {
   }
 }
 
-// ✅ FETCH SINGLE SETTING
+// FETCH SINGLE SETTING
 export async function fetchSettingByIdAction(id: string) {
   await connectToDatabase();
-
   try {
     const setting = await getSettingById(id);
-    if (!setting) {
-      return { error: { message: ["Setting not found"] } };
-    }
+    if (!setting) return { error: { message: ["Setting not found"] } };
     return { data: setting };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch setting"] } };
   }
 }
 
-// ✅ FETCH LATEST SETTING
+// FETCH LATEST SETTING
 export async function fetchLatestSettingAction() {
   await connectToDatabase();
-
   try {
     const setting = await getLatestSetting();
-    if (!setting) {
-      return { error: { message: ["No settings found"] } };
-    }
+    if (!setting) return { error: { message: ["No settings found"] } };
     return { data: setting };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch latest setting"] } };

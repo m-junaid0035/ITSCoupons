@@ -100,7 +100,7 @@ export default function EditEventForm() {
     const slugSource = latestSEO.slug || eventTitle;
     const processedSlug = replaceEventTitle(slugSource)
       .toLowerCase()
-      .replace(/\s+/g, "_");
+      .replace(/\s+/g, "-");
 
     setSeo({
       metaTitle: replaceEventTitle(latestSEO.metaTitle || ""),

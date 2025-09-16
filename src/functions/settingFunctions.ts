@@ -1,12 +1,13 @@
 import { Setting } from "@/models/Setting";
+import { saveSettingLogo, saveSettingFavicon } from "@/lib/uploadSettingImage"; // ✅ new
 
 /**
  * Sanitize and format incoming settings data.
  */
 const sanitizeSettingData = (data: {
   siteName: string;
-  logo?: string;
-  favicon?: string;
+  logo: string;
+  favicon: string;
   contactEmail?: string;
   contactPhone?: string;
   address?: string;
@@ -55,13 +56,17 @@ const serializeSetting = (setting: any) => ({
   updatedAt: setting.updatedAt?.toISOString?.(),
 });
 
+/* ------------------------------------------------------------------ */
+/*                               CRUD                                 */
+/* ------------------------------------------------------------------ */
+
 /**
- * Create a new setting
+ * Create a new setting (with logo & favicon upload).
  */
 export const createSetting = async (data: {
   siteName: string;
-  logo?: string;
-  favicon?: string;
+  logoFile: File;     // ✅ upload
+  faviconFile: File;  // ✅ upload
   contactEmail?: string;
   contactPhone?: string;
   address?: string;
@@ -73,7 +78,16 @@ export const createSetting = async (data: {
   instagramUrl?: string;
   whatsappUrl?: string;
 }) => {
-  const settingData = sanitizeSettingData(data);
+  // ✅ Save uploaded images
+  const logoPath = await saveSettingLogo(data.logoFile);
+  const faviconPath = await saveSettingFavicon(data.faviconFile);
+
+  const settingData = sanitizeSettingData({
+    ...data,
+    logo: logoPath,
+    favicon: faviconPath,
+  });
+
   const setting = await new Setting(settingData).save();
   return serializeSetting(setting);
 };
@@ -95,12 +109,14 @@ export const getSettingById = async (id: string) => {
 };
 
 /**
- * Update setting by ID
+ * Update setting by ID (optionally with new logo & favicon).
  */
 export const updateSetting = async (
   id: string,
   data: {
     siteName: string;
+    logoFile?: File;     // ✅ optional upload
+    faviconFile?: File;  // ✅ optional upload
     logo?: string;
     favicon?: string;
     contactEmail?: string;
@@ -115,12 +131,28 @@ export const updateSetting = async (
     whatsappUrl?: string;
   }
 ) => {
-  const updatedData = sanitizeSettingData(data);
+  let logoPath = data.logo ?? "";
+  let faviconPath = data.favicon ?? "";
+
+  if (data.logoFile) {
+    logoPath = await saveSettingLogo(data.logoFile);
+  }
+  if (data.faviconFile) {
+    faviconPath = await saveSettingFavicon(data.faviconFile);
+  }
+
+  const updatedData = sanitizeSettingData({
+    ...data,
+    logo: logoPath,
+    favicon: faviconPath,
+  });
+
   const setting = await Setting.findByIdAndUpdate(
     id,
     { $set: updatedData },
     { new: true, runValidators: true }
   ).lean();
+
   return setting ? serializeSetting(setting) : null;
 };
 

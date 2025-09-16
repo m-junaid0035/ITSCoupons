@@ -76,7 +76,7 @@ export default function BlogCreatePageClient({
     const slugSource = latestSEO.slug || blogTitle;
     const processedSlug = replaceBlogTitle(slugSource)
       .toLowerCase()
-      .replace(/\s+/g, "_");
+      .replace(/\s+/g, "-");
 
     setSeo({
       metaTitle: replaceBlogTitle(latestSEO.metaTitle || ""),

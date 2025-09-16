@@ -67,7 +67,7 @@ export default function CreateCategoryForm() {
   // Auto-generate slug from name if not manually edited
   useEffect(() => {
     if (!isSlugEdited) {
-      const generatedSlug = name.toLowerCase().trim().replace(/\s+/g, "_");
+      const generatedSlug = name.toLowerCase().trim().replace(/\s+/g, "-");
       setSlug(generatedSlug);
     }
   }, [name, isSlugEdited]);

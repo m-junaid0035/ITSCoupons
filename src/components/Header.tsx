@@ -27,7 +27,6 @@ export default function Header() {
     { href: "/aboutus", label: "About us" },
   ];
 
-  // ✅ Fetch stores client-side
   useEffect(() => {
     async function fetchStores() {
       try {
@@ -40,7 +39,6 @@ export default function Header() {
     fetchStores();
   }, []);
 
-  // ✅ Filter stores based on search term
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredStores([]);
@@ -67,6 +65,7 @@ export default function Header() {
           🎉 Get the latest coupon updates daily – Save more, spend less!
           <button
             onClick={() => setShowAnnouncement(false)}
+            aria-label="Close announcement"
             className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 text-white text-lg sm:text-xl hover:text-gray-300 focus:outline-none"
           >
             <IoMdClose />
@@ -102,11 +101,10 @@ export default function Header() {
                   <Link
                     key={href}
                     href={href}
-                    className={`px-1 py-1 ${
-                      isActive
+                    className={`px-1 py-1 ${isActive
                         ? "text-purple-800 font-semibold underline underline-offset-4"
                         : "text-gray-700 hover:text-purple-700"
-                    }`}
+                      }`}
                   >
                     {label}
                   </Link>
@@ -122,6 +120,7 @@ export default function Header() {
                 className="w-full border border-gray-300 rounded px-4 py-2 pr-10 text-sm outline-none focus:border-gray-300 focus:ring-0"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                aria-label="Search stores"
               />
               <FaSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" />
 
@@ -145,6 +144,7 @@ export default function Header() {
           <button
             className="min-[1201px]:hidden text-gray-700 hover:text-purple-700"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
+            aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           >
             {mobileMenuOpen ? (
               <IoMdClose className="w-6 h-6" />
@@ -157,17 +157,35 @@ export default function Header() {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-0 bg-white z-50 transform transition-transform duration-300 ${
-          mobileMenuOpen ? "translate-x-0" : "translate-x-full"
-        } min-[1201px]:hidden`}
+        className={`fixed inset-0 bg-white z-50 transform transition-transform duration-300 ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"
+          } min-[1201px]:hidden`}
       >
         <div className="flex flex-col h-full p-6">
-          <button
-            onClick={() => setMobileMenuOpen(false)}
-            className="self-end mb-6 text-gray-700 hover:text-purple-700"
-          >
-            <IoMdClose className="w-8 h-8" />
-          </button>
+          {/* Top Row: Logo + Close Button */}
+          <div className="flex items-center justify-between mb-6">
+            <Link
+              href="/"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Image
+                src="/logos/ITS-Coupons-Logo.png"
+                alt="ITS Coupons Logo"
+                width={280}
+                height={280}
+                className="h-20 sm:h-24 md:h-28 w-auto object-contain"
+                priority
+              />
+            </Link>
+
+            {/* Close Button */}
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              aria-label="Close menu"
+              className="text-gray-700 hover:text-purple-700"
+            >
+              <IoMdClose className="w-8 h-8" />
+            </button>
+          </div>
 
           {/* Sidebar Nav */}
           <nav className="flex flex-col space-y-6 text-lg font-semibold text-gray-800">
@@ -195,6 +213,7 @@ export default function Header() {
               className="w-full border border-gray-300 rounded px-4 py-2 pr-10 text-sm focus:ring-2 focus:ring-purple-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search stores"
             />
             <FaSearch className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" />
 

@@ -129,7 +129,7 @@ export default function StorePage({
   const verifiedCount = coupons.filter((c) => c.verified).length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 text-gray-800">
+    <div className="max-w-7xl mx-auto px-4 md:px-8 pt-0 md:pt-6 pb-6 text-gray-800">
       <div className="flex flex-col md:flex-row gap-10">
         {/* Sidebar */}
         <aside className="hidden md:block w-full md:w-1/4 space-y-8">
@@ -175,31 +175,31 @@ export default function StorePage({
           {/* 🔹 Mobile Header */}
           <div className="block md:hidden mb-6">
             <div className="flex items-center gap-3">
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden border border-gray-300 bg-white shadow-md flex items-center justify-center transition hover:scale-105">
+              {/* Logo */}
+              <div className="relative w-22 h-22 sm:w-24 sm:h-24 rounded-full overflow-hidden border border-gray-300 bg-white shadow-md flex items-center justify-center">
                 <Image
                   src={store.image || "/placeholder-store.png"}
                   alt={store.name}
-                  width={80}
-                  height={80}
-                  className="object-contain rounded-full p-2 transition-transform duration-300 hover:scale-110 hover:brightness-105"
+                  width={96}
+                  height={96}
+                  className="object-contain rounded-full p-2"
                 />
               </div>
 
-              <h2 className="text-lg font-bold text-gray-900 leading-snug">
-                {store.name}
-                <br />
-                <span className="text-sm font-medium text-gray-700">
-                  Coupon & Discount Code
-                </span>
-              </h2>
+              {/* Heading + Verified line stacked */}
+              <div className="flex flex-col">
+                <h2 className="text-2xl font-extrabold text-gray-900 leading-snug">
+                  {store.name} Coupon Codes
+                </h2>
+                <p className="mt-2 text-gray-600 font-medium text-xs">
+                  {verifiedCount} VERIFIED OFFERS ON {today}
+                </p>
+              </div>
             </div>
 
-            <p className="mt-2 text-gray-600 font-medium text-xs">
-              {verifiedCount} VERIFIED OFFERS ON {today}
-            </p>
-
+            {/* Description with Read More */}
             {store.description && (
-              <div className="mt-3 text-sm text-gray-600">
+              <div className="mt-2 text-sm text-gray-600">
                 {expandedDesc ? (
                   <div
                     id="store-description"
@@ -242,8 +242,8 @@ export default function StorePage({
               <button
                 key={tab}
                 className={`pb-2 ${activeTab === tab
-                    ? "border-b-2 border-purple-700 text-purple-700"
-                    : "hover:text-purple-600"
+                  ? "border-b-2 border-purple-700 text-purple-700"
+                  : "hover:text-purple-600"
                   }`}
                 onClick={() => setActiveTab(tab)}
               >
@@ -360,7 +360,7 @@ export default function StorePage({
 
       {/* Store content */}
       {store.content && (
-         <div className="max-w-[1150px] mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
+        <div className="max-w-[1150px] mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
           <div
             className="prose text-gray-800 max-w-none"
             dangerouslySetInnerHTML={{ __html: store.content }}

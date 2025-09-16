@@ -59,6 +59,43 @@ export default function SettingForm({
     metaKeywords: (latestSEO?.metaKeywords || []).join(", "),
   });
 
+  /** ---------------- Logo + Favicon ---------------- */
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+
+  const [faviconFile, setFaviconFile] = useState<File | null>(null);
+  const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "logo" | "favicon"
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (type === "logo") {
+        setLogoFile(file);
+        setLogoPreview(reader.result as string);
+      } else {
+        setFaviconFile(file);
+        setFaviconPreview(reader.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeFile = (type: "logo" | "favicon") => {
+    if (type === "logo") {
+      setLogoFile(null);
+      setLogoPreview(null);
+    } else {
+      setFaviconFile(null);
+      setFaviconPreview(null);
+    }
+  };
+
   // ✅ Auto SEO update when site name changes
   const updateSEO = (siteName: string) => {
     if (!latestSEO) return;
@@ -122,6 +159,14 @@ export default function SettingForm({
     formData.set("metaDescription", seo.metaDescription);
     formData.set("metaKeywords", seo.metaKeywords);
 
+    // ✅ attach logo + favicon
+    if (logoFile) {
+      formData.set("logoFile", logoFile);
+    }
+    if (faviconFile) {
+      formData.set("faviconFile", faviconFile);
+    }
+
     startTransition(() => dispatch(formData));
   };
 
@@ -159,31 +204,67 @@ export default function SettingForm({
               )}
             </div>
 
-            {/* Logo */}
+            {/* Logo Upload */}
             <div className="space-y-2">
-              <Label htmlFor="logo">Site Logo URL</Label>
+              <Label htmlFor="logoFile">Site Logo</Label>
               <Input
-                id="logo"
-                name="logo"
-                type="url"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="https://example.com/logo.png"
+                id="logoFile"
+                name="logoFile"
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileChange(e, "logo")}
               />
+              {logoPreview && (
+                <div className="mt-2">
+                  <img
+                    src={logoPreview}
+                    alt="Logo Preview"
+                    className="w-32 h-32 object-contain border rounded-md"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeFile("logo")}
+                    className="mt-2"
+                  >
+                    Remove Logo
+                  </Button>
+                </div>
+              )}
               {errorFor("logo") && (
                 <p className="text-sm text-red-500">{errorFor("logo")}</p>
               )}
             </div>
 
-            {/* Favicon */}
+            {/* Favicon Upload */}
             <div className="space-y-2">
-              <Label htmlFor="favicon">Favicon URL</Label>
+              <Label htmlFor="faviconFile">Favicon</Label>
               <Input
-                id="favicon"
-                name="favicon"
-                type="url"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="https://example.com/favicon.ico"
+                id="faviconFile"
+                name="faviconFile"
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileChange(e, "favicon")}
               />
+              {faviconPreview && (
+                <div className="mt-2">
+                  <img
+                    src={faviconPreview}
+                    alt="Favicon Preview"
+                    className="w-16 h-16 object-contain border rounded-md"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeFile("favicon")}
+                    className="mt-2"
+                  >
+                    Remove Favicon
+                  </Button>
+                </div>
+              )}
               {errorFor("favicon") && (
                 <p className="text-sm text-red-500">{errorFor("favicon")}</p>
               )}
@@ -233,7 +314,7 @@ export default function SettingForm({
               )}
             </div>
 
-            {/* SEO (auto-updated) */}
+            {/* SEO */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
               <Input

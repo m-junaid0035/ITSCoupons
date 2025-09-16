@@ -52,7 +52,7 @@ export default function StaticPageForm() {
   // Auto-update slug when title changes
   useEffect(() => {
     if (title) {
-      setSlug(title.trim().toLowerCase().replace(/\s+/g, "_"));
+      setSlug(title.trim().toLowerCase().replace(/\s+/g, "-"));
     } else {
       setSlug("");
     }

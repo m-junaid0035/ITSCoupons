@@ -39,7 +39,7 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
       </h2>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-8 justify-items-center px-4 md:px-16">
-        {stores.map((store) => (
+        {stores.map((store, index) => (
           <Link
             key={store._id}
             href={`/stores/${store.slug}`}
@@ -52,10 +52,12 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
             }}
           >
             <Image
-              src={store.image || "/placeholder-store.png"}
+              src={`https://itscoupons.com${store.image}` || "/placeholder-store.png"}
               alt={store.name}
               width={178}
               height={178}
+              priority={index < 6} // make first row priority for SEO & LCP
+              loading={index < 6 ? "eager" : "lazy"}
               className="object-contain rounded-full p-6 transition-transform duration-300 hover:scale-110 hover:brightness-105"
             />
           </Link>

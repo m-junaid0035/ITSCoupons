@@ -13,6 +13,13 @@ import {
   CardTitle,
   CardContent,
 } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -152,7 +159,7 @@ export default function NetworksPageClient({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [selectedNetwork, setSelectedNetwork] = useState<INetwork | null>(null);
 
-  const pageSize = 8;
+  const [pageSize, setPageSize] = useState(8);
 
   const [optimisticNetworks, deleteOptimistic] = useOptimistic(
     networks,
@@ -244,6 +251,20 @@ export default function NetworksPageClient({
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   />
                 </PaginationItem>
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(value) => setPageSize(Number(value))}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Items per page" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 per page</SelectItem>
+                    <SelectItem value="8">8 per page</SelectItem>
+                    <SelectItem value="10">10 per page</SelectItem>
+                    <SelectItem value="20">20 per page</SelectItem>
+                  </SelectContent>
+                </Select>
               </PaginationContent>
             </Pagination>
           </div>

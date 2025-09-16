@@ -70,7 +70,7 @@ export default function EditCategoryForm({ category }: { category: any }) {
 
   useEffect(() => {
     if (!isSlugEdited) {
-      const generatedSlug = name.toLowerCase().trim().replace(/\s+/g, "_");
+      const generatedSlug = name.toLowerCase().trim().replace(/\s+/g, "-");
       setSlug(generatedSlug);
     }
   }, [name, isSlugEdited]);

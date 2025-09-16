@@ -269,7 +269,7 @@ export default function StoresPageClient({
     const [searchType, setSearchType] = useState<"store" | "network">("store");
     const [viewStore, setViewStore] = useState<IStore | null>(null);
 
-    const pageSize = 8;
+    const [pageSize, setPageSize] = useState(8);
 
     const [optimisticStores, deleteOptimistic] = useOptimistic(
         stores,
@@ -364,19 +364,20 @@ export default function StoresPageClient({
             </CardHeader>
 
             <CardContent>
-                    <StoresTable
-                        stores={paginatedStores}
-                        networks={networks}
-                        onView={(store) => setViewStore(store)} // pass the store here
-                        onEdit={(id) => router.push(`/admin/stores/edit/${id}`)}
-                        onDelete={(id) => setConfirmDeleteId(id)}
-                        onCouponsClick={(id) => router.push(`/admin/coupons?storeId=${id}`)}
-                        onInlineUpdate={handleInlineUpdate}
-                    />
+                <StoresTable
+                    stores={paginatedStores}
+                    networks={networks}
+                    onView={(store) => setViewStore(store)} // pass the store here
+                    onEdit={(id) => router.push(`/admin/stores/edit/${id}`)}
+                    onDelete={(id) => setConfirmDeleteId(id)}
+                    onCouponsClick={(id) => router.push(`/admin/coupons?storeId=${id}`)}
+                    onInlineUpdate={handleInlineUpdate}
+                />
 
 
                 {totalPages > 1 && (
                     <div className="mt-4 flex justify-center">
+
                         <Pagination>
                             <PaginationContent>
                                 <PaginationItem>
@@ -394,13 +395,30 @@ export default function StoresPageClient({
                                         </PaginationLink>
                                     </PaginationItem>
                                 ))}
+
                                 <PaginationItem>
                                     <PaginationNext
                                         onClick={() =>
                                             setCurrentPage((p) => Math.min(totalPages, p + 1))
                                         }
                                     />
+
                                 </PaginationItem>
+                                <Select
+                                    value={String(pageSize)}
+                                    onValueChange={(value) => setPageSize(Number(value))}
+                                >
+                                    <SelectTrigger className="w-32">
+                                        <SelectValue placeholder="Items per page" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="5">5 per page</SelectItem>
+                                        <SelectItem value="8">8 per page</SelectItem>
+                                        <SelectItem value="10">10 per page</SelectItem>
+                                        <SelectItem value="20">20 per page</SelectItem>
+                                    </SelectContent>
+                                </Select>
+
                             </PaginationContent>
                         </Pagination>
                     </div>

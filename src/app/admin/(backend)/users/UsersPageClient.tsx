@@ -20,6 +20,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -60,7 +67,7 @@ export default function UsersPageClient({
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [viewUser, setViewUser] = useState<IUser | null>(null);
-  const pageSize = 8;
+  const [pageSize, setPageSize] = useState(8);
 
   const [optimisticUsers, deleteOptimistic] = useOptimistic(
     users,
@@ -116,100 +123,100 @@ export default function UsersPageClient({
       </CardHeader>
 
       <CardContent>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-muted">
-                  <TableHead>Image</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="w-[140px] text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedUsers.length > 0 ? (
-                  paginatedUsers.map((user) => (
-                    <TableRow
-                      key={user._id}
-                      className="hover:bg-muted/40 transition-colors"
-                    >
-                      <TableCell>
-                        {user.image ? (
-                          <img
-                            src={user.image}
-                            alt={user.name}
-                            className="w-8 h-8 rounded-full object-cover border"
-                          />
-                        ) : (
-                          "-"
-                        )}
-                      </TableCell>
-                      <TableCell className="font-medium">{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{getRoleDisplayName(user.role)}</TableCell>
-                      <TableCell>
-                        {user.isActive ? (
-                          <span className="text-green-600 font-semibold">Yes</span>
-                        ) : (
-                          <span className="text-gray-400">No</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {user.createdAt
-                          ? new Date(user.createdAt).toLocaleDateString()
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex justify-end items-center gap-1.5">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => setViewUser(user)}
-                            title="View"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() =>
-                              router.push(`/admin/users/edit/${user._id}`)
-                            }
-                            title="Edit"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => setConfirmDeleteId(user._id)}
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center text-muted-foreground py-6"
-                    >
-                      No users found.
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b border-muted">
+                <TableHead>Image</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Active</TableHead>
+                <TableHead>Created</TableHead>
+                <TableHead className="w-[140px] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedUsers.length > 0 ? (
+                paginatedUsers.map((user) => (
+                  <TableRow
+                    key={user._id}
+                    className="hover:bg-muted/40 transition-colors"
+                  >
+                    <TableCell>
+                      {user.image ? (
+                        <img
+                          src={user.image}
+                          alt={user.name}
+                          className="w-8 h-8 rounded-full object-cover border"
+                        />
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
+                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{getRoleDisplayName(user.role)}</TableCell>
+                    <TableCell>
+                      {user.isActive ? (
+                        <span className="text-green-600 font-semibold">Yes</span>
+                      ) : (
+                        <span className="text-gray-400">No</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {user.createdAt
+                        ? new Date(user.createdAt).toLocaleDateString()
+                        : "-"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end items-center gap-1.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setViewUser(user)}
+                          title="View"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() =>
+                            router.push(`/admin/users/edit/${user._id}`)
+                          }
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          onClick={() => setConfirmDeleteId(user._id)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="text-center text-muted-foreground py-6"
+                  >
+                    No users found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
         {totalPages > 1 && (
           <div className="mt-4 flex justify-center">
             <Pagination>
@@ -234,6 +241,20 @@ export default function UsersPageClient({
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   />
                 </PaginationItem>
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(value) => setPageSize(Number(value))}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Items per page" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 per page</SelectItem>
+                    <SelectItem value="8">8 per page</SelectItem>
+                    <SelectItem value="10">10 per page</SelectItem>
+                    <SelectItem value="20">20 per page</SelectItem>
+                  </SelectContent>
+                </Select>
               </PaginationContent>
             </Pagination>
           </div>

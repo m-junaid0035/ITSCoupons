@@ -110,7 +110,7 @@ export default function StoreForm({
             text.replace(/{{storeName}}|s_n/gi, storeName);
 
         const slugSource = latestSEO.slug || storeName;
-        const processedSlug = replaceStoreName(slugSource).toLowerCase().replace(/\s+/g, "_");
+        const processedSlug = replaceStoreName(slugSource).toLowerCase().replace(/\s+/g, "-");
 
         setSeo({
             metaTitle: replaceStoreName(latestSEO.metaTitle || ""),

@@ -29,6 +29,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -152,7 +159,7 @@ export default function SettingsPageClient({
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [viewSetting, setViewSetting] = useState<ISetting | null>(null);
-  const pageSize = 8;
+  const [pageSize, setPageSize] = useState(8);
 
   const [optimisticSettings, deleteOptimistic] = useOptimistic(
     settings,
@@ -210,12 +217,12 @@ export default function SettingsPageClient({
       </CardHeader>
 
       <CardContent>
-          <SettingsTable
-            settings={paginatedSettings}
-            onView={(s) => setViewSetting(s)}
-            onEdit={(id) => router.push(`/admin/settings/edit/${id}`)}
-            onDelete={(id) => setConfirmDeleteId(id)}
-          />
+        <SettingsTable
+          settings={paginatedSettings}
+          onView={(s) => setViewSetting(s)}
+          onEdit={(id) => router.push(`/admin/settings/edit/${id}`)}
+          onDelete={(id) => setConfirmDeleteId(id)}
+        />
 
         {totalPages > 1 && (
           <div className="mt-4 flex justify-center">
@@ -243,6 +250,20 @@ export default function SettingsPageClient({
                     }
                   />
                 </PaginationItem>
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(value) => setPageSize(Number(value))}
+                >
+                  <SelectTrigger className="w-32">
+                    <SelectValue placeholder="Items per page" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 per page</SelectItem>
+                    <SelectItem value="8">8 per page</SelectItem>
+                    <SelectItem value="10">10 per page</SelectItem>
+                    <SelectItem value="20">20 per page</SelectItem>
+                  </SelectContent>
+                </Select>
               </PaginationContent>
             </Pagination>
           </div>

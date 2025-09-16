@@ -92,7 +92,7 @@ export default function EditBlogForm({
     const slugSource = seoTemplate.slug || blogTitle;
     const processedSlug = replaceBlogTitle(slugSource)
       .toLowerCase()
-      .replace(/\s+/g, "_");
+      .replace(/\s+/g, "-");
 
     setSeo({
       metaTitle: replaceBlogTitle(seoTemplate.metaTitle || ""),

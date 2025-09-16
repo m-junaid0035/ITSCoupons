@@ -3,8 +3,6 @@ import React from "react";
 import { fetchBlogBySlugAction } from "@/actions/blogActions";
 import type { BlogData } from "@/types/blog";
 import BlogShow from "@/components/BlogShow";
-import { Button } from "@/components/ui/button";
-import { Rocket } from "lucide-react";
 import { Metadata } from "next";
 import BlogNotFound from "./BlogNotFound";
 
@@ -28,25 +26,29 @@ export async function generateMetadata({
 
   const metaTitle = blog.metaTitle || blog.title;
   const metaDescription = blog.metaDescription || blog.description || "";
-
-  // ✅ Handle keywords correctly (string only, fallback to title)
-  const metaKeywords =
-    blog.metaKeywords ||
-    blog.focusKeywords ||
-    blog.title;
+  const metaKeywords = blog.metaKeywords || blog.focusKeywords || blog.title;
+  const blogUrl = `${process.env.DOMAIN}/blog/${blog.slug}`;
+  const blogImage = blog.image
+    ? blog.image.startsWith("http")
+      ? blog.image
+      : `${process.env.DOMAIN}${blog.image}`
+    : `${process.env.DOMAIN}/default-blog.jpg`;
 
   return {
     title: metaTitle,
     description: metaDescription,
     keywords: metaKeywords,
+    alternates: {
+      canonical: blogUrl,
+    },
     openGraph: {
       title: metaTitle,
       description: metaDescription,
       type: "article",
-      url: `${process.env.DOMAIN}/blog/${blog._id}/${blog.slug}`,
+      url: blogUrl,
       images: [
         {
-          url: blog.image || `${process.env.DOMAIN}/default-blog.jpg`,
+          url: blogImage,
           width: 1200,
           height: 630,
           alt: blog.title,
@@ -57,8 +59,10 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: metaTitle,
       description: metaDescription,
-      images: [blog.image || `${process.env.DOMAIN}/default-blog.jpg`],
+      images: [blogImage],
     },
+    // Optional: structured data for blog article
+    metadataBase: new URL(process.env.DOMAIN || "https://itscoupons.com"),
   };
 }
 

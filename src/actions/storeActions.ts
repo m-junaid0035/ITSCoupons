@@ -292,9 +292,10 @@ export async function updateStoreInline(
     updates.slug = updates.name
       .toLowerCase()
       .trim()
-      .replace(/\s+/g, "_")
-      .replace(/[^\w_]/g, "");
+      .replace(/\s+/g, "-")   // replace spaces with hyphens
+      .replace(/[^\w-]/g, ""); // allow only word characters and hyphens
   }
+
 
   // Auto-update meta fields if name changed
   if (updates.name) {

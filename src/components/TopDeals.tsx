@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import CouponModal from "@/components/coupon_popup";
+import Image from "next/image";
 
 interface TopDealsProps {
   deals: CouponWithStoreData[];
@@ -72,9 +73,13 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
             {/* Upper Box (Image) */}
             <div className="w-full h-[150px] bg-gray-300 rounded-[16px] overflow-hidden flex items-center justify-center">
               {deal.store?.image ? (
-                <img
-                  src={deal.store.image}
-                  alt={deal.title}
+                <Image
+                  src={`https://itscoupons.com${deal.store.image}`}
+                  alt={deal.store?.name || deal.title}
+                  width={247}
+                  height={150}
+                  priority={index < 4}
+                  loading={index < 4 ? "eager" : "lazy"}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -85,7 +90,7 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
             </div>
 
             {/* Lower Box (Details) */}
-            <div className="w-full h-[148px] bg-white rounded-[16px] shadow-md -mt-6 z-10 flex flex-col justify-between p-4">
+            <div className="w-full min-h-[148px] bg-white rounded-[16px] shadow-md -mt-6 z-10 flex flex-col justify-between p-4">
               <div>
                 <h3 className="font-bold text-sm text-gray-900 line-clamp-2">
                   {deal.title}

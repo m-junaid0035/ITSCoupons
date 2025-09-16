@@ -11,29 +11,32 @@ export async function generateMetadata(): Promise<Metadata> {
   const settingResult = await fetchLatestSettingAction();
   const latestSetting: SettingData | null = settingResult?.data || null;
 
+  const metaTitle = latestSetting?.metaTitle || "ITS Coupons - Your Trusted Coupon & Deal Finder";
+  const metaDescription =
+    latestSetting?.metaDescription ||
+    "ITS Coupons brings you hand-picked, verified discount codes and offers from leading brands. Enjoy safe, reliable, and updated coupons to save money on every purchase.";
+  const logoUrl = latestSetting?.logo
+    ? `https://itscoupons.com${latestSetting.logo}`
+    : "https://itscoupons.com/images/og-image.jpg";
+
   return {
-    title: latestSetting?.metaTitle || "ITSCoupons",
-    description:
-      latestSetting?.metaDescription ||
-      "A stunning and functional retractable sidebar for Next.js built on top of shadcn/ui complete with desktop and mobile responsiveness.",
+    title: metaTitle,
+    description: metaDescription,
     alternates: {
-      canonical: "/",
+      canonical: "https://itscoupons.com/",
     },
     openGraph: {
-      url: "/",
-      title: latestSetting?.metaTitle || "ITSCoupons",
-      description:
-        latestSetting?.metaDescription ||
-        "A stunning and functional retractable sidebar for Next.js built on top of shadcn/ui complete with desktop and mobile responsiveness.",
+      url: "https://itscoupons.com/",
+      title: metaTitle,
+      description: metaDescription,
       type: "website",
-      images: latestSetting?.logo || "https://www.itscoupons.com/images/og-image.jpg",
+      images: logoUrl,
     },
     twitter: {
       card: "summary_large_image",
-      title: latestSetting?.metaTitle || "ITSCoupons",
-      description:
-        latestSetting?.metaDescription ||
-        "A stunning and functional retractable sidebar for Next.js built on top of shadcn/ui complete with desktop and mobile responsiveness.",
+      title: metaTitle,
+      description: metaDescription,
+      images: logoUrl,
     },
     icons: {
       icon: "/logos/ITS-Coupons-FV-Icon-2.png",
@@ -42,6 +45,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
   };
 }
+
 
 // ✅ Single RootLayout
 export default async function RootLayout({

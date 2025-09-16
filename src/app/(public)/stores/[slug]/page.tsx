@@ -16,9 +16,9 @@ import StoreNotFound from "./StoreNotFound";
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: "" }>;
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { slug = "" } = await params;
+  const { slug } = await params;
   const storeResult = await fetchStoreWithCouponsBySlugAction(decodeURIComponent(slug));
   const store: StoreWithCouponsData | null = storeResult?.data ?? null;
 
@@ -34,19 +34,25 @@ export async function generateMetadata({
   const metaKeywords = (store.metaKeywords ?? store.focusKeywords ?? [store.name]).join(
     ", "
   );
+  const storeUrl = `${process.env.DOMAIN}/stores/${store.slug}`;
+  const ogImage =
+    store.image.startsWith("http") ? store.image : `${process.env.DOMAIN}${store.image}`;
 
   return {
     title: metaTitle,
     description: metaDescription,
     keywords: metaKeywords,
+    alternates: {
+      canonical: storeUrl,
+    },
     openGraph: {
       title: metaTitle,
       description: metaDescription,
       type: "website",
-      url: `${process.env.DOMAIN}/stores/${store._id}/${store.slug}`,
+      url: storeUrl,
       images: [
         {
-          url: store.image,
+          url: ogImage,
           width: 1200,
           height: 630,
           alt: store.name,
@@ -57,10 +63,11 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: metaTitle,
       description: metaDescription,
-      images: [store.image],
+      images: [ogImage],
     },
   };
 }
+
 
 /* ---------------------- Store Page Component ---------------------- */
 export default async function StorePage({

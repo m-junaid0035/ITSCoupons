@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import type { BlogData } from "@/types/blog";
 
 interface BlogSectionProps {
@@ -8,8 +9,9 @@ interface BlogSectionProps {
 }
 
 export default function BlogSection({ blogs }: BlogSectionProps): JSX.Element {
-  if (!blogs.length)
+  if (!blogs.length) {
     return <p className="text-center py-10">No blogs available.</p>;
+  }
 
   return (
     <section className="py-12 px-4 sm:px-6 lg:px-8 bg-white text-center">
@@ -18,7 +20,7 @@ export default function BlogSection({ blogs }: BlogSectionProps): JSX.Element {
       </h2>
 
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10 max-w-6xl mx-auto justify-items-center">
-        {blogs.map((blog) => {
+        {blogs.map((blog, index) => {
           const formattedDate = blog.date
             ? new Date(blog.date).toLocaleDateString("en-US", {
                 year: "numeric",
@@ -33,29 +35,36 @@ export default function BlogSection({ blogs }: BlogSectionProps): JSX.Element {
               className="flex flex-col items-center w-full max-w-[301px]"
             >
               {/* Image box */}
-              <div className="w-full h-[150px] bg-gray-300 rounded-[12px] overflow-hidden">
+              <div className="w-full h-[160px] bg-gray-200 rounded-[12px] overflow-hidden flex items-center justify-center">
                 {blog.image ? (
-                  <img
-                    src={blog.image}
+                  <Image
+                    src={`https://itscoupons.com${blog.image}`}
                     alt={blog.title || "Blog image"}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
+                    width={301}
+                    height={160}
+                    priority={index < 4} // preload first row
+                    loading={index < 4 ? "eager" : "lazy"}
+                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gray-300" />
+                  <span className="text-gray-400 text-sm flex items-center justify-center h-full">
+                    No Image
+                  </span>
                 )}
               </div>
 
               {/* Lower content box */}
               <div
-                className="w-full h-[148px] bg-white rounded-[12px] shadow-md -mt-6 z-10 flex flex-col justify-between p-4 text-left"
+                className="w-full min-h-[148px] bg-white rounded-[12px] shadow-md -mt-6 z-10 flex flex-col justify-between p-4 text-left"
                 style={{ boxShadow: "0px 4px 4px 0px #00000040" }}
               >
-                <p className="text-sm text-gray-500">{formattedDate}</p>
-                <h3 className="text-base font-semibold mb-2">{blog.title}</h3>
+                <p className="text-xs text-gray-500">{formattedDate}</p>
+                <h3 className="text-sm font-semibold line-clamp-2">
+                  {blog.title}
+                </h3>
                 <a
                   href={`/blogs/${blog.slug}`}
-                  className="text-purple-700 font-semibold hover:underline flex items-center"
+                  className="text-purple-700 font-semibold hover:underline flex items-center text-sm"
                 >
                   Read More... <span className="ml-1 text-purple-700">→</span>
                 </a>

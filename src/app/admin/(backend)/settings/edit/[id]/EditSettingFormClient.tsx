@@ -93,6 +93,81 @@ export default function EditSettingFormClient({
             : null;
     };
 
+    /** ---------------- Logo & Favicon state ---------------- */
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(
+        initialSetting?.logo || null
+    );
+
+    const [faviconFile, setFaviconFile] = useState<File | null>(null);
+    const [faviconPreview, setFaviconPreview] = useState<string | null>(
+        initialSetting?.favicon || null
+    );
+
+    const handleFileChange = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        type: "logo" | "favicon"
+    ) => {
+        const file = e.target.files?.[0] || null;
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            if (type === "logo") {
+                setLogoFile(file);
+                setLogoPreview(reader.result as string);
+            } else {
+                setFaviconFile(file);
+                setFaviconPreview(reader.result as string);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const removeFile = (type: "logo" | "favicon") => {
+        if (type === "logo") {
+            setLogoFile(null);
+            setLogoPreview(null);
+        } else {
+            setFaviconFile(null);
+            setFaviconPreview(null);
+        }
+    };
+
+    /** ---------------- Submit handler ---------------- */
+    const urlToFile = async (url: string, filename: string, mimeType: string) => {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        return new File([blob], filename, { type: mimeType });
+    };
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+
+        // ✅ attach SEO fields
+        formData.set("metaTitle", seo.metaTitle);
+        formData.set("metaDescription", seo.metaDescription);
+        formData.set("metaKeywords", seo.metaKeywords);
+
+        // ✅ attach logo & favicon
+        if (logoFile) formData.set("logoFile", logoFile);
+        else if (!logoFile && logoPreview)
+            formData.set(
+                "logoFile",
+                await urlToFile(logoPreview, "logo.jpg", "image/jpeg")
+            );
+
+        if (faviconFile) formData.set("faviconFile", faviconFile);
+        else if (!faviconFile && faviconPreview)
+            formData.set(
+                "faviconFile",
+                await urlToFile(faviconPreview, "favicon.ico", "image/x-icon")
+            );
+
+        startTransition(() => dispatch(formData));
+    };
+
     useEffect(() => {
         if (formState.data && !formState.error) {
             setSuccessDialogOpen(true);
@@ -108,19 +183,6 @@ export default function EditSettingFormClient({
         }
     }, [formState]);
 
-    /** ---------------- Submit handler ---------------- */
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-
-        // ✅ attach SEO fields
-        formData.set("metaTitle", seo.metaTitle);
-        formData.set("metaDescription", seo.metaDescription);
-        formData.set("metaKeywords", seo.metaKeywords);
-
-        startTransition(() => dispatch(formData));
-    };
-
     if (!initialSetting)
         return <p className="text-red-500">Setting not found.</p>;
 
@@ -131,7 +193,10 @@ export default function EditSettingFormClient({
                     <CardTitle className="text-lg sm:text-xl font-semibold">
                         Edit Setting
                     </CardTitle>
-                    <Button variant="secondary" onClick={() => router.push("/admin/settings")}>
+                    <Button
+                        variant="secondary"
+                        onClick={() => router.push("/admin/settings")}
+                    >
                         Back to Settings
                     </Button>
                 </CardHeader>
@@ -158,35 +223,73 @@ export default function EditSettingFormClient({
                                 <p className="text-sm text-red-500">{errorFor("siteName")}</p>
                             )}
                         </div>
-                        {/* Logo */}
+
+                        {/* Logo Upload */}
                         <div className="space-y-2">
-                            <Label htmlFor="logo">Site Logo URL</Label>
+                            <Label htmlFor="logoFile">Site Logo</Label>
                             <Input
-                                id="logo"
-                                name="logo"
-                                type="url"
-                                defaultValue={initialSetting.logo}
-                                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                                id="logoFile"
+                                name="logoFile"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleFileChange(e, "logo")}
                             />
+                            {logoPreview && (
+                                <div className="mt-2">
+                                    <img
+                                        src={logoPreview}
+                                        alt="Logo Preview"
+                                        className="w-32 h-32 object-contain border rounded-md"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => removeFile("logo")}
+                                        className="mt-2"
+                                    >
+                                        Remove Logo
+                                    </Button>
+                                </div>
+                            )}
                             {errorFor("logo") && (
                                 <p className="text-sm text-red-500">{errorFor("logo")}</p>
                             )}
                         </div>
 
-                        {/* Favicon */}
+                        {/* Favicon Upload */}
                         <div className="space-y-2">
-                            <Label htmlFor="favicon">Favicon URL</Label>
+                            <Label htmlFor="faviconFile">Favicon</Label>
                             <Input
-                                id="favicon"
-                                name="favicon"
-                                type="url"
-                                defaultValue={initialSetting.favicon}
-                                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                                id="faviconFile"
+                                name="faviconFile"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleFileChange(e, "favicon")}
                             />
+                            {faviconPreview && (
+                                <div className="mt-2">
+                                    <img
+                                        src={faviconPreview}
+                                        alt="Favicon Preview"
+                                        className="w-16 h-16 object-contain border rounded-md"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => removeFile("favicon")}
+                                        className="mt-2"
+                                    >
+                                        Remove Favicon
+                                    </Button>
+                                </div>
+                            )}
                             {errorFor("favicon") && (
                                 <p className="text-sm text-red-500">{errorFor("favicon")}</p>
                             )}
                         </div>
+
 
                         {/* Contact Email */}
                         <div className="space-y-2">
@@ -199,9 +302,7 @@ export default function EditSettingFormClient({
                                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                             />
                             {errorFor("contactEmail") && (
-                                <p className="text-sm text-red-500">
-                                    {errorFor("contactEmail")}
-                                </p>
+                                <p className="text-sm text-red-500">{errorFor("contactEmail")}</p>
                             )}
                         </div>
 
@@ -215,9 +316,7 @@ export default function EditSettingFormClient({
                                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                             />
                             {errorFor("contactPhone") && (
-                                <p className="text-sm text-red-500">
-                                    {errorFor("contactPhone")}
-                                </p>
+                                <p className="text-sm text-red-500">{errorFor("contactPhone")}</p>
                             )}
                         </div>
 
@@ -261,17 +360,12 @@ export default function EditSettingFormClient({
                                 rows={3}
                                 value={seo.metaDescription}
                                 onChange={(e) =>
-                                    setSeo((prev) => ({
-                                        ...prev,
-                                        metaDescription: e.target.value,
-                                    }))
+                                    setSeo((prev) => ({ ...prev, metaDescription: e.target.value }))
                                 }
                                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                             />
                             {errorFor("metaDescription") && (
-                                <p className="text-sm text-red-500">
-                                    {errorFor("metaDescription")}
-                                </p>
+                                <p className="text-sm text-red-500">{errorFor("metaDescription")}</p>
                             )}
                         </div>
 
@@ -282,17 +376,12 @@ export default function EditSettingFormClient({
                                 name="metaKeywords"
                                 value={seo.metaKeywords}
                                 onChange={(e) =>
-                                    setSeo((prev) => ({
-                                        ...prev,
-                                        metaKeywords: e.target.value,
-                                    }))
+                                    setSeo((prev) => ({ ...prev, metaKeywords: e.target.value }))
                                 }
                                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                             />
                             {errorFor("metaKeywords") && (
-                                <p className="text-sm text-red-500">
-                                    {errorFor("metaKeywords")}
-                                </p>
+                                <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
                             )}
                         </div>
 
@@ -309,9 +398,7 @@ export default function EditSettingFormClient({
                                     placeholder="https://facebook.com/yourpage"
                                 />
                                 {errorFor("facebookUrl") && (
-                                    <p className="text-sm text-red-500">
-                                        {errorFor("facebookUrl")}
-                                    </p>
+                                    <p className="text-sm text-red-500">{errorFor("facebookUrl")}</p>
                                 )}
                             </div>
                             <div className="space-y-2">
@@ -339,9 +426,7 @@ export default function EditSettingFormClient({
                                     placeholder="https://instagram.com/yourprofile"
                                 />
                                 {errorFor("instagramUrl") && (
-                                    <p className="text-sm text-red-500">
-                                        {errorFor("instagramUrl")}
-                                    </p>
+                                    <p className="text-sm text-red-500">{errorFor("instagramUrl")}</p>
                                 )}
                             </div>
                             <div className="space-y-2">
@@ -355,9 +440,7 @@ export default function EditSettingFormClient({
                                     placeholder="https://wa.me/yourNumber"
                                 />
                                 {errorFor("whatsappUrl") && (
-                                    <p className="text-sm text-red-500">
-                                        {errorFor("whatsappUrl")}
-                                    </p>
+                                    <p className="text-sm text-red-500">{errorFor("whatsappUrl")}</p>
                                 )}
                             </div>
                         </div>
@@ -369,12 +452,9 @@ export default function EditSettingFormClient({
                             </p>
                         )}
 
-
                         <CardFooter className="flex justify-end border-none">
                             <Button type="submit" disabled={isPending}>
-                                {isPending && (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                )}
+                                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {isPending ? "Saving..." : "Update Settings"}
                             </Button>
                         </CardFooter>
