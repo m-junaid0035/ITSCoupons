@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, startTransition, useEffect } from "react";
+import { useState, startTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useActionState } from "react";
 import { Label } from "@/components/ui/label";
@@ -70,7 +70,7 @@ export default function EditCouponForm({ coupon, stores }: EditCouponFormProps) 
   const [expirationDate, setExpirationDate] = useState<Date | undefined>(
     coupon?.expirationDate ? new Date(coupon.expirationDate) : undefined
   );
-  const storeName= stores.find((s) => s._id === coupon?.storeId)?.name || "";
+  const storeName = stores.find((s) => s._id === coupon?.storeId)?.name || "";
   const [descriptionHtml, setDescriptionHtml] = useState(coupon?.description || "");
   const [couponType, setCouponType] = useState(coupon?.couponType || "coupon");
   const [couponCode, setCouponCode] = useState(coupon?.couponCode || "");
@@ -78,6 +78,7 @@ export default function EditCouponForm({ coupon, stores }: EditCouponFormProps) 
   const [couponUrl, setCouponUrl] = useState(coupon?.couponUrl || "");
   const [storeSearch, setStoreSearch] = useState(storeName);
   const [storeDropdownOpen, setStoreDropdownOpen] = useState(false);
+  const storeDropdownRef = useRef<HTMLDivElement>(null);
   const [selectedStore, setSelectedStore] = useState<Store | null>(
     stores.find((s) => s._id === coupon?.storeId) || null
   );
@@ -97,22 +98,56 @@ export default function EditCouponForm({ coupon, stores }: EditCouponFormProps) 
     }
   }, [formState]);
 
+  // Inside your component (after storeDropdownRef)
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        storeDropdownRef.current &&
+        !storeDropdownRef.current.contains(event.target as Node)
+      ) {
+        setStoreDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+
   if (!coupon)
     return <p className="text-red-500 text-center mt-4">Coupon not found</p>;
 
   const errorFor = (field: string) =>
     formState.error &&
-    typeof formState.error === "object" &&
-    field in formState.error
+      typeof formState.error === "object" &&
+      field in formState.error
       ? (formState.error as Record<string, string[]>)[field]?.[0]
       : null;
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    const percentMatch = value.match(/(\d+%)/);
-    if (percentMatch) setDiscount(`${percentMatch[0]} Off`);
-  };
 
+    // Match "50%" or "20%" → "50% Off"
+    const percentMatch = value.match(/(\d+)%/);
+
+    // Match "$50" or "50$" → "$50 Off"
+    const dollarMatch = value.match(/\$?\s?(\d+)\$?/);
+
+    // Match "Free Shipping" (case-insensitive)
+    const freeShippingMatch = value.match(/free\s+shipping/i);
+
+    if (percentMatch) {
+      setDiscount(`${percentMatch[1]}% Off`);
+    } else if (dollarMatch) {
+      setDiscount(`$${dollarMatch[1]} Off`);
+    } else if (freeShippingMatch) {
+      setDiscount("Free Shipping");
+    } else {
+      setDiscount(""); // reset if nothing matches
+    }
+  };
   const handleStoreChange = (storeId: string) => {
     const store = stores.find((s) => s._id === storeId);
     if (store?.network) setCouponUrl(store?.storeNetworkUrl ?? "");
@@ -134,7 +169,7 @@ export default function EditCouponForm({ coupon, stores }: EditCouponFormProps) 
     startTransition(() => dispatch(formData));
   };
 
-return (
+  return (
     <>
       <Card className="w-full shadow-lg bg-white dark:bg-gray-800 pt-4">
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-none gap-2 sm:gap-0">
@@ -144,6 +179,65 @@ return (
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Store Search & Select */}
+            <div className="space-y-2" ref={storeDropdownRef}>
+              <Label htmlFor="storeId">
+                Store <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  placeholder="Search store..."
+                  value={storeSearch}
+                  onFocus={() => setStoreDropdownOpen(true)}
+                  onChange={(e) => setStoreSearch(e.target.value)}
+                  required
+                />
+
+                {storeDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border rounded shadow max-h-60 overflow-y-auto">
+                    {stores
+                      .filter((s) =>
+                        s.name.toLowerCase().includes(storeSearch.toLowerCase())
+                      )
+                      .map((store) => (
+                        <div
+                          key={store._id}
+                          className="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                          onClick={() => {
+                            setSelectedStore(store);
+                            setStoreSearch(store.name);
+                            setStoreDropdownOpen(false);
+                            handleStoreChange(store._id);
+                          }}
+                        >
+                          {store.name}
+                        </div>
+                      ))}
+
+                    {stores.filter((s) =>
+                      s.name.toLowerCase().includes(storeSearch.toLowerCase())
+                    ).length === 0 && (
+                        <div className="px-4 py-2 text-gray-500">No stores found</div>
+                      )}
+                  </div>
+                )}
+              </div>
+              <input type="hidden" name="storeId" value={selectedStore?._id || ""} required />
+            </div>
+
+            {/* Coupon URL */}
+            <div className="space-y-2">
+              <Label htmlFor="couponUrl">Coupon URL (auto-filled)</Label>
+              <Input
+                id="couponUrl"
+                name="couponUrl"
+                type="url"
+                value={couponUrl}
+                onChange={(e) => setCouponUrl(e.target.value)}
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
+            </div>
+
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
@@ -160,10 +254,15 @@ return (
 
             {/* Description */}
             <div className="space-y-2">
-              <Label>
-                Description
-              </Label>
-              <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} height="200px" />
+              <Label htmlFor="description">Description</Label>
+              <textarea
+                id="description"
+                name="description"
+                value={descriptionHtml}
+                onChange={(e) => setDescriptionHtml(e.target.value)}
+                placeholder="Enter coupon description"
+                className="w-full min-h-[120px] rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
 
             {/* Coupon Type */}
@@ -182,20 +281,25 @@ return (
             </div>
 
             {/* Coupon Code */}
-            <div className="space-y-2">
-              <Label htmlFor="couponCode">Coupon Code <span className="text-red-500">*</span></Label>
-              <Input
-                id="couponCode"
-                name="couponCode"
-                value={couponType === "deal" ? "DEAL_CODE" : couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-                disabled={couponType === "deal"}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-              {couponType === "deal" && (
-                <input type="hidden" name="couponCode" value="DEAL_CODE" />
-              )}
-            </div>
+            {couponType === "coupon" && (
+              <div className="space-y-2">
+                <Label htmlFor="couponCode">
+                  Coupon Code <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="couponCode"
+                  name="couponCode"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* Hidden input when it's a deal */}
+            {couponType === "deal" && (
+              <input type="hidden" name="couponCode" value="NO_CODE" />
+            )}
+
 
             {/* Expiration Date */}
             <div className="space-y-2">
@@ -230,19 +334,6 @@ return (
               >
                 Clear Date
               </Button>
-            </div>
-
-            {/* Coupon URL */}
-            <div className="space-y-2">
-              <Label htmlFor="couponUrl">Coupon URL (auto-filled)</Label>
-              <Input
-                id="couponUrl"
-                name="couponUrl"
-                type="url"
-                value={couponUrl}
-                onChange={(e) => setCouponUrl(e.target.value)}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
             </div>
 
             {/* Discount */}
@@ -283,55 +374,6 @@ return (
                 className="w-4 h-4"
               />
               <Label htmlFor="verified">Verified</Label>
-            </div>
-
-            {/* Store with Search */}
-            <div className="space-y-2">
-              <Label htmlFor="storeId">Store <span className="text-red-500">*</span></Label>
-
-              <div className="relative">
-                {/* Search Input */}
-                <Input
-                  placeholder="Search store..."
-                  value={storeSearch}
-                  onFocus={() => setStoreDropdownOpen(true)}
-                  onChange={(e) => setStoreSearch(e.target.value)}
-                  required
-                />
-
-                {/* Dropdown List */}
-                {storeDropdownOpen && (
-                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border rounded shadow max-h-60 overflow-y-auto">
-                    {stores
-                      .filter((s) =>
-                        s.name.toLowerCase().includes(storeSearch.toLowerCase())
-                      )
-                      .map((store) => (
-                        <div
-                          key={store._id}
-                          className="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-                          onClick={() => {
-                            setSelectedStore(store);
-                            setStoreSearch(store.name);
-                            setStoreDropdownOpen(false);
-                            handleStoreChange(store._id); // keep your old logic
-                          }}
-                        >
-                          {store.name}
-                        </div>
-                      ))}
-
-                    {stores.filter((s) =>
-                      s.name.toLowerCase().includes(storeSearch.toLowerCase())
-                    ).length === 0 && (
-                        <div className="px-4 py-2 text-gray-500">No stores found</div>
-                      )}
-                  </div>
-                )}
-              </div>
-
-              {/* Hidden field to submit selected storeId */}
-              <input type="hidden" name="storeId" value={selectedStore?._id || ""} required />
             </div>
 
 

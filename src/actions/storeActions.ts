@@ -19,12 +19,13 @@ import {
   getStoreWithCouponsBySlug,
 } from "@/functions/storeFunctions";
 import { saveStoreImage } from "@/lib/uploadStoreImage";
+import { fetchLatestSEOAction } from "./seoActions";
 
 /* ---------------------------- 📝 Validation Schema ---------------------------- */
 const storeSchema = z.object({
   name: z.string().trim().min(3).max(100),
   network: z.string().optional().or(z.literal("")),
-  storeNetworkUrl: z.string().url("Invalid network URL").optional().or(z.literal("")), // ✅ added
+  storeNetworkUrl: z.string().url("Invalid network URL").optional().or(z.literal("")),
   directUrl: z.string().url("Invalid direct URL").optional().or(z.literal("")),
   categories: z.array(z.string().min(1, "Invalid category ID")),
   totalCouponUsedTimes: z.coerce.number().min(0).optional(),
@@ -37,8 +38,9 @@ const storeSchema = z.object({
   slug: z.string().trim().min(3).max(100),
   isPopular: z.coerce.boolean().optional().default(false),
   isActive: z.coerce.boolean().optional().default(true),
-  content: z.string().min(5), // ✅ required
+  content: z.string().optional().default(""), // ✅ make optional with default ""
 });
+
 
 type StoreFormData = z.infer<typeof storeSchema>;
 
@@ -69,7 +71,7 @@ async function parseStoreFormData(
   return {
     name: String(formData.get("name") || ""),
     network: String(formData.get("network") || ""),
-    storeNetworkUrl: String(formData.get("storeNetworkUrl") || ""), // ✅ parse
+    storeNetworkUrl: String(formData.get("storeNetworkUrl") || ""),
     directUrl: String(formData.get("directUrl") || ""),
     categories: categoryIds,
     totalCouponUsedTimes: Number(formData.get("totalCouponUsedTimes") || 0),
@@ -82,10 +84,11 @@ async function parseStoreFormData(
     slug: String(formData.get("slug") || ""),
     isPopular: ["true", "on", "1"].includes(String(formData.get("isPopular"))),
     isActive: ["true", "on", "1"].includes(String(formData.get("isActive"))),
-    content: String(formData.get("content") || ""),
+    content: String(formData.get("content") || ""), // ✅ optional default to ""
     imageFile: uploadedFile,
   };
 }
+
 
 /* ---------------------------- 🔹 CREATE ---------------------------- */
 export async function createStoreAction(
@@ -261,7 +264,7 @@ export async function fetchCouponCountByStoreIdAction(storeId: string) {
 export type InlineStoreUpdate = Partial<{
   name: string;
   network: string;
-  storeNetworkUrl: string; // ✅ added
+  storeNetworkUrl: string;
   directUrl: string;
   categories: string[];
   totalCouponUsedTimes: number;
@@ -275,8 +278,9 @@ export type InlineStoreUpdate = Partial<{
   slug: string;
   isPopular: boolean;
   isActive: boolean;
-  content: string;
+  content?: string; // ✅ optional
 }>;
+
 
 export async function updateStoreInline(
   id: string,
@@ -287,27 +291,49 @@ export async function updateStoreInline(
   const store = await getStoreById(id);
   if (!store) return { error: { message: ["Store not found"] } };
 
-  // Auto-generate slug if name is updated
-  if (updates.name && !updates.slug) {
-    updates.slug = updates.name
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-")   // replace spaces with hyphens
-      .replace(/[^\w-]/g, ""); // allow only word characters and hyphens
-  }
+  /* ---------------------------- 📝 SEO Template Handling ---------------------------- */
+  let seoUpdates: Partial<InlineStoreUpdate> = {};
 
-
-  // Auto-update meta fields if name changed
   if (updates.name) {
-    updates.metaTitle = `${updates.name} - Your Store`;
-    updates.metaDescription = `Buy ${updates.name} products online`;
-    updates.focusKeywords = [updates.name.toLowerCase()];
+    const { data: latestSEO } = await fetchLatestSEOAction("stores");
+
+    if (latestSEO) {
+      const replaceStoreName = (text: string) =>
+        text.replace(/{{storeName}}|s_n/gi, updates.name as string);
+
+      const slugSource = latestSEO.slug || updates.name;
+      const processedSlug = replaceStoreName(slugSource)
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^\w-]/g, "");
+
+      seoUpdates = {
+        metaTitle: replaceStoreName(latestSEO.metaTitle || ""),
+        metaDescription: replaceStoreName(latestSEO.metaDescription || ""),
+        metaKeywords: (latestSEO.metaKeywords || []).map(replaceStoreName),
+        focusKeywords: (latestSEO.focusKeywords || []).map(replaceStoreName),
+        slug: processedSlug,
+      };
+    } else {
+      // fallback if no SEO template is found
+      seoUpdates = {
+        metaTitle: `${updates.name} - Your Store`,
+        metaDescription: `Buy ${updates.name} products online`,
+        focusKeywords: [updates.name.toLowerCase()],
+        slug: updates.name
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, "-")
+          .replace(/[^\w-]/g, ""),
+      };
+    }
   }
 
+  /* ---------------------------- 🔹 Merge Updates ---------------------------- */
   const finalUpdates = {
     name: updates.name ?? store.name,
     network: updates.network ?? store.network,
-    storeNetworkUrl: updates.storeNetworkUrl ?? store.storeNetworkUrl, // ✅ added
+    storeNetworkUrl: updates.storeNetworkUrl ?? store.storeNetworkUrl,
     directUrl: updates.directUrl ?? store.directUrl,
     categories: updates.categories ?? store.categories,
     totalCouponUsedTimes:
@@ -315,11 +341,16 @@ export async function updateStoreInline(
     imageFile: updates.imageFile,
     image: updates.image ?? store.image,
     description: updates.description ?? store.description,
-    metaTitle: updates.metaTitle ?? store.metaTitle,
-    metaDescription: updates.metaDescription ?? store.metaDescription,
-    metaKeywords: updates.metaKeywords ?? store.metaKeywords,
-    focusKeywords: updates.focusKeywords ?? store.focusKeywords,
-    slug: updates.slug ?? store.slug,
+    metaTitle: seoUpdates.metaTitle ?? updates.metaTitle ?? store.metaTitle,
+    metaDescription:
+      seoUpdates.metaDescription ??
+      updates.metaDescription ??
+      store.metaDescription,
+    metaKeywords:
+      seoUpdates.metaKeywords ?? updates.metaKeywords ?? store.metaKeywords,
+    focusKeywords:
+      seoUpdates.focusKeywords ?? updates.focusKeywords ?? store.focusKeywords,
+    slug: seoUpdates.slug ?? updates.slug ?? store.slug,
     isPopular: updates.isPopular ?? store.isPopular,
     isActive: updates.isActive ?? store.isActive,
     content: updates.content ?? store.content,
@@ -377,3 +408,4 @@ export async function fetchStoreWithCouponsBySlugAction(slug: string) {
     };
   }
 }
+

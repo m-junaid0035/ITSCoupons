@@ -112,7 +112,7 @@ export default function StorePage({
   }, [couponId, coupons]);
 
   const handleOpenCouponNewTab = (coupon: CouponData) => {
-    const modalUrl = `/stores/${store.slug}?couponId=${coupon._id}`;
+    const modalUrl = `/stores/${store._id}?couponId=${coupon._id}`;
     window.open(modalUrl, "_blank", "noopener,noreferrer");
 
     if (coupon.couponUrl) {
@@ -136,7 +136,7 @@ export default function StorePage({
           <div className="text-center">
             <div className="relative mx-auto w-44 h-44 mb-6 rounded-full border border-gray-300 shadow-md bg-white flex items-center justify-center overflow-hidden transition hover:scale-105">
               <Image
-                src={`https://itscoupons.com${store.image}` || "/placeholder-store.png"}
+                src={`store.image || "/placeholder-store.png"}
                 alt={store.name}
                 width={178}
                 height={178}
@@ -176,15 +176,16 @@ export default function StorePage({
           <div className="block md:hidden mb-6">
             <div className="flex items-center gap-3">
               {/* Logo */}
-              <div className="relative w-30 md:w-38 rounded-full aspect-square  border-gray-300 bg-white shadow-md flex items-center justify-center">
+              <div className="relative w-22 h-22 sm:w-24 sm:h-24 rounded-full overflow-hidden border border-gray-300 bg-white shadow-md flex items-center justify-center">
                 <Image
-                  src={store.image ? `https://itscoupons.com${store.image}` : "/placeholder-store.png"}
+                  src={store.image || "/placeholder-store.png"}
                   alt={store.name}
                   width={96}
                   height={96}
                   className="object-contain rounded-full p-2"
                 />
               </div>
+
               {/* Heading + Verified line stacked */}
               <div className="flex flex-col">
                 <h2 className="text-2xl font-extrabold text-gray-900 leading-snug">
@@ -195,50 +196,40 @@ export default function StorePage({
                 </p>
               </div>
             </div>
-{store.description && (
+
+            {/* Description with Read More */}
+            {store.description && (
               <div className="mt-2 text-sm text-gray-600">
-                {!expandedDesc ? (
-                  <div className="flex items-baseline">
-                    <span className="truncate">
-                      {plainDescription}
-                    </span>
-                    {needsReadMore && (
-                      <button
-                        onClick={() => setExpandedDesc(true)}
-                        className="ml-1 text-purple-700 font-medium text-xs underline whitespace-nowrap flex-shrink-0"
-                        aria-expanded={expandedDesc}
-                        aria-controls="store-description"
-                      >
-                        Read More
-                      </button>
-                    )}
-                  </div>
+                {expandedDesc ? (
+                  <div
+                    id="store-description"
+                    className="prose text-gray-600 max-w-none"
+                    dangerouslySetInnerHTML={{ __html: store.description }}
+                  />
                 ) : (
-                  <div>
-                    <span
-                      id="store-description"
-                      className="prose text-gray-600 max-w-none"
-                      dangerouslySetInnerHTML={{ __html: store.description }}
-                    />
-                    <button
-                      onClick={() => setExpandedDesc(false)}
-                      className="ml-1 text-purple-700 font-medium text-xs underline whitespace-nowrap"
-                      aria-expanded={expandedDesc}
-                      aria-controls="store-description"
-                    >
-                      Read Less
-                    </button>
+                  <div className="truncate" title={plainDescription}>
+                    {plainDescription}
                   </div>
+                )}
+
+                {needsReadMore && (
+                  <button
+                    onClick={() => setExpandedDesc((p) => !p)}
+                    className="mt-1 text-purple-700 font-medium text-xs underline"
+                    aria-expanded={expandedDesc}
+                    aria-controls="store-description"
+                  >
+                    {expandedDesc ? "Read Less" : "Read More"}
+                  </button>
                 )}
               </div>
             )}
-
-
           </div>
+
           {/* 🔹 Desktop Header */}
           <div className="hidden md:block mb-10 text-left">
             <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3">
-              {store.name} Coupon Codes
+              {store.name} Coupon & Discount Code
             </h1>
             <p className="text-gray-600 font-medium">
               {verifiedCount} VERIFIED OFFERS ON {today}
@@ -384,7 +375,6 @@ export default function StorePage({
         discount={selectedCoupon?.discount}
         code={selectedCoupon?.couponCode}
         redeemUrl={selectedCoupon?.couponUrl}
-        storeImageUrl={store?.image}
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />

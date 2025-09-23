@@ -27,7 +27,6 @@ import { toast } from "@/hooks/use-toast";
 import { updateStoreAction } from "@/actions/storeActions";
 import { fetchLatestSEOAction } from "@/actions/seoActions";
 
-import DescriptionEditor from "@/components/DescriptionEditor";
 import RichTextEditor from "@/components/RichTextEditor";
 
 interface FormState {
@@ -115,6 +114,14 @@ export default function EditStoreForm({
     const networkDropdownRef = useRef<HTMLDivElement>(null);
     const categoryDropdownRef = useRef<HTMLDivElement>(null);
 
+    useEffect(() => {
+        if (!networkSearch.trim()) {
+            setSelectedNetwork(null);
+            setStoreNetworkUrl(""); // reset URL
+        }
+    }, [networkSearch]);
+
+
     /** ---------------- Click Outside Dropdowns ---------------- */
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -191,23 +198,52 @@ export default function EditStoreForm({
         const form = e.currentTarget;
         const formData = new FormData(form);
 
-        const requiredFields = ["name", "slug"];
-        for (const field of requiredFields) {
-            if (!formData.get(field)?.toString().trim()) {
-                toast({
-                    title: "Validation Error",
-                    description: `${field} is required`,
-                    variant: "destructive",
-                });
-                return;
-            }
+        // ✅ Store Name required
+        if (!formData.get("name")?.toString().trim()) {
+            toast({
+                title: "Validation Error",
+                description: "Store name is required",
+                variant: "destructive",
+            });
+            return;
         }
 
+        // ✅ At least one category required
+        if (selectedCategories.length === 0) {
+            toast({
+                title: "Validation Error",
+                description: "At least one category is required",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        // ✅ Description required
+        if (!descriptionHtml || descriptionHtml.trim().length < 10) {
+            toast({
+                title: "Validation Error",
+                description: "Description is required (minimum 10 characters)",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        // ✅ Direct URL OR Network required
         const directUrl = formData.get("directUrl")?.toString().trim();
         if (!directUrl && !selectedNetwork) {
             toast({
                 title: "Validation Error",
-                description: "You must provide either a Direct URL or select a Network.",
+                description: "You must provide either a Direct URL or select a Network",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        // ✅ If network selected → affiliated link required
+        if (selectedNetwork && !formData.get("storeNetworkUrl")?.toString().trim()) {
+            toast({
+                title: "Validation Error",
+                description: "Affiliated link is required when a Network is selected",
                 variant: "destructive",
             });
             return;
@@ -237,8 +273,10 @@ export default function EditStoreForm({
             return;
         }
 
+        const cleanedContent = contentHtml?.trim() || "";
+
         formData.set("description", descriptionHtml);
-        formData.set("content", contentHtml);
+        formData.set("content", cleanedContent);
         formData.set("metaTitle", seo.metaTitle);
         formData.set("metaDescription", seo.metaDescription);
         formData.set("metaKeywords", seo.metaKeywords);
@@ -282,12 +320,20 @@ export default function EditStoreForm({
                     <CardTitle className="text-lg sm:text-xl font-semibold">
                         Edit Store
                     </CardTitle>
-                    <Button
-                        variant="secondary"
-                        onClick={() => router.push("/admin/stores")}
-                    >
-                        Back to Stores
-                    </Button>
+                    <div>
+                        <Button type="submit" disabled={isPending} form="store-form" className="m-2">
+                            {isPending && (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}
+                            {isPending ? "Updating..." : "Update Store"}
+                        </Button>
+                        <Button
+                            variant="secondary"
+                            onClick={() => router.push("/admin/stores")}
+                        >
+                            Back to Stores
+                        </Button>
+                    </div>
                 </CardHeader>
 
                 <CardContent>
@@ -349,7 +395,7 @@ export default function EditStoreForm({
                             <Label htmlFor="directUrl">
                                 Direct URL{" "}
                                 <span className="block mt-1 text-red-500 italic text-xs">
-                                    *Select either a Direct URL or a Network
+                                    Paste Direct Url
                                 </span>
                             </Label>
                             <Input
@@ -361,12 +407,12 @@ export default function EditStoreForm({
                             />
                         </div>
 
-                        {/* Network Dropdown */}
+                        {/* Network Searchable Dropdown */}
                         <div className="relative space-y-2" ref={networkDropdownRef}>
                             <Label>
                                 Network{" "}
                                 <span className="block mt-1 text-red-500 italic text-xs">
-                                    *Select either a Direct URL or a Network
+                                    Select a Network
                                 </span>
                             </Label>
                             <Input
@@ -392,27 +438,27 @@ export default function EditStoreForm({
                                         </div>
                                     ))}
                                     {filteredNetworks.length === 0 && (
-                                        <div className="px-3 py-2 text-gray-500">
-                                            No networks found
-                                        </div>
+                                        <div className="px-3 py-2 text-gray-500">No networks found</div>
                                     )}
                                 </div>
                             )}
                         </div>
 
-                        {/* Store Network URL - ✅ belongs to store */}
+                        {/* Store Network URL - only show if network selected */}
                         {selectedNetwork && (
                             <div className="space-y-2">
-                                <Label htmlFor="storeNetworkUrl">Store Network URL</Label>
+                                <Label htmlFor="storeNetworkUrl">Store Affiliated Link</Label>
                                 <Input
                                     id="storeNetworkUrl"
                                     name="storeNetworkUrl"
+                                    placeholder="https://example.com/network-store"
                                     value={storeNetworkUrl}
                                     onChange={(e) => setStoreNetworkUrl(e.target.value)}
                                     className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                                 />
                             </div>
                         )}
+
 
                         {/* Categories */}
                         <div className="relative space-y-2" ref={categoryDropdownRef}>
@@ -427,7 +473,7 @@ export default function EditStoreForm({
                                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                             />
                             {categoryDropdownOpen && (
-                                <div className="absolute z-10 w-full max-h-40 overflow-y-auto bg-white dark:bg-gray-700 border rounded mt-1 p-2 grid grid-cols-2 gap-2">
+                                <div className="absolute z-10 w-full max-h-40 overflow-y-auto bg-white dark:bg-gray-700 border rounded mt-1 p-2 grid grid-cols-1 gap-2">
                                     {filteredCategories.map((cat) => (
                                         <label
                                             key={cat._id}
@@ -437,12 +483,13 @@ export default function EditStoreForm({
                                                 type="checkbox"
                                                 checked={selectedCategories.includes(cat._id)}
                                                 onChange={(e) => {
-                                                    if (e.target.checked)
+                                                    if (e.target.checked) {
                                                         setSelectedCategories((prev) => [...prev, cat._id]);
-                                                    else
+                                                    } else {
                                                         setSelectedCategories((prev) =>
                                                             prev.filter((id) => id !== cat._id)
                                                         );
+                                                    }
                                                 }}
                                                 className="h-4 w-4"
                                             />
@@ -450,9 +497,7 @@ export default function EditStoreForm({
                                         </label>
                                     ))}
                                     {filteredCategories.length === 0 && (
-                                        <div className="col-span-2 text-gray-500">
-                                            No categories found
-                                        </div>
+                                        <div className="text-gray-500">No categories found</div>
                                     )}
                                 </div>
                             )}
@@ -472,7 +517,7 @@ export default function EditStoreForm({
                         {/* Content */}
                         <div className="space-y-2">
                             <Label>
-                                Content <span className="text-red-500">*</span>
+                                Content <span className="text-gray-400">(Optional)</span>
                             </Label>
                             <RichTextEditor
                                 value={contentHtml}
@@ -512,22 +557,6 @@ export default function EditStoreForm({
                             </label>
                         </div>
 
-                        {/* Slug */}
-                        <div className="space-y-2">
-                            <Label htmlFor="slug">
-                                Slug <span className="text-red-500">*</span>
-                            </Label>
-                            <Input
-                                id="slug"
-                                name="slug"
-                                value={seo.slug}
-                                onChange={(e) =>
-                                    setSeo((prev) => ({ ...prev, slug: e.target.value }))
-                                }
-                                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                            />
-                        </div>
-
                         <CardFooter className="flex justify-end border-none px-0">
                             <Button type="submit" disabled={isPending} form="store-form">
                                 {isPending && (
@@ -539,20 +568,6 @@ export default function EditStoreForm({
                     </form>
                 </CardContent>
             </Card>
-
-            {/* Description Modal */}
-            <Dialog open={descriptionModalOpen} onOpenChange={setDescriptionModalOpen}>
-                <DialogContent className="max-w-3xl w-full">
-                    <DialogHeader>
-                        <DialogTitle>Edit Description</DialogTitle>
-                    </DialogHeader>
-                    <DescriptionEditor initialContent={descriptionHtml} onChange={setDescriptionHtml} />
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setDescriptionModalOpen(false)}>Cancel</Button>
-                        <Button onClick={() => setDescriptionModalOpen(false)}>Save</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
 
             {/* SEO Modal */}
             <Dialog open={seoModalOpen} onOpenChange={setSeoModalOpen}>
@@ -573,7 +588,6 @@ export default function EditStoreForm({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-
             {/* Success Dialog */}
             <Dialog open={successDialogOpen} onOpenChange={setSuccessDialogOpen}>
                 <DialogContent>

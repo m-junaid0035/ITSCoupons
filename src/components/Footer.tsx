@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -46,9 +47,9 @@ export default function Footer() {
                 className="bg-purple-900 p-2 rounded"
                 target="_blank"
                 rel="noreferrer"
-                aria-label="WhatsApp"
               >
                 <FaWhatsapp />
+<span className="sr-only">Whatsapp Link</span>
               </Link>
             )}
             {latestSetting?.facebookUrl && (
@@ -57,9 +58,9 @@ export default function Footer() {
                 className="bg-purple-900 p-2 rounded"
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Facebook"
               >
                 <FaFacebookF />
+<span className="sr-only">Facebook Link</span>
               </Link>
             )}
             {latestSetting?.XUrl && (
@@ -68,9 +69,9 @@ export default function Footer() {
                 className="bg-purple-900 p-2 rounded"
                 target="_blank"
                 rel="noreferrer"
-                aria-label="X / Twitter"
               >
                 <SiX />
+<span className="sr-only">X Link</span>
               </Link>
             )}
             {latestSetting?.instagramUrl && (
@@ -79,9 +80,9 @@ export default function Footer() {
                 className="bg-purple-900 p-2 rounded"
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Instagram"
               >
                 <FaInstagram />
+<span className="sr-only">Intagram Link</span>
               </Link>
             )}
           </div>
@@ -89,7 +90,7 @@ export default function Footer() {
 
         {/* Deals & Shop */}
         <div>
-          <h4 className="font-semibold mb-2">Deals & Shop</h4>
+<h2 className="font-semibold mb-2">Deals &amp; Shop</h2>
           <ul className="space-y-1">
             <li><Link href="/coupons" className="hover:underline">Promo Codes</Link></li>
             <li><Link href="/coupons" className="hover:underline">Latest Deals</Link></li>
@@ -124,32 +125,26 @@ export default function Footer() {
 
         {/* About Section */}
         <div>
-          <h4 className="font-semibold mb-2">About</h4>
+          <h2 className="font-semibold mb-2">About</h2>
           <ul className="space-y-1">
-            <li>
-              <Link href="/contactus" className="hover:underline">
-                Contact Us
-              </Link>
-            </li>
+            <li><Link href="/contactus" className="hover:underline">Contact Us</Link></li>
             {aboutPages.length > 0 ? (
-              aboutPages
-                .filter((page) => page.slug === "about-us")
-                .map((page) => (
-                  <li key={page.slug}>
-                    <Link href={`/about?slug=${page.slug}`} className="hover:underline">
-                      {page.title}
-                    </Link>
-                  </li>
-                ))
+              aboutPages.map((page) => (
+                <li key={page.slug}>
+                  <Link href={`/about?slug=${page.slug}`} className="hover:underline">
+                    {page.title}
+                  </Link>
+                </li>
+              ))
             ) : (
-              <li>Loading Links...</li>
+              <li>Loading pages...</li>
             )}
           </ul>
         </div>
 
         {/* Contact Info */}
         <div>
-          <h4 className="font-semibold mb-2">Contact Us</h4>
+          <h2 className="font-semibold mb-2">Contact Us</h2>
           <ul className="space-y-1">
             <li className="max-w-full break-words">{latestSetting?.contactEmail || "support@itscoupons.com"}</li>
             <li className="max-w-full break-words">{latestSetting?.contactPhone || "(+92) 3143328342"}</li>

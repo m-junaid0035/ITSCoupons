@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, startTransition } from "react";
+import { useState, useEffect, startTransition, useRef } from "react";
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, CalendarIcon } from "lucide-react";
@@ -73,6 +73,8 @@ export default function CouponFormClient({ stores }: CouponFormClientProps) {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
 
   const [descriptionHtml, setDescriptionHtml] = useState("");
+  const storeDropdownRef = useRef<HTMLDivElement>(null);
+
   const [discount, setDiscount] = useState("");
   const [couponUrl, setCouponUrl] = useState("");
 
@@ -115,21 +117,54 @@ export default function CouponFormClient({ stores }: CouponFormClientProps) {
       });
     }
   }, [formState]);
+  // Inside your component (after storeDropdownRef)
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        storeDropdownRef.current &&
+        !storeDropdownRef.current.contains(event.target as Node)
+      ) {
+        setStoreDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
 
   // 🔥 Auto extract discount from title
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    const percentMatch = value.match(/(\d+%)/);
+
+    // Match "50%" or "20%" → "50% Off"
+    const percentMatch = value.match(/(\d+)%/);
+
+    // Match "$50" or "50$" → "$50 Off"
+    const dollarMatch = value.match(/\$?\s?(\d+)\$?/);
+
+    // Match "Free Shipping" (case-insensitive)
+    const freeShippingMatch = value.match(/free\s+shipping/i);
+
     if (percentMatch) {
-      setDiscount(`${percentMatch[0]} Off`);
+      setDiscount(`${percentMatch[1]}% Off`);
+    } else if (dollarMatch) {
+      setDiscount(`$${dollarMatch[1]} Off`);
+    } else if (freeShippingMatch) {
+      setDiscount("Free Shipping");
+    } else {
+      setDiscount(""); // reset if nothing matches
     }
   };
+
 
   // 🔥 Auto-update couponUrl when store changes
   const handleStoreChange = async (storeId: string) => {
     const store = stores.find((s) => s._id === storeId);
     if (store?.network) {
-        setCouponUrl(store?.storeNetworkUrl ?? "");
+      setCouponUrl(store?.storeNetworkUrl ?? "");
     } else if (store?.directUrl) {
       setCouponUrl(store?.directUrl);
     }
@@ -169,153 +204,9 @@ export default function CouponFormClient({ stores }: CouponFormClientProps) {
 
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">
-                Title <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="title"
-                name="title"
-                required
-                placeholder="Enter coupon title"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                onChange={handleTitleChange}
-              />
-              {errorFor("title") && (
-                <p className="text-sm text-red-500">{errorFor("title")}</p>
-              )}
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label>Description</Label>
-              <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} height="200px" />
-            </div>
-
-            {/* Coupon Type */}
-            <div className="space-y-2">
-              <Label htmlFor="couponType">
-                Coupon Type <span className="text-red-500">*</span>
-              </Label>
-              <select
-                id="couponType"
-                name="couponType"
-                value={couponType}
-                onChange={(e) => setCouponType(e.target.value)}
-                className="w-full rounded px-3 py-2 shadow-sm border-none bg-gray-50 dark:bg-gray-700"
-              >
-                <option value="coupon">Coupon</option>
-                <option value="deal">Deal</option>
-              </select>
-            </div>
-
-            {/* Coupon Code */}
-            <div className="space-y-2">
-              <Label htmlFor="couponCode">
-                Coupon Code <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="couponCode"
-                name="couponCode"
-                value={couponType === "deal" ? "NO_CODE" : couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-                disabled={couponType === "deal"}
-              />
-              {couponType === "deal" && (
-                <input type="hidden" name="couponCode" value="NO_CODE" />
-              )}
-            </div>
-
-            {/* Expiration Date */}
-            <div className="space-y-2">
-              <Label>Expiration Date (optional)</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal border-none shadow-sm bg-gray-50 dark:bg-gray-700",
-                      !expirationDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {expirationDate ? format(expirationDate, "PPP") : "No expiry date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={expirationDate}
-                    onSelect={setExpirationDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setExpirationDate(undefined)}
-              >
-                Clear Date
-              </Button>
-            </div>
-
-            {/* Coupon URL */}
-            <div className="space-y-2">
-              <Label htmlFor="couponUrl">Coupon URL (auto-filled)</Label>
-              <Input
-                id="couponUrl"
-                name="couponUrl"
-                type="url"
-                value={couponUrl}
-                onChange={(e) => setCouponUrl(e.target.value)}
-                placeholder="https://example.com/coupon"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-            </div>
-
-            {/* Discount */}
-            <div className="space-y-2">
-              <Label htmlFor="discount">Discount (auto-filled)</Label>
-              <Input
-                id="discount"
-                name="discount"
-                value={discount}
-                onChange={(e) => setDiscount(e.target.value)}
-                placeholder="e.g. 20% Off"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-            </div>
-
-            {/* Uses */}
-            <div className="space-y-2">
-              <Label htmlFor="uses">Uses (optional)</Label>
-              <Input
-                id="uses"
-                name="uses"
-                type="number"
-                min={0}
-                placeholder="Number of uses"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-            </div>
-
-            {/* Verified */}
-            <div className="flex items-center space-x-2">
-              <Input
-                type="checkbox"
-                id="verified"
-                name="verified"
-                value="true"
-                className="w-4 h-4"
-              />
-              <Label htmlFor="verified">Verified</Label>
-            </div>
 
             {/* Store Search & Select */}
-            <div className="space-y-2">
+            <div className="space-y-2" ref={storeDropdownRef}>
               <Label htmlFor="storeId">
                 Store <span className="text-red-500">*</span>
               </Label>
@@ -360,6 +251,162 @@ export default function CouponFormClient({ stores }: CouponFormClientProps) {
               <input type="hidden" name="storeId" value={selectedStore?._id || ""} required />
             </div>
 
+            {/* Coupon URL */}
+            <div className="space-y-2">
+              <Label htmlFor="couponUrl">Coupon URL (auto-filled)</Label>
+              <Input
+                id="couponUrl"
+                name="couponUrl"
+                type="url"
+                value={couponUrl}
+                onChange={(e) => setCouponUrl(e.target.value)}
+                placeholder="https://example.com/coupon"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
+            </div>
+
+            {/* Title */}
+            <div className="space-y-2">
+              <Label htmlFor="title">
+                Title <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="title"
+                name="title"
+                required
+                placeholder="Enter coupon title"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                onChange={handleTitleChange}
+              />
+              {errorFor("title") && (
+                <p className="text-sm text-red-500">{errorFor("title")}</p>
+              )}
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <textarea
+                id="description"
+                name="description"
+                value={descriptionHtml}
+                onChange={(e) => setDescriptionHtml(e.target.value)}
+                placeholder="Enter coupon description"
+                className="w-full min-h-[120px] rounded-md border border-gray-300 shadow-sm px-3 py-2 text-sm bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+
+            {/* Coupon Type */}
+            <div className="space-y-2">
+              <Label htmlFor="couponType">
+                Coupon Type <span className="text-red-500">*</span>
+              </Label>
+              <select
+                id="couponType"
+                name="couponType"
+                value={couponType}
+                onChange={(e) => setCouponType(e.target.value)}
+                className="w-full rounded px-3 py-2 shadow-sm border-none bg-gray-50 dark:bg-gray-700"
+              >
+                <option value="coupon">Coupon</option>
+                <option value="deal">Deal</option>
+              </select>
+            </div>
+
+            {/* Coupon Code */}
+            {couponType === "coupon" && (
+              <div className="space-y-2">
+                <Label htmlFor="couponCode">
+                  Coupon Code <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="couponCode"
+                  name="couponCode"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                />
+              </div>
+            )}
+
+            {/* Hidden input when it's a deal */}
+            {couponType === "deal" && (
+              <input type="hidden" name="couponCode" value="NO_CODE" />
+            )}
+
+
+            {/* Expiration Date */}
+            <div className="space-y-2">
+              <Label>Expiration Date (optional)</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal border-none shadow-sm bg-gray-50 dark:bg-gray-700",
+                      !expirationDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {expirationDate ? format(expirationDate, "PPP") : "No expiry date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={expirationDate}
+                    onSelect={setExpirationDate}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setExpirationDate(undefined)}
+              >
+                Clear Date
+              </Button>
+            </div>
+
+            {/* Discount */}
+            <div className="space-y-2">
+              <Label htmlFor="discount">Discount (auto-filled)</Label>
+              <Input
+                id="discount"
+                name="discount"
+                value={discount}
+                onChange={(e) => setDiscount(e.target.value)}
+                placeholder="e.g. 20% Off"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
+            </div>
+
+            {/* Uses */}
+            <div className="space-y-2">
+              <Label htmlFor="uses">Uses (optional)</Label>
+              <Input
+                id="uses"
+                name="uses"
+                type="number"
+                min={0}
+                placeholder="Number of uses"
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+              />
+            </div>
+
+            {/* Verified */}
+            <div className="flex items-center space-x-2">
+              <Input
+                type="checkbox"
+                id="verified"
+                name="verified"
+                value="true"
+                className="w-4 h-4"
+              />
+              <Label htmlFor="verified">Verified</Label>
+            </div>
             {/* Store Name */}
             <div className="space-y-2">
               <Label htmlFor="storeName">Store Name (optional)</Label>

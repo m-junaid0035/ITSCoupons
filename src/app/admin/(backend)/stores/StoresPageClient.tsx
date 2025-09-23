@@ -67,7 +67,6 @@ function StoresTable({
                         <TableHead>Network</TableHead>
                         <TableHead>Total Coupons</TableHead>
                         <TableHead>Image</TableHead>
-                        <TableHead>Slug</TableHead>
                         <TableHead>Live View</TableHead>
                         <TableHead className="w-[140px] text-right">Actions</TableHead>
                     </TableRow>
@@ -184,8 +183,6 @@ function StoresTable({
                                         "-"
                                     )}
                                 </TableCell>
-
-                                <TableCell>{store.slug ?? "-"}</TableCell>
 
                                 <TableCell>
                                     {store.slug ? (

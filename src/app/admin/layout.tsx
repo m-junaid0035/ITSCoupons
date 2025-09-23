@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { cookies } from "next/headers";
+import { Toaster } from "@/components/ui/toaster";
 import { redirect } from "next/navigation";
 import "../globals.css";
 
@@ -57,6 +58,7 @@ export default async function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AdminPanelLayout>{children}</AdminPanelLayout>;
         </ThemeProvider>
+         <Toaster />  {/* 👈 required */}
       </body>
     </html>
   );

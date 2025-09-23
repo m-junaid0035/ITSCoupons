@@ -9,7 +9,7 @@ import { Coupon } from "@/models/Coupon";
 const sanitizeStoreData = (data: {
   name: string;
   network?: string;
-  storeNetworkUrl?: string; // ✅ added
+  storeNetworkUrl?: string;
   directUrl?: string;
   categories: string[];
   totalCouponUsedTimes?: number;
@@ -22,11 +22,11 @@ const sanitizeStoreData = (data: {
   slug: string;
   isPopular?: boolean;
   isActive?: boolean;
-  content: string;
+  content?: string; // ✅ optional now
 }) => ({
   name: data.name.trim(),
   network: data.network ? new Types.ObjectId(data.network) : undefined,
-  storeNetworkUrl: data.storeNetworkUrl?.trim() ?? "", // ✅ sanitize
+  storeNetworkUrl: data.storeNetworkUrl?.trim() ?? "",
   directUrl: data.directUrl?.trim() ?? "",
   categories: data.categories.map((id) => new Types.ObjectId(id)),
   totalCouponUsedTimes: data.totalCouponUsedTimes ?? 0,
@@ -39,8 +39,9 @@ const sanitizeStoreData = (data: {
   slug: data.slug.trim().toLowerCase().replace(/\s+/g, "-"),
   isPopular: data.isPopular ?? false,
   isActive: data.isActive ?? true,
-  content: data.content.trim(),
+  content: data.content?.trim() ?? "", // ✅ default to empty string
 });
+
 
 /**
  * Serialize coupon (for embedding in store).
@@ -98,7 +99,7 @@ const serializeStore = (store: any) => ({
 export const createStore = async (data: {
   name: string;
   network?: string;
-  storeNetworkUrl?: string; // ✅ added
+  storeNetworkUrl?: string;
   directUrl?: string;
   categories: string[];
   totalCouponUsedTimes?: number;
@@ -111,7 +112,7 @@ export const createStore = async (data: {
   slug: string;
   isPopular?: boolean;
   isActive?: boolean;
-  content: string;
+  content?: string; // ✅ optional
 }) => {
   const imagePath = await saveStoreImage(data.imageFile);
 
@@ -123,6 +124,7 @@ export const createStore = async (data: {
   const store = await new Store(storeData).save();
   return serializeStore(store);
 };
+
 
 /**
  * Get all active stores.
@@ -160,7 +162,7 @@ export const updateStore = async (
   data: {
     name: string;
     network?: string;
-    storeNetworkUrl?: string; // ✅ added
+    storeNetworkUrl?: string;
     directUrl?: string;
     categories: string[];
     totalCouponUsedTimes?: number;
@@ -174,7 +176,7 @@ export const updateStore = async (
     slug: string;
     isPopular?: boolean;
     isActive?: boolean;
-    content: string;
+    content?: string; // ✅ optional
   }
 ) => {
   let imagePath = data.image ?? "";
@@ -198,6 +200,7 @@ export const updateStore = async (
 
   return store ? serializeStore(store) : null;
 };
+
 
 /**
  * Delete a store by ID.

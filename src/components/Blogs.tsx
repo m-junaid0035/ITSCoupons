@@ -123,19 +123,17 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
                     {new Date(blog.createdAt).toISOString().split("T")[0]}
                   </p>
                 )}
-                {blog.description && (
-                  <div
-                    className="prose prose-purple text-sm sm:text-base text-gray-600 max-w-none"
-                    dangerouslySetInnerHTML={{ __html: blog.description }}
-                  />
-                )}
-
-                <Link
-                  href={`/blogs/${blog.slug}`}
-                  className="text-purple-700 font-medium hover:underline"
-                >
-                  Read More
-                </Link>
+{blog.description && (
+  <p className="text-sm sm:text-base text-gray-600">
+    {blog.description.replace(/<[^>]+>/g, "").slice(0, 150)}...
+  </p>
+)}
+<Link
+  href={`/blogs/${blog.slug}`}
+  className="text-purple-700 font-medium hover:underline"
+>
+  Read More
+</Link>
               </div>
             </div>
           ))}

@@ -24,7 +24,7 @@ export default function Header() {
     { href: "/stores", label: "Stores" },
     { href: "/categories", label: "Categories" },
     { href: "/blogs", label: "Blogs" },
-    { href: "/aboutus", label: "About us" },
+    { href: "/about?slug=about-us", label: "About us" },
   ];
 
   useEffect(() => {

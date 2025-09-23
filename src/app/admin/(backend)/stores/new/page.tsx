@@ -82,6 +82,15 @@ export default function StoreForm() {
 
   const networkDropdownRef = useRef<HTMLDivElement>(null);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const [storeNetworkUrl, setStoreNetworkUrl] = useState("");
+
+  useEffect(() => {
+    if (!networkSearch.trim()) {
+      setSelectedNetwork(null);
+      setStoreNetworkUrl(""); // reset URL
+    }
+  }, [networkSearch]);
+
 
   /** ---------------- Load Categories & Networks ---------------- */
   useEffect(() => {
@@ -195,22 +204,22 @@ export default function StoreForm() {
 
   /** ---------------- Submit Handler ---------------- */
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+
     e.preventDefault();
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    const requiredFields = ["name", "slug"];
-    for (const field of requiredFields) {
-      if (!formData.get(field)?.toString().trim()) {
-        toast({
-          title: "Validation Error",
-          description: `${field} is required`,
-          variant: "destructive",
-        });
-        return;
-      }
+    // ✅ Store Name required
+    if (!formData.get("name")?.toString().trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Store name is required",
+        variant: "destructive",
+      });
+      return;
     }
 
+    // ✅ Image required
     if (!imageFile) {
       toast({
         title: "Validation Error",
@@ -220,28 +229,53 @@ export default function StoreForm() {
       return;
     }
 
-    if (!contentHtml) {
+    // ✅ At least one category required
+    if (selectedCategories.length === 0) {
       toast({
         title: "Validation Error",
-        description: "Content is required at least 5 words",
+        description: "At least one category is required",
         variant: "destructive",
       });
       return;
     }
 
+    // ✅ Description required
+    if (!descriptionHtml || descriptionHtml.trim().length < 10) {
+      toast({
+        title: "Validation Error",
+        description: "Description is required (minimum 10 characters)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // ✅ Direct URL OR Network required
     const directUrl = formData.get("directUrl")?.toString().trim();
     if (!directUrl && !selectedNetwork) {
       toast({
         title: "Validation Error",
-        description: "You must provide either a Direct URL or select a Network.",
+        description: "You must provide either a Direct URL or select a Network",
         variant: "destructive",
       });
       return;
     }
 
+    // ✅ If network selected → affiliated link required
+    if (selectedNetwork && !formData.get("storeNetworkUrl")?.toString().trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Affiliated link is required when a Network is selected",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Content optional — but trim if empty
+    const cleanedContent = contentHtml?.trim() || "";
+
+
     formData.set("imageFile", imageFile);
     formData.set("description", descriptionHtml);
-    formData.set("content", contentHtml);
+    formData.set("content", cleanedContent);
     formData.set("metaTitle", seo.metaTitle);
     formData.set("metaDescription", seo.metaDescription);
     formData.set("metaKeywords", seo.metaKeywords);
@@ -294,7 +328,6 @@ export default function StoreForm() {
               <Input
                 id="name"
                 name="name"
-                required
                 placeholder="Enter store name"
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
@@ -341,7 +374,7 @@ export default function StoreForm() {
               <Label htmlFor="directUrl">
                 Direct URL{" "}
                 <span className="block mt-1 text-red-500 italic text-xs">
-                  *Select either a Direct URL or a Network
+                  Paste Direct Url
                 </span>
               </Label>
               <Input
@@ -363,7 +396,7 @@ export default function StoreForm() {
               <Label>
                 Network{" "}
                 <span className="block mt-1 text-red-500 italic text-xs">
-                  *Select either a Direct URL or a Network
+                  Select a Network
                 </span>
               </Label>
               <Input
@@ -389,9 +422,7 @@ export default function StoreForm() {
                     </div>
                   ))}
                   {filteredNetworks.length === 0 && (
-                    <div className="px-3 py-2 text-gray-500">
-                      No networks found
-                    </div>
+                    <div className="px-3 py-2 text-gray-500">No networks found</div>
                   )}
                 </div>
               )}
@@ -400,15 +431,18 @@ export default function StoreForm() {
             {/* Store Network URL - only show if network selected */}
             {selectedNetwork && (
               <div className="space-y-2">
-                <Label htmlFor="storeNetworkUrl">Store Network URL</Label>
+                <Label htmlFor="storeNetworkUrl">Store Affiliated Link</Label>
                 <Input
                   id="storeNetworkUrl"
                   name="storeNetworkUrl"
                   placeholder="https://example.com/network-store"
+                  value={storeNetworkUrl}
+                  onChange={(e) => setStoreNetworkUrl(e.target.value)}
                   className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 />
               </div>
             )}
+
 
 
             {/* Categories Searchable Multi-select */}
@@ -424,7 +458,7 @@ export default function StoreForm() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {categoryDropdownOpen && (
-                <div className="absolute z-10 w-full max-h-40 overflow-y-auto bg-white dark:bg-gray-700 border rounded mt-1 p-2 grid grid-cols-2 gap-2">
+                <div className="absolute z-10 w-full max-h-40 overflow-y-auto bg-white dark:bg-gray-700 border rounded mt-1 p-2 grid grid-cols-1 gap-2">
                   {filteredCategories.map((cat) => (
                     <label
                       key={cat._id}
@@ -435,10 +469,7 @@ export default function StoreForm() {
                         checked={selectedCategories.includes(cat._id)}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            setSelectedCategories((prev) => [
-                              ...prev,
-                              cat._id,
-                            ]);
+                            setSelectedCategories((prev) => [...prev, cat._id]);
                           } else {
                             setSelectedCategories((prev) =>
                               prev.filter((id) => id !== cat._id)
@@ -451,13 +482,12 @@ export default function StoreForm() {
                     </label>
                   ))}
                   {filteredCategories.length === 0 && (
-                    <div className="col-span-2 text-gray-500">
-                      No categories found
-                    </div>
+                    <div className="text-gray-500">No categories found</div>
                   )}
                 </div>
               )}
             </div>
+
 
             {/* Description */}
             <div className="space-y-2">
@@ -474,7 +504,7 @@ export default function StoreForm() {
             {/* Content */}
             <div className="space-y-2">
               <Label>
-                Content <span className="text-red-500">*</span>
+                Content <span className="text-gray-400">(Optional)</span>
               </Label>
               <RichTextEditor
                 value={contentHtml}
@@ -482,6 +512,7 @@ export default function StoreForm() {
                 height="500px"
               />
             </div>
+
 
             {/* SEO Modal Trigger */}
             <div>
@@ -515,28 +546,7 @@ export default function StoreForm() {
               <Label htmlFor="isActive">Mark as Active</Label>
             </div>
 
-            {/* Slug */}
-            <div className="space-y-2">
-              <Label htmlFor="slug">
-                Slug <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="slug"
-                name="slug"
-                required
-                placeholder="store-slug"
-                value={seo.slug}
-                onChange={(e) =>
-                  setSeo((prev) => ({ ...prev, slug: e.target.value }))
-                }
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-              {errorsForField("slug").map((err, idx) => (
-                <p key={idx} className="text-sm text-red-500">
-                  {err}
-                </p>
-              ))}
-            </div>
+
 
             {/* General Errors */}
             {Array.isArray((formState.error as any)?.message) &&
@@ -622,9 +632,10 @@ export default function StoreForm() {
               />
             </div>
             <div>
-              <Label htmlFor="slug">Slug</Label>
+              <Label htmlFor="slugModal">Slug</Label>
               <Input
                 id="slugModal"
+                name="slug"  // ✅ add name="slug" so it still submits with the form
                 value={seo.slug}
                 onChange={(e) =>
                   setSeo((prev) => ({ ...prev, slug: e.target.value }))
@@ -632,6 +643,7 @@ export default function StoreForm() {
                 className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
             </div>
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSeoModalOpen(false)}>

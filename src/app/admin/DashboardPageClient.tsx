@@ -14,6 +14,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import Link from "next/link";
 
 ChartJS.register(
   CategoryScale,
@@ -114,14 +115,16 @@ export default function DashboardPageClient({
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {Object.entries(summary).map(([key, value]) => (
-          <Card key={key} className="shadow">
-            <CardHeader>
-              <CardTitle className="capitalize text-sm">{key}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{value}</p>
-            </CardContent>
-          </Card>
+          <Link key={key} href={(key === "totalStores" || key === "activeStores") ? "/admin/stores" : (key === "totalCoupons") ? "/admin/coupons"  : ""}>
+            <Card key={key} className="shadow">
+              <CardHeader>
+                <CardTitle className="capitalize text-sm">{key}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold">{value}</p>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 

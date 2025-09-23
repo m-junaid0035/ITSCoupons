@@ -116,7 +116,6 @@ const storeSchema = new Schema<IStore>(
 
     content: {
       type: String,
-      required: [true, "Content is required"],
       trim: true,
     },
   },
