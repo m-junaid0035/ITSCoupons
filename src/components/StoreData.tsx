@@ -331,7 +331,7 @@ export default function StorePage({
                         onClick={() => handleOpenCouponNewTab(coupon)}
                         className="relative bg-purple-700 hover:bg-purple-800 text-white font-semibold text-xs md:text-base px-4 md:px-8 py-2 md:py-3 rounded-full"
                       >
-                        Show Code
+                        {coupon.couponType === "coupon" ? "Show Code" : "Get Deal"}
                         <span className="absolute top-0 right-0 w-4 h-4 md:w-5 md:h-5 bg-gradient-to-br from-white to-purple-700 rounded-tr-md"></span>
                       </button>
                       <button
@@ -345,10 +345,9 @@ export default function StorePage({
 
                   {/* Expanded Description */}
                   {expandedCoupons.includes(coupon._id) && coupon.description && (
-                    <div
-                      className="px-4 md:px-6 pb-4 text-sm text-gray-600 border-t prose max-w-none"
-                      dangerouslySetInnerHTML={{ __html: coupon.description }}
-                    />
+                    <div className="border-t border-gray-200 p-4 bg-gray-50 text-sm text-gray-700">
+                      {coupon.description}
+                    </div>
                   )}
                 </div>
               );
@@ -397,6 +396,7 @@ export default function StorePage({
         discount={selectedCoupon?.discount}
         code={selectedCoupon?.couponCode}
         redeemUrl={selectedCoupon?.couponUrl}
+        description={selectedCoupon?.description}
         storeImageUrl={store?.image}
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}

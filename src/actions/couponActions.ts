@@ -140,6 +140,19 @@ export async function updateCouponAction(
 
   try {
     const updated = await updateCoupon(id, result.data);
+    
+    const storeId = parsed.storeId;
+    const discountStr = parsed.discount || "";
+    
+        // Extract only the number before % (e.g. "55%" → 55)
+    const match = discountStr.match(/(\d+)\s*%/);
+    const discountValue = match ? parseInt(match[1], 10) : 0;
+
+    if (storeId && discountValue > 0) {
+      await updateMetaTitleWithDiscountIfHigher(storeId, discountValue);
+    }
+
+
     return { data: updated };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to update coupon"] } };

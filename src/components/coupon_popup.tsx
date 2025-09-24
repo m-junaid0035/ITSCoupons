@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createSubscriberAction } from '@/actions/subscriberActions';
 import { useActionState } from 'react';
 import { Copy, X, Mail } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export type CouponModalProps = {
   open: boolean;
@@ -13,8 +15,10 @@ export type CouponModalProps = {
   title?: string;
   discount?: string;
   code?: string;
+  description?: string;
   redeemUrl?: string;
   storeImageUrl?: string;
+  storeSlug?: string;
 };
 
 export default function CouponModal({
@@ -24,8 +28,10 @@ export default function CouponModal({
   title = 'Udemy Coupon: 85% Off',
   discount = '85%',
   code = 'COUPON123',
+  description = 'Dummy description goes here.',
   redeemUrl = 'https://udemy.com',
   storeImageUrl,
+  storeSlug = 'udemy',
 }: CouponModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
@@ -41,7 +47,7 @@ export default function CouponModal({
       : null;
   };
 
-  // ESC key to close
+  // ESC close
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose();
@@ -50,36 +56,13 @@ export default function CouponModal({
     return () => document.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  // Focus trap
-  useEffect(() => {
-    if (!open) return;
-    const el = dialogRef.current;
-    const focusables = el?.querySelectorAll<HTMLElement>(
-      'a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])'
-    );
-    const first = focusables?.[0];
-    const last = focusables?.[focusables.length - 1];
-    first?.focus();
-
-    function trap(e: KeyboardEvent) {
-      if (e.key !== 'Tab' || !focusables || focusables.length === 0) return;
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last?.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first?.focus();
-      }
-    }
-    document.addEventListener('keydown', trap);
-    return () => document.removeEventListener('keydown', trap);
-  }, [open]);
-
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      if (code) {
+        await navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }
     } catch {}
   }
 
@@ -110,13 +93,10 @@ export default function CouponModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          aria-modal="true"
-          role="dialog"
         >
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={onClose}
-            aria-hidden="true"
           />
 
           <motion.div
@@ -125,7 +105,7 @@ export default function CouponModal({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 10 }}
             transition={{ type: 'spring', stiffness: 260, damping: 25 }}
-            className="relative w-full max-w-3xl rounded-2xl bg-white shadow-2xl overflow-hidden"
+            className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden p-6"
           >
             {/* Close Button */}
             <button
@@ -136,50 +116,79 @@ export default function CouponModal({
               <X size={20} />
             </button>
 
-            {/* Mobile compact layout */}
-            <div className="flex flex-col gap-4 p-4 md:hidden">
-              <div className="flex justify-center">
-                {storeImageUrl ? (
-                  <img src={storeImageUrl} alt={storeName} className="h-16 w-16 rounded-lg object-cover" />
-                ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-purple-700 text-white text-2xl font-bold">
-                    {storeName[0]}
-                  </div>
-                )}
-              </div>
+            {/* Store Logo */}
+            <div className="flex justify-center">
+              <Link
+                href={`/stores/${storeSlug}`}
+                className="flex items-center justify-center bg-white overflow-hidden transition hover:scale-105"
+                style={{
+                  width: "178px",
+                  height: "178px",
+                  borderRadius: "100px",
+                  border: "1px solid #C4C4C4"
+                }}
+              >
+                <Image
+                  src={storeImageUrl || "/placeholder-store.png"}
+                  alt={storeName}
+                  width={178}
+                  height={178}
+                  className="object-contain rounded-full p-6 transition-transform duration-300 hover:scale-110 hover:brightness-105"
+                />
+              </Link>
+            </div>
 
-              <h2 className="text-lg font-semibold text-gray-900 text-center">{title}</h2>
+            {/* Title */}
+            <h2 className="mt-4 text-center text-2xl font-bold text-gray-900">{title}</h2>
 
-              {code !== 'NO_CODE' && (
-                <div className="flex gap-2">
-                  <div className="flex-1 flex items-center justify-center h-10 rounded-md border border-gray-300 bg-gray-50 px-2 shadow-sm text-sm font-mono tracking-widest text-gray-900">
+            {/* Description */}
+            {description && (
+              <p className="mt-2 text-center text-gray-600 text-sm">{description}</p>
+            )}
+
+            {/* Coupon Code Section */}
+            <div className="mt-6 flex flex-col items-center">
+              {code && code !== 'NO_CODE' ? (
+                <>
+                  <div className="flex items-center justify-center border-2 border-dashed border-purple-600 rounded-lg px-6 py-4 bg-gray-50 text-lg font-mono tracking-wider text-gray-900">
                     {code}
                   </div>
                   <button
                     onClick={handleCopy}
-                    className="h-10 flex items-center justify-center gap-1 rounded-md bg-purple-700 px-3 text-xs font-semibold text-white hover:bg-purple-800 shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                    className="mt-3 inline-flex items-center gap-2 rounded-md bg-purple-700 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-800 shadow-md transition"
                   >
-                    <Copy size={14} /> {copied ? 'Copied' : 'Copy'}
+                    <Copy size={16} /> {copied ? 'Copied!' : 'Copy Code'}
                   </button>
+                </>
+              ) : (
+                <div className="mt-2 text-center text-green-700 font-semibold">
+                  Deal Activated – No Code Required 🎉
                 </div>
               )}
+            </div>
 
-              <a
-                href={redeemUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full text-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50 shadow-sm transition"
-              >
-                Redeem at {storeName}
-              </a>
+            {/* Redeem Button */}
+            <a
+              href={redeemUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-6 w-full block text-center rounded-lg bg-purple-700 px-6 py-3 text-white font-semibold hover:bg-purple-800 shadow-md transition"
+            >
+              Redeem at {storeName}
+            </a>
 
-              <form onSubmit={handleSubscribe} className="flex flex-col gap-2 w-full">
-                <div className="relative">
-                  <Mail size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+            {/* Email Subscribe */}
+            <div className="mt-8 bg-gray-50 rounded-xl p-6">
+              <h3 className="font-semibold text-gray-900 text-lg mb-3">
+                Get Coupon Alerts
+              </h3>
+              <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-1">
+                  <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
                     type="email"
-                    placeholder="Email address"
-                    className="w-full h-10 pl-8 pr-2 rounded-md border border-gray-300 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Enter your email address"
+                    className="w-full h-12 pl-10 pr-3 rounded-md border border-gray-300 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -188,120 +197,17 @@ export default function CouponModal({
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="h-10 rounded-md bg-purple-700 px-3 text-sm font-semibold text-white hover:bg-purple-800 shadow-md transition"
+                  className="h-12 rounded-md bg-purple-700 px-6 text-sm font-semibold text-white hover:bg-purple-800 shadow-md transition"
                 >
                   {isPending ? 'Subscribing...' : 'Get Alerts'}
                 </button>
               </form>
-
               {confirmation && (
-                <p className={`mt-1 text-sm ${formState.error ? 'text-red-500' : 'text-green-600'}`}>
+                <p className={`mt-2 text-sm ${formState.error ? 'text-red-500' : 'text-green-600'}`}>
                   {confirmation}
                 </p>
               )}
-
               {errorFor('email') && <p className="text-red-500 mt-1 text-sm">{errorFor('email')}</p>}
-            </div>
-
-            {/* Desktop layout remains unchanged */}
-            <div className="hidden md:grid md:grid-cols-2 gap-8 p-8">
-              {/* Left Column */}
-              <div className="flex flex-col items-start space-y-4">
-                {storeImageUrl ? (
-                  <img src={storeImageUrl} alt={storeName} className="h-16 w-16 rounded-lg object-cover" />
-                ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-purple-700 text-white text-2xl font-bold">
-                    {storeName[0]}
-                  </div>
-                )}
-
-                <h2 className="text-2xl font-semibold text-gray-900">{title}</h2>
-                <p className="text-sm text-gray-600">
-                  Copy this code at{' '}
-                  <a className="underline text-purple-700" href={redeemUrl} target="_blank" rel="noreferrer">
-                    {storeName.toLowerCase()}.com
-                  </a>
-                </p>
-
-                {code !== 'NO_CODE' && (
-                  <div className="mt-4 w-full flex gap-3">
-                    <div className="flex-1 flex items-center justify-center h-14 rounded-md border border-gray-300 bg-gray-50 px-4 shadow-sm">
-                      <span className="select-all font-mono text-lg tracking-widest text-gray-900">
-                        {code}
-                      </span>
-                    </div>
-                    <button
-                      onClick={handleCopy}
-                      className="h-14 flex items-center justify-center gap-2 rounded-md bg-purple-700 px-6 text-sm font-semibold text-white hover:bg-purple-800 shadow-md focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
-                    >
-                      <Copy size={16} /> {copied ? 'Copied' : 'Copy'}
-                    </button>
-                  </div>
-                )}
-
-                <a
-                  href={redeemUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 w-full text-center rounded-md border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-800 hover:bg-gray-50 shadow-sm transition"
-                >
-                  Redeem at {storeName}
-                </a>
-              </div>
-
-              {/* Right Column */}
-              <div className="flex flex-col justify-between p-6 bg-gray-50 rounded-xl space-y-4">
-                <div>
-                  <h3 className="font-semibold text-gray-900 text-lg mb-2">Offer Details</h3>
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    Receive {discount} off your order with {storeName}'s promo code. Redeem on checkout. Offer valid for a limited time only.
-                  </p>
-                </div>
-
-                <div className="mt-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    {storeImageUrl ? (
-                      <img src={storeImageUrl} alt={storeName} className="h-10 w-10 rounded object-cover" />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded bg-purple-700 font-semibold text-white">
-                        {storeName[0]}
-                      </div>
-                    )}
-                    <div className="text-sm font-medium text-gray-800">
-                      Get coupon alerts for {storeName} and never miss another deal!
-                    </div>
-                  </div>
-
-                  <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-2 w-full max-w-md">
-                    <div className="relative flex-1">
-                      <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input
-                        type="email"
-                        placeholder="Enter your email address"
-                        className="w-full h-12 pl-10 pr-3 rounded-md border border-gray-300 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      disabled={isPending}
-                      className="h-12 rounded-md bg-purple-700 px-4 text-sm font-semibold text-white hover:bg-purple-800 shadow-md transition"
-                    >
-                      {isPending ? 'Subscribing...' : 'Get Alerts'}
-                    </button>
-                  </form>
-
-                  {confirmation && (
-                    <p className={`mt-2 text-sm ${formState.error ? 'text-red-500' : 'text-green-600'}`}>
-                      {confirmation}
-                    </p>
-                  )}
-
-                  {errorFor('email') && <p className="text-red-500 mt-1 text-sm">{errorFor('email')}</p>}
-                </div>
-              </div>
             </div>
           </motion.div>
         </motion.div>

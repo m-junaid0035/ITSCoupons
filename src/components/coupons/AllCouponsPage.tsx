@@ -221,8 +221,8 @@ export default function AllCouponsPage({
           <button
             key={tab}
             className={`pb-2 ${activeTab === tab
-                ? "border-b-2 border-purple-700 text-purple-700"
-                : "hover:text-purple-600"
+              ? "border-b-2 border-purple-700 text-purple-700"
+              : "hover:text-purple-600"
               }`}
             onClick={() => setActiveTab(tab)}
           >
@@ -504,11 +504,11 @@ export default function AllCouponsPage({
 
                 {/* Description Section */}
                 {expandedCouponId === coupon._id && coupon.description && (
-                  <div
-                    className="border-t border-gray-200 p-4 bg-gray-50 text-sm text-gray-700"
-                    dangerouslySetInnerHTML={{ __html: coupon.description }}
-                  />
+                  <div className="border-t border-gray-200 p-4 bg-gray-50 text-sm text-gray-700">
+                    {coupon.description}
+                  </div>
                 )}
+
               </div>
             );
           })}
@@ -520,8 +520,8 @@ export default function AllCouponsPage({
                 disabled={page === 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 className={`px-3 py-1 rounded border ${page === 1
-                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                    : "text-purple-700 border-purple-200 hover:bg-purple-50"
+                  ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                  : "text-purple-700 border-purple-200 hover:bg-purple-50"
                   }`}
               >
                 Previous
@@ -532,8 +532,8 @@ export default function AllCouponsPage({
                     key={n}
                     onClick={() => setPage(n)}
                     className={`h-8 w-8 rounded border text-sm ${n === page
-                        ? "bg-purple-700 text-white border-purple-700"
-                        : "border-gray-200 hover:bg-gray-50"
+                      ? "bg-purple-700 text-white border-purple-700"
+                      : "border-gray-200 hover:bg-gray-50"
                       }`}
                   >
                     {n}
@@ -544,8 +544,8 @@ export default function AllCouponsPage({
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 className={`px-3 py-1 rounded border ${page === totalPages
-                    ? "text-gray-400 border-gray-200 cursor-not-allowed"
-                    : "text-purple-700 border-purple-200 hover:bg-purple-50"
+                  ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                  : "text-purple-700 border-purple-200 hover:bg-purple-50"
                   }`}
               >
                 Next
@@ -562,6 +562,7 @@ export default function AllCouponsPage({
         discount={selectedCoupon?.discount}
         code={selectedCoupon?.couponCode}
         redeemUrl={selectedCoupon?.couponUrl}
+        description={selectedCoupon?.description}
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
