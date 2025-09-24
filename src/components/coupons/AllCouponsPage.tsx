@@ -220,11 +220,10 @@ export default function AllCouponsPage({
         {(["all", "promo", "deal"] as const).map((tab) => (
           <button
             key={tab}
-            className={`pb-2 ${
-              activeTab === tab
+            className={`pb-2 ${activeTab === tab
                 ? "border-b-2 border-purple-700 text-purple-700"
                 : "hover:text-purple-600"
-            }`}
+              }`}
             onClick={() => setActiveTab(tab)}
           >
             {tab === "all" && `All Coupons (${coupons.length})`}
@@ -441,12 +440,24 @@ export default function AllCouponsPage({
                 className="flex flex-col border border-gray-200 rounded-xl bg-white shadow-md overflow-hidden"
               >
                 <div className="flex items-stretch">
-                  {/* Left Discount Section */}
-                  <div className="flex flex-col items-center justify-center min-w-[90px] md:min-w-[120px] p-3 md:p-6 text-purple-700 font-bold">
-                    <span className="text-[10px] md:text-sm uppercase">Up To</span>
-                    <span className="text-lg md:text-3xl">{coupon.discount || "0%"}</span>
-                    <span className="text-[10px] md:text-sm uppercase">Off</span>
+                  <div className="flex items-stretch">
+                    {/* Left Discount Section */}
+                    <div className="flex flex-col items-center justify-center min-w-[90px] md:min-w-[120px] p-3 md:p-6 text-purple-700 font-bold">
+                      {coupon.discount?.toLowerCase() === "free shipping" ? (
+                        <>
+                          <span className="text-lg md:text-3xl">Free</span>
+                          <span className="text-lg md:text-3xl">Shipping</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-[10px] md:text-sm uppercase">Up To</span>
+                          <span className="text-lg md:text-3xl">{coupon.discount || "0%"}</span>
+                          <span className="text-[10px] md:text-sm uppercase">Off</span>
+                        </>
+                      )}
+                    </div>
                   </div>
+
 
                   {/* Middle Content */}
                   <div className="flex-1 p-3 md:p-6">
@@ -508,11 +519,10 @@ export default function AllCouponsPage({
               <button
                 disabled={page === 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className={`px-3 py-1 rounded border ${
-                  page === 1
+                className={`px-3 py-1 rounded border ${page === 1
                     ? "text-gray-400 border-gray-200 cursor-not-allowed"
                     : "text-purple-700 border-purple-200 hover:bg-purple-50"
-                }`}
+                  }`}
               >
                 Previous
               </button>
@@ -521,11 +531,10 @@ export default function AllCouponsPage({
                   <button
                     key={n}
                     onClick={() => setPage(n)}
-                    className={`h-8 w-8 rounded border text-sm ${
-                      n === page
+                    className={`h-8 w-8 rounded border text-sm ${n === page
                         ? "bg-purple-700 text-white border-purple-700"
                         : "border-gray-200 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     {n}
                   </button>
@@ -534,11 +543,10 @@ export default function AllCouponsPage({
               <button
                 disabled={page === totalPages}
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                className={`px-3 py-1 rounded border ${
-                  page === totalPages
+                className={`px-3 py-1 rounded border ${page === totalPages
                     ? "text-gray-400 border-gray-200 cursor-not-allowed"
                     : "text-purple-700 border-purple-200 hover:bg-purple-50"
-                }`}
+                  }`}
               >
                 Next
               </button>

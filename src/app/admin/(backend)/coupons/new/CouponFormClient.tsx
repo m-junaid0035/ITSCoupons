@@ -149,9 +149,9 @@ export default function CouponFormClient({ stores }: CouponFormClientProps) {
     const freeShippingMatch = value.match(/free\s+shipping/i);
 
     if (percentMatch) {
-      setDiscount(`${percentMatch[1]}% Off`);
+      setDiscount(`${percentMatch[1]}%`);
     } else if (dollarMatch) {
-      setDiscount(`$${dollarMatch[1]} Off`);
+      setDiscount(`$${dollarMatch[1]}`);
     } else if (freeShippingMatch) {
       setDiscount("Free Shipping");
     } else {

@@ -3,12 +3,8 @@ import StaticPageView from "@/components/genericPage"; // move client compo to c
 import { Metadata } from "next";
 import { StaticPageData } from "@/types/staticPage";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}): Promise<Metadata> {
-  const { slug } = await params;
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ slug?: "" }> }): Promise<Metadata> {
+  const { slug = ""} = await searchParams;
 
   const res = await fetchStaticPageBySlugAction(slug);
   const page: StaticPageData | null = res?.data ?? null;

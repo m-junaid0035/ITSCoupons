@@ -150,24 +150,25 @@ export default function StorePage({
             />
           </div>
 
-          <div className="space-y-4">
-            <Stat icon={<FaTags />} value={coupons.length} label="Total Coupons" />
+          <div className="grid grid-cols-2 gap-4">
+            <Stat icon={<FaTags size={28}/>} value={coupons.length} label="Total Coupons" />
             <Stat
-              icon={<FaHandshake />}
+              icon={<FaHandshake size={28}/>}
               value={coupons.filter((c) => c.couponType === "coupon").length}
               label="Promo Codes"
             />
             <Stat
-              icon={<FaHandshake />}
+              icon={<FaHandshake size={28}/>}
               value={coupons.filter((c) => c.couponType === "deal").length}
               label="Deals"
             />
             <Stat
-              icon={<FaClock />}
+              icon={<FaClock size={28}/>}
               value={coupons.filter(isExpired).length}
               label="Expired Coupons"
             />
           </div>
+
         </aside>
 
         {/* Main Content */}
@@ -195,7 +196,7 @@ export default function StorePage({
                 </p>
               </div>
             </div>
-{store.description && (
+            {store.description && (
               <div className="mt-2 text-sm text-gray-600">
                 {!expandedDesc ? (
                   <div className="flex items-baseline">
@@ -282,12 +283,24 @@ export default function StorePage({
                   className="flex flex-col border border-gray-200 rounded-xl bg-white shadow-md overflow-hidden"
                 >
                   <div className="flex items-stretch">
-                    {/* Left Discount Section */}
-                    <div className="flex flex-col items-center justify-center min-w-[90px] md:min-w-[120px] p-3 md:p-6 text-purple-700 font-bold">
-                      <span className="text-[10px] md:text-sm uppercase">Up To</span>
-                      <span className="text-lg md:text-3xl">{coupon.discount || "0%"}</span>
-                      <span className="text-[10px] md:text-sm uppercase">Off</span>
+                    <div className="flex items-stretch">
+                      {/* Left Discount Section */}
+                      <div className="flex flex-col items-center justify-center min-w-[90px] md:min-w-[120px] p-3 md:p-6 text-purple-700 font-bold">
+                        {coupon.discount?.toLowerCase() === "free shipping" ? (
+                          <>
+                            <span className="text-lg md:text-3xl">Free</span>
+                            <span className="text-lg md:text-3xl">Shipping</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[10px] md:text-sm uppercase">Up To</span>
+                            <span className="text-lg md:text-3xl">{coupon.discount || "0%"}</span>
+                            <span className="text-[10px] md:text-sm uppercase">Off</span>
+                          </>
+                        )}
+                      </div>
                     </div>
+
 
                     {/* Middle Content */}
                     <div className="flex-1 p-3 md:p-6">
