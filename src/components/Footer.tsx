@@ -1,10 +1,10 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { FaWhatsapp, FaFacebookF, FaInstagram } from "react-icons/fa";
 import { SiX } from "react-icons/si";
 import Link from "next/link";
+import Image from "next/image"; // ✅ Import added
 import { fetchLatestSettingAction } from "@/actions/settingActions";
 import { fetchLatestStaticPageTitlesAndSlugsAction } from "@/actions/staticPagesActions";
 import type { SettingData } from "@/types/setting";
@@ -33,9 +33,16 @@ export default function Footer() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-8 text-sm">
         {/* Logo + Description + Socials */}
         <div className="space-y-4 col-span-2 md:col-span-1 text-center md:text-left">
-          <h2 className="text-2xl font-bold">
-            {latestSetting?.siteName || "ITSCoupons"}
-          </h2>
+          <div className="flex justify-center md:justify-start">
+            <Image
+              src="/logos/ITS-Coupons-Logo-White.png"
+              alt="ITS Coupons Logo"
+              width={180}
+              height={60}
+              className="h-12 w-auto object-contain"
+              priority
+            />
+          </div>
           <p className="max-w-sm mx-auto md:mx-0">
             Helping you save money with verified coupons and deals from your
             favorite stores.
@@ -49,7 +56,7 @@ export default function Footer() {
                 rel="noreferrer"
               >
                 <FaWhatsapp />
-<span className="sr-only">Whatsapp Link</span>
+                <span className="sr-only">Whatsapp Link</span>
               </Link>
             )}
             {latestSetting?.facebookUrl && (
@@ -60,7 +67,7 @@ export default function Footer() {
                 rel="noreferrer"
               >
                 <FaFacebookF />
-<span className="sr-only">Facebook Link</span>
+                <span className="sr-only">Facebook Link</span>
               </Link>
             )}
             {latestSetting?.XUrl && (
@@ -71,7 +78,7 @@ export default function Footer() {
                 rel="noreferrer"
               >
                 <SiX />
-<span className="sr-only">X Link</span>
+                <span className="sr-only">X Link</span>
               </Link>
             )}
             {latestSetting?.instagramUrl && (
@@ -82,7 +89,7 @@ export default function Footer() {
                 rel="noreferrer"
               >
                 <FaInstagram />
-<span className="sr-only">Intagram Link</span>
+                <span className="sr-only">Instagram Link</span>
               </Link>
             )}
           </div>
@@ -90,7 +97,7 @@ export default function Footer() {
 
         {/* Deals & Shop */}
         <div>
-<h2 className="font-semibold mb-2">Deals &amp; Shop</h2>
+          <h2 className="font-semibold mb-2">Deals &amp; Shop</h2>
           <ul className="space-y-1">
             <li><Link href="/coupons" className="hover:underline">Promo Codes</Link></li>
             <li><Link href="/coupons" className="hover:underline">Latest Deals</Link></li>
