@@ -125,7 +125,7 @@ export default function CouponModal({ coupon, isOpen, onClose }: CouponModalProp
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Discount</p>
             <p className="text-lg text-gray-900 dark:text-gray-100">
-              {coupon.discount}% Off
+              {coupon.discount}
             </p>
           </div>
 

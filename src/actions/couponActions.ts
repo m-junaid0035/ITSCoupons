@@ -15,6 +15,7 @@ import {
   getTopDealsWithStores,
   getCouponsByStore,
 } from "@/functions/couponFunctions";
+import { updateMetaTitleWithDiscountIfHigher } from "./storeActions";
 
 // ✅ Coupon Validation Schema with new fields
 const couponSchema = z.object({
@@ -26,12 +27,12 @@ const couponSchema = z.object({
 
   // ✅ expirationDate optional
   expirationDate: z
-  .string()
-  .transform((val) => (val === "" ? undefined : val))
-  .optional()
-  .refine((val) => !val || !isNaN(Date.parse(val)), {
-    message: "Invalid date format",
-  }),
+    .string()
+    .transform((val) => (val === "" ? undefined : val))
+    .optional()
+    .refine((val) => !val || !isNaN(Date.parse(val)), {
+      message: "Invalid date format",
+    }),
 
   couponUrl: z.string().url("Invalid URL").optional(),
   storeName: z.string().optional(),
@@ -103,12 +104,25 @@ export async function createCouponAction(
 
   try {
     const coupon = await createCoupon(result.data);
+
+    // ✅ After creating coupon, update store meta title if discount is higher
+    const storeId = parsed.storeId;
+    const discountStr = parsed.discount || "";
+
+    // Extract only the number before % (e.g. "55%" → 55)
+    const match = discountStr.match(/(\d+)\s*%/);
+    const discountValue = match ? parseInt(match[1], 10) : 0;
+
+    if (storeId && discountValue > 0) {
+      await updateMetaTitleWithDiscountIfHigher(storeId, discountValue);
+    }
+
+
     return { data: coupon };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to create coupon"] } };
   }
 }
-
 // ✅ UPDATE COUPON
 export async function updateCouponAction(
   prevState: CouponFormState,

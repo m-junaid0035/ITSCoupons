@@ -409,3 +409,39 @@ export async function fetchStoreWithCouponsBySlugAction(slug: string) {
   }
 }
 
+export async function updateMetaTitleWithDiscountIfHigher(
+  storeId: string,
+  newDiscount: number
+) {
+  await connectToDatabase();
+
+  if (!storeId) {
+    return { error: { message: ["Store ID is required"] } };
+  }
+
+  const store = await getStoreById(storeId);
+  if (!store) return { error: { message: ["Store not found"] } };
+  if (!store.metaTitle) return { error: { message: ["Meta title is empty"] } };
+
+  // ✅ Extract the current discount before % (first occurrence)
+  const match = store.metaTitle.match(/(\d+)%/);
+  const currentDiscount = match ? parseInt(match[1], 10) : 0;
+
+  // ✅ Only update if newDiscount is greater
+  if (newDiscount > currentDiscount) {
+    const updatedMetaTitle = store.metaTitle.replace(/(\d+)%/g, `${newDiscount}%`);
+
+    try {
+      const updatedStore = await updateStoreInline(storeId, {
+        metaTitle: updatedMetaTitle,
+      });
+      if (!updatedStore) return { error: { message: ["Failed to update meta title"] } };
+      return { data: updatedStore };
+    } catch (error: any) {
+      return { error: { message: [error.message || "Failed to update meta title"] } };
+    }
+  }
+
+  // ✅ Nothing to update
+  return { data: null, message: "New discount is not greater than current" };
+}

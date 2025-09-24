@@ -167,26 +167,36 @@ export default function EditStoreForm({
         const { data: latestSEO } = await fetchLatestSEOAction("stores");
         if (!latestSEO) return;
 
-        const replaceStoreName = (text: string) =>
-            text.replace(/{{storeName}}|s_n/gi, storeName);
+        // Format current date -> "14 September 2025"
+        const currentDate = new Date().toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+        });
+
+        const replacePlaceholders = (text: string) =>
+            text
+                .replace(/{{storeName}}|s_n/gi, storeName)
+                .replace(/{{currentDate}}|c_d/gi, currentDate);
 
         const slugSource = latestSEO.slug || storeName;
-        const processedSlug = replaceStoreName(slugSource)
+        const processedSlug = replacePlaceholders(slugSource)
             .toLowerCase()
             .replace(/\s+/g, "-");
 
         setSeo({
-            metaTitle: replaceStoreName(latestSEO.metaTitle || ""),
-            metaDescription: replaceStoreName(latestSEO.metaDescription || ""),
+            metaTitle: replacePlaceholders(latestSEO.metaTitle || ""),
+            metaDescription: replacePlaceholders(latestSEO.metaDescription || ""),
             metaKeywords: (latestSEO.metaKeywords || [])
-                .map(replaceStoreName)
+                .map(replacePlaceholders)
                 .join(", "),
             focusKeywords: (latestSEO.focusKeywords || [])
-                .map(replaceStoreName)
+                .map(replacePlaceholders)
                 .join(", "),
             slug: processedSlug,
         });
     };
+
 
     useEffect(() => {
         if (storeName.trim()) updateSEO(storeName.trim());

@@ -142,30 +142,39 @@ export default function StoreForm() {
   };
 
   /** ---------------- Auto SEO Update ---------------- */
-  const updateSEO = async (storeName: string) => {
-    const { data: latestSEO } = await fetchLatestSEOAction("stores");
-    if (!latestSEO) return;
+ const updateSEO = async (storeName: string) => {
+  const { data: latestSEO } = await fetchLatestSEOAction("stores");
+  if (!latestSEO) return;
 
-    const replaceStoreName = (text: string) =>
-      text.replace(/{{storeName}}|s_n/gi, storeName);
+  // Format current date -> "14 September 2025"
+  const currentDate = new Date().toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
-    const slugSource = latestSEO.slug || storeName;
-    const processedSlug = replaceStoreName(slugSource)
-      .toLowerCase()
-      .replace(/\s+/g, "-");
+  const replacePlaceholders = (text: string) =>
+    text
+      .replace(/{{storeName}}|s_n/gi, storeName)
+      .replace(/{{currentDate}}|c_d/gi, currentDate);
 
-    setSeo({
-      metaTitle: replaceStoreName(latestSEO.metaTitle || ""),
-      metaDescription: replaceStoreName(latestSEO.metaDescription || ""),
-      metaKeywords: (latestSEO.metaKeywords || [])
-        .map(replaceStoreName)
-        .join(", "),
-      focusKeywords: (latestSEO.focusKeywords || [])
-        .map(replaceStoreName)
-        .join(", "),
-      slug: processedSlug,
-    });
-  };
+  const slugSource = latestSEO.slug || storeName;
+  const processedSlug = replacePlaceholders(slugSource)
+    .toLowerCase()
+    .replace(/\s+/g, "-");
+
+  setSeo({
+    metaTitle: replacePlaceholders(latestSEO.metaTitle || ""),
+    metaDescription: replacePlaceholders(latestSEO.metaDescription || ""),
+    metaKeywords: (latestSEO.metaKeywords || [])
+      .map(replacePlaceholders)
+      .join(", "),
+    focusKeywords: (latestSEO.focusKeywords || [])
+      .map(replacePlaceholders)
+      .join(", "),
+    slug: processedSlug,
+  });
+};
 
   /** ---------------- Listen Store Name Changes ---------------- */
   useEffect(() => {
