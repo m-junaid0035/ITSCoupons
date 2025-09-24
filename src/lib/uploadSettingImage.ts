@@ -2,46 +2,54 @@
 
 import fs from "fs";
 import path from "path";
+import { v4 as uuidv4 } from "uuid";
 
-// ✅ Directories
-const logoDir = path.join(process.cwd(), "public", "logos");
-const faviconDir = path.join(process.cwd(), "public", "favicons");
+/* ===============================
+   Logo Upload
+================================ */
+const logoDir = "/www/var/ITSCoupons-uploads/uploads-logos";
 
-// Ensure folders exist
-[logoDir, faviconDir].forEach((dir) => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
+// Ensure folder exists
+if (!fs.existsSync(logoDir)) fs.mkdirSync(logoDir, { recursive: true });
 
 export async function saveSettingLogo(file: File): Promise<string> {
-  return saveImage(file, logoDir, "logo");
-}
-
-export async function saveSettingFavicon(file: File): Promise<string> {
-  return saveImage(file, faviconDir, "favicon");
-}
-
-// ✅ Reusable helper
-async function saveImage(file: File, targetDir: string, prefix: string): Promise<string> {
   if (!file) throw new Error("No file provided");
 
-  const ext = path.extname(file.name) || ".jpg"; // default jpg
-  const existingFiles = fs.readdirSync(targetDir).filter((f) => f.startsWith(prefix));
+  const ext = path.extname(file.name) || ".png"; // default to png
+  const fileName = `l-${uuidv4()}${ext}`; // UUID-based filename
+  const filePath = path.join(logoDir, fileName);
 
-  const numbers = existingFiles
-    .map((f) => parseInt(f.replace(/\D/g, ""), 10))
-    .filter((n) => !isNaN(n));
-
-  const nextNumber = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
-  const fileName = `${prefix}${nextNumber}${ext}`;
-  const filePath = path.join(targetDir, fileName);
-
+  // Convert File → ArrayBuffer → Uint8Array
   const arrayBuffer = await file.arrayBuffer();
-  const buffer = new Uint8Array(arrayBuffer);
+  const uint8Array = new Uint8Array(arrayBuffer);
 
-  fs.writeFileSync(filePath, buffer);
+  fs.writeFileSync(filePath, uint8Array);
 
-  // ✅ Return relative path for DB/frontend
-  return `/${path.basename(targetDir)}/${fileName}`;
+  // ✅ Return relative path
+  return `/uploads-logos/${fileName}`;
+}
+
+/* ===============================
+   Favicon Upload
+================================ */
+const faviconDir = "/www/var/ITSCoupons-uploads/uploads-favicons";
+
+// Ensure folder exists
+if (!fs.existsSync(faviconDir)) fs.mkdirSync(faviconDir, { recursive: true });
+
+export async function saveSettingFavicon(file: File): Promise<string> {
+  if (!file) throw new Error("No file provided");
+
+  const ext = path.extname(file.name) || ".ico"; // default to .ico
+  const fileName = `f-${uuidv4()}${ext}`; // UUID-based filename
+  const filePath = path.join(faviconDir, fileName);
+
+  // Convert File → ArrayBuffer → Uint8Array
+  const arrayBuffer = await file.arrayBuffer();
+  const uint8Array = new Uint8Array(arrayBuffer);
+
+  fs.writeFileSync(filePath, uint8Array);
+
+  // ✅ Return relative path
+  return `/uploads-favicons/${fileName}`;
 }
