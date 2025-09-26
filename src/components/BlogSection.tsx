@@ -35,7 +35,7 @@ export default function BlogSection({ blogs }: BlogSectionProps): JSX.Element {
               className="flex flex-col items-center w-full max-w-[301px]"
             >
               {/* Image box */}
-              <div className="w-full h-[160px] bg-gray-200 rounded-[12px] overflow-hidden flex items-center justify-center">
+              <div className="w-full h-[160px] bg-gray-200 rounded-[12px] overflow-hidden flex items-center justify-center border border-gray-100">
                 {blog.image ? (
                   <Image
                     src={`https://itscoupons.com${blog.image}`}
@@ -44,7 +44,7 @@ export default function BlogSection({ blogs }: BlogSectionProps): JSX.Element {
                     height={160}
                     priority={index < 4} // preload first row
                     loading={index < 4 ? "eager" : "lazy"}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                    className="-mt-6 w-full h-full object-contain bg-white p-2 transition-transform duration-300 hover:scale-105"
                   />
                 ) : (
                   <span className="text-gray-400 text-sm flex items-center justify-center h-full">

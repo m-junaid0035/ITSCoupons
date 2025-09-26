@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 
 interface FormState {
-  error?: Record<string, string[]> & { message?: string[] };
+  error?: Record<string, string[]> | { message?: string[] };
   data?: any;
 }
 
@@ -34,16 +34,13 @@ const initialState: FormState = {
 
 export default function NetworkForm() {
   const router = useRouter();
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
   const [formState, dispatch, isPending] = useActionState(
-    async (prevState: FormState, formData: FormData) => {
-      const result = await createNetworkAction(prevState, formData);
-      return result;
-    },
+    async (prevState: FormState, formData: FormData) =>
+      await createNetworkAction(prevState, formData),
     initialState
   );
-
-  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
   useEffect(() => {
     if (formState.data && !formState.error) {
@@ -52,10 +49,18 @@ export default function NetworkForm() {
 
     if (formState.error && "message" in formState.error) {
       alert(
-        formState.error.message?.[0] || "An error occurred while saving network"
+        (formState.error as any).message?.[0] ||
+          "An error occurred while saving network"
       );
     }
   }, [formState]);
+
+  const errorFor = (field: string) =>
+    formState.error &&
+    typeof formState.error === "object" &&
+    field in formState.error
+      ? (formState.error as Record<string, string[]>)[field]?.[0]
+      : null;
 
   return (
     <>
@@ -89,7 +94,19 @@ export default function NetworkForm() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="Enter network name"
               />
+              {errorFor("networkName") && (
+                <p className="text-sm text-red-500">
+                  {errorFor("networkName")}
+                </p>
+              )}
             </div>
+
+            {/* General Error */}
+            {"message" in (formState.error ?? {}) && (
+              <p className="text-sm text-red-500">
+                {(formState.error as any).message?.[0]}
+              </p>
+            )}
 
             <CardFooter className="flex justify-end border-none">
               <Button type="submit" disabled={isPending}>

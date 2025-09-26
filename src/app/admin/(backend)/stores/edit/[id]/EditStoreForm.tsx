@@ -169,10 +169,10 @@ export default function EditStoreForm({
 
         // Format current date -> "14 September 2025"
         const currentDate = new Date().toLocaleDateString("en-GB", {
-            day: "numeric",
             month: "long",
             year: "numeric",
         });
+
 
         const replacePlaceholders = (text: string) =>
             text

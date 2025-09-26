@@ -147,11 +147,11 @@ export default function StoreForm() {
   if (!latestSEO) return;
 
   // Format current date -> "14 September 2025"
-  const currentDate = new Date().toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+const currentDate = new Date().toLocaleDateString("en-GB", {
+  month: "long",
+  year: "numeric",
+});
+
 
   const replacePlaceholders = (text: string) =>
     text

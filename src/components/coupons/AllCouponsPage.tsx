@@ -445,8 +445,8 @@ export default function AllCouponsPage({
                     <div className="flex flex-col items-center justify-center min-w-[90px] md:min-w-[120px] p-3 md:p-6 text-purple-700 font-bold">
                       {coupon.discount?.toLowerCase() === "free shipping" ? (
                         <>
-                          <span className="text-lg md:text-3xl">Free</span>
-                          <span className="text-lg md:text-3xl">Shipping</span>
+                          <span className="text-lg md:text-3xl uppercase">Free</span>
+                          <span className="text-[10px] md:text-sm uppercase">Shipping</span>
                         </>
                       ) : (
                         <>
@@ -486,11 +486,12 @@ export default function AllCouponsPage({
                   <div className="flex flex-col items-center justify-center min-w-[120px] md:min-w-[200px] p-3 md:p-6 border-l border-gray-100">
                     <button
                       onClick={() => handleOpenCouponNewTab(coupon)}
-                      className="relative bg-purple-700 hover:bg-purple-800 text-white font-semibold text-xs md:text-base px-4 md:px-8 py-2 md:py-3 rounded-full"
+                      className="relative w-36 h-11 bg-purple-700 hover:bg-purple-800 text-white font-semibold text-sm px-4 py-2 rounded-full text-center"
                     >
                       {coupon.couponType === "coupon" ? "Show Code" : "Get Deal"}
-                      <span className="absolute top-0 right-0 w-4 h-4 md:w-5 md:h-5 bg-gradient-to-br from-white to-purple-700 rounded-tr-md"></span>
+                      <span className="absolute top-0 right-0 w-4 h-5 bg-gradient-to-br from-white to-purple-700 rounded-tr-md"></span>
                     </button>
+
                     <button
                       onClick={() => toggleCouponDetails(coupon._id)}
                       className="text-xs md:text-sm text-gray-500 mt-2 md:mt-3 hover:underline"

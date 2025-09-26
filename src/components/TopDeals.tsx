@@ -71,7 +71,7 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
             className="flex flex-col items-center w-full max-w-[247px]"
           >
             {/* Upper Box (Image) */}
-            <div className="w-full h-[150px] bg-gray-300 rounded-[16px] overflow-hidden flex items-center justify-center">
+            <div className="w-full h-[150px] bg-gray-300 rounded-[16px] overflow-hidden flex items-center justify-center border border-gray-100">
               {deal.store?.image ? (
                 <Image
                   src={`https://itscoupons.com${deal.store.image}`}
@@ -80,8 +80,9 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
                   height={150}
                   priority={index < 4}
                   loading={index < 4 ? "eager" : "lazy"}
-                  className="w-full h-full object-cover"
+                  className="-mt-6 w-full h-full object-contain bg-white p-2"
                 />
+
               ) : (
                 <span className="text-gray-400 text-sm flex items-center justify-center h-full">
                   No Image
@@ -101,9 +102,9 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
               {deal.couponCode && (
                 <button
                   onClick={() => handleGetDealClick(deal)}
-                  className="w-full bg-gray-200 text-xs font-semibold text-black rounded-full py-1 hover:bg-purple-200 transition"
+                  className="w-full bg-purple-700 text-xs font-semibold text-white rounded-full py-2 hover:bg-purple-200 transition"
                 >
-                  {deal.couponCode === "DEAL_CODE" ? "View Deal" : "Get Deal"}
+                  Get Deal
                 </button>
               )}
             </div>

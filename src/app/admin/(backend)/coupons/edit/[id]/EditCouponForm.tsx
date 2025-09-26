@@ -164,7 +164,7 @@ export default function EditCouponForm({ coupon, stores }: EditCouponFormProps) 
     formData.set("description", descriptionHtml);
     formData.set("couponUrl", couponUrl);
     if (discount) formData.set("discount", discount);
-    if (couponType === "deal") formData.set("couponCode", "DEAL_CODE");
+    if (couponType === "deal") formData.set("couponCode", "NO_CODE");
 
     startTransition(() => dispatch(formData));
   };

@@ -78,6 +78,7 @@ function CouponsTable({
             <TableHead>Expires</TableHead>
             <TableHead>Store</TableHead>
             <TableHead>Top One</TableHead>
+            <TableHead>Verified</TableHead>
             <TableHead className="w-[140px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -89,7 +90,10 @@ function CouponsTable({
                 className="hover:bg-muted/40 transition-colors"
               >
                 <TableCell className="font-medium">{coupon.title}</TableCell>
-                <TableCell>{coupon.couponCode}</TableCell>
+                <TableCell>
+                  {coupon.couponCode === "NO_CODE" ? "Deal" : coupon.couponCode}
+                </TableCell>
+
                 <TableCell className="capitalize">{coupon.couponType}</TableCell>
                 <TableCell className="capitalize">{coupon.status}</TableCell>
                 <TableCell>
@@ -100,6 +104,13 @@ function CouponsTable({
                 <TableCell>{coupon.storeName || "-"}</TableCell>
                 <TableCell>
                   {coupon.isTopOne ? (
+                    <span className="text-green-600 font-semibold">Yes</span>
+                  ) : (
+                    <span className="text-gray-400">No</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {coupon.verified ? (
                     <span className="text-green-600 font-semibold">Yes</span>
                   ) : (
                     <span className="text-gray-400">No</span>

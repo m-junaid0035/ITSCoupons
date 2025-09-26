@@ -78,12 +78,12 @@ export default function PromoCodesSection({ coupons, couponId}: PromoCodesSectio
 
           return (
             <div key={coupon._id || idx} className="flex flex-col items-center w-full max-w-[247px]">
-              <div className="w-full h-[150px] bg-gray-100 rounded-[16px] overflow-hidden flex items-center justify-center">
+              <div className="w-full h-[150px] bg-gray-100 rounded-[16px] overflow-hidden flex items-center justify-center border border-gray-100">
                 {coupon.store?.image ? (
                   <img
                     src={`https://itscoupons.com${coupon.store.image}`}
                     alt={displayStoreName}
-                    className="w-full h-full object-cover"
+                    className="-mt-6 w-full h-full object-contain bg-white p-2"
                   />
                 ) : (
                   <span className="text-gray-400 text-sm">No Image</span>
@@ -115,9 +115,9 @@ export default function PromoCodesSection({ coupons, couponId}: PromoCodesSectio
                 {coupon.couponCode && (
                   <button
                     onClick={() => handleGetCouponClick(coupon)}
-                    className="w-full bg-gray-200 text-xs font-semibold text-black rounded-full py-1 hover:bg-purple-200 transition"
+                    className="w-full bg-purple-700 text-xs font-semibold text-white rounded-full py-2 hover:bg-purple-200 transition"
                   >
-                    {coupon.couponCode === "DEAL_CODE" ? "View Deal" : "Get Coupon Code"}
+                    Get Coupon Code
                   </button>
                 )}
               </div>

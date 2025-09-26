@@ -39,7 +39,7 @@ export default function Footer() {
               alt="ITS Coupons Logo"
               width={180}
               height={60}
-              className="h-12 w-auto object-contain"
+              className="h-12 w-auto object-contain pr-2"
               priority
             />
           </div>
