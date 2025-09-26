@@ -114,19 +114,30 @@ export default function DashboardPageClient({
     <div className="p-6 space-y-6">
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {Object.entries(summary).map(([key, value]) => (
-          <Link key={key} href={(key === "totalStores" || key === "activeStores") ? "/admin/stores" : (key === "totalCoupons") ? "/admin/coupons"  : ""}>
-            <Card key={key} className="shadow">
-              <CardHeader>
-                <CardTitle className="capitalize text-sm">{key}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold">{value}</p>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
+        {Object.entries(summary).map(([key, value]) => {
+          // Determine the route based on the key
+          let href = "";
+          if (key === "totalStores" || key === "activeStores") href = "/admin/stores";
+          else if (key === "totalCoupons" || key === "activeCoupons" || key === "expiredCoupons") href = "/admin/coupons";
+          else if (key === "totalUsers" || key === "activeUsers") href = "/admin/users";
+          else if (key === "totalRoles") href = "/admin/roles";
+          else if (key === "totalCategories") href = "/admin/categories";
+
+          return (
+            <Link key={key} href={href}>
+              <Card className="shadow">
+                <CardHeader>
+                  <CardTitle className="capitalize text-sm">{key}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-2xl font-bold">{value}</p>
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
+
 
       {/* Monthly Trends */}
       <Card>

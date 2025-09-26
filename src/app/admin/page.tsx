@@ -47,7 +47,7 @@ export default async function DashboardPage() {
       : [];
   const topStoresData =
     topStoresResult.status === "fulfilled" ? topStoresResult.value?.data ?? [] : [];
-
+  console.log(summaryData)
   return (
     <DashboardPageClient
       summary={summaryData}
