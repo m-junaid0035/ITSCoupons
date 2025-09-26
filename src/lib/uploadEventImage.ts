@@ -2,7 +2,6 @@
 
 import fs from "fs";
 import path from "path";
-import { v4 as uuidv4 } from "uuid";
 
 // ✅ Directory to store event images
 const eventDir = "/www/var/ITSCoupons-uploads/uploads-events";
@@ -13,8 +12,12 @@ if (!fs.existsSync(eventDir)) fs.mkdirSync(eventDir, { recursive: true });
 export async function saveEventImage(file: File): Promise<string> {
   if (!file) throw new Error("No file provided");
 
-  const ext = path.extname(file.name) || ".jpg"; // default jpg if missing
-  const fileName = `e-${uuidv4()}${ext}`; // UUID-based filename
+  // Sanitize original filename
+  const originalName = file.name.replace(/\s+/g, "_"); // replace spaces with underscores
+
+  // Append timestamp to filename to avoid overwriting
+  const timestamp = Date.now();
+  const fileName = `${timestamp}-${originalName}`;
   const filePath = path.join(eventDir, fileName);
 
   // Convert File → ArrayBuffer → Uint8Array
