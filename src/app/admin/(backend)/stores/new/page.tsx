@@ -346,6 +346,7 @@ export default function StoreForm() {
                 id="name"
                 name="name"
                 placeholder="Enter store name"
+                required
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorsForField("name").map((err, idx) => (
@@ -365,6 +366,7 @@ export default function StoreForm() {
                 name="imageFile"
                 type="file"
                 accept="image/*"
+                required
                 onChange={handleImageChange}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />

@@ -234,6 +234,7 @@ export default function EditCouponForm({ coupon, stores }: EditCouponFormProps) 
                 name="couponUrl"
                 type="url"
                 value={couponUrl}
+                required
                 onChange={(e) => setCouponUrl(e.target.value)}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
@@ -273,6 +274,7 @@ export default function EditCouponForm({ coupon, stores }: EditCouponFormProps) 
                 id="couponType"
                 name="couponType"
                 value={couponType}
+                required
                 onChange={(e) => setCouponType(e.target.value)}
                 className="w-full rounded px-3 py-2 shadow-sm border-none bg-gray-50 dark:bg-gray-700"
               >
@@ -291,6 +293,7 @@ export default function EditCouponForm({ coupon, stores }: EditCouponFormProps) 
                   id="couponCode"
                   name="couponCode"
                   value={couponCode}
+                  required
                   onChange={(e) => setCouponCode(e.target.value)}
                 />
               </div>
