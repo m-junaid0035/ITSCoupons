@@ -279,3 +279,33 @@ export const getCouponsByStore = async (
     .lean();
   return coupons.map(serializeCoupon);
 };
+
+
+/**
+ * Update a coupon partially (inline updates like isTopOne, verified)
+ * Does NOT require title, couponCode, or other mandatory fields.
+ */
+export const updateCouponInline = async (
+  id: string,
+  data: Partial<{
+    isTopOne: boolean;
+    verified: boolean;
+    discount: string;
+    uses: number;
+  }>
+) => {
+  // Only keep defined values to avoid overwriting existing fields with undefined
+  const updateData: Record<string, any> = {};
+  if (data.isTopOne !== undefined) updateData.isTopOne = data.isTopOne;
+  if (data.verified !== undefined) updateData.verified = data.verified;
+  if (data.discount !== undefined) updateData.discount = data.discount.trim();
+  if (data.uses !== undefined) updateData.uses = data.uses;
+
+  if (Object.keys(updateData).length === 0) {
+    throw new Error("No valid fields to update");
+  }
+
+  const updated = await Coupon.findByIdAndUpdate(id, { $set: updateData }, { new: true }).lean();
+  if (!updated) throw new Error("Coupon not found");
+  return serializeCoupon(updated);
+};

@@ -9,6 +9,7 @@ import {
 import { useRouter } from "next/navigation";
 import {
   deleteCouponAction,
+  updateCouponInlineAction,
 } from "@/actions/couponActions";
 
 import {
@@ -59,11 +60,14 @@ function CouponsTable({
   onView,
   onEdit,
   onDelete,
+  handleInlineUpdate,
 }: {
   coupons: ICoupon[];
   onView: (coupon: ICoupon) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  handleInlineUpdate: (id: string, field: string, value: boolean) => void;
+
 }) {
 
   return (
@@ -102,20 +106,30 @@ function CouponsTable({
                     : "N/A"}
                 </TableCell>
                 <TableCell>{coupon.storeName || "-"}</TableCell>
-                <TableCell>
+                <TableCell
+                  onDoubleClick={() =>
+                    handleInlineUpdate(coupon._id, "isTopOne", !coupon.isTopOne)
+                  }
+                >
                   {coupon.isTopOne ? (
-                    <span className="text-green-600 font-semibold">Yes</span>
+                    <span className="text-green-600 font-semibold cursor-pointer">Yes</span>
                   ) : (
-                    <span className="text-gray-400">No</span>
+                    <span className="text-gray-400 cursor-pointer">No</span>
                   )}
                 </TableCell>
-                <TableCell>
+
+                <TableCell
+                  onDoubleClick={() =>
+                    handleInlineUpdate(coupon._id, "verified", !coupon.verified)
+                  }
+                >
                   {coupon.verified ? (
-                    <span className="text-green-600 font-semibold">Yes</span>
+                    <span className="text-green-600 font-semibold cursor-pointer">Yes</span>
                   ) : (
-                    <span className="text-gray-400">No</span>
+                    <span className="text-gray-400 cursor-pointer">No</span>
                   )}
                 </TableCell>
+
                 <TableCell>
                   <div className="flex justify-end items-center gap-2">
                     <Button
@@ -192,7 +206,21 @@ export default function CouponsPageClient({
   initialStores.forEach((store) => {
     storesMap[store._id] = store.name;
   });
-
+  const handleInlineUpdate = async (id: string, field: string, value: boolean) => {
+    const result = await updateCouponInlineAction(id, { [field]: value });
+    if (result?.data) {
+      setCoupons((prev) =>
+        prev.map((c) => (c._id === id ? { ...c, ...result.data } : c))
+      );
+      toast({ title: "Updated", description: "Coupon updated successfully." });
+    } else if (result?.error) {
+      toast({
+        title: "Error",
+        description: result.error.message?.[0] || "Failed to update coupon",
+        variant: "destructive",
+      });
+    }
+  };
   const handleDelete = async (id: string) => {
     startTransition(() => {
       deleteOptimistic(id);
@@ -253,6 +281,7 @@ export default function CouponsPageClient({
           onView={(coupon) => setViewCoupon(coupon)}
           onEdit={(id) => router.push(`/admin/coupons/edit/${id}`)}
           onDelete={(id) => setConfirmDeleteId(id)}
+          handleInlineUpdate={handleInlineUpdate}
         />
 
         {totalPages > 1 && (

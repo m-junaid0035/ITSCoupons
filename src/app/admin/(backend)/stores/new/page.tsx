@@ -142,39 +142,39 @@ export default function StoreForm() {
   };
 
   /** ---------------- Auto SEO Update ---------------- */
- const updateSEO = async (storeName: string) => {
-  const { data: latestSEO } = await fetchLatestSEOAction("stores");
-  if (!latestSEO) return;
+  const updateSEO = async (storeName: string) => {
+    const { data: latestSEO } = await fetchLatestSEOAction("stores");
+    if (!latestSEO) return;
 
-  // Format current date -> "14 September 2025"
-const currentDate = new Date().toLocaleDateString("en-GB", {
-  month: "long",
-  year: "numeric",
-});
+    // Format current date -> "14 September 2025"
+    const currentDate = new Date().toLocaleDateString("en-GB", {
+      month: "long",
+      year: "numeric",
+    });
 
 
-  const replacePlaceholders = (text: string) =>
-    text
-      .replace(/{{storeName}}|s_n/gi, storeName)
-      .replace(/{{currentDate}}|c_d/gi, currentDate);
+    const replacePlaceholders = (text: string) =>
+      text
+        .replace(/{{storeName}}|s_n/gi, storeName)
+        .replace(/{{currentDate}}|c_d/gi, currentDate);
 
-  const slugSource = latestSEO.slug || storeName;
-  const processedSlug = replacePlaceholders(slugSource)
-    .toLowerCase()
-    .replace(/\s+/g, "-");
+    const slugSource = latestSEO.slug || storeName;
+    const processedSlug = replacePlaceholders(slugSource)
+      .toLowerCase()
+      .replace(/\s+/g, "-");
 
-  setSeo({
-    metaTitle: replacePlaceholders(latestSEO.metaTitle || ""),
-    metaDescription: replacePlaceholders(latestSEO.metaDescription || ""),
-    metaKeywords: (latestSEO.metaKeywords || [])
-      .map(replacePlaceholders)
-      .join(", "),
-    focusKeywords: (latestSEO.focusKeywords || [])
-      .map(replacePlaceholders)
-      .join(", "),
-    slug: processedSlug,
-  });
-};
+    setSeo({
+      metaTitle: replacePlaceholders(latestSEO.metaTitle || ""),
+      metaDescription: replacePlaceholders(latestSEO.metaDescription || ""),
+      metaKeywords: (latestSEO.metaKeywords || [])
+        .map(replacePlaceholders)
+        .join(", "),
+      focusKeywords: (latestSEO.focusKeywords || [])
+        .map(replacePlaceholders)
+        .join(", "),
+      slug: processedSlug,
+    });
+  };
 
   /** ---------------- Listen Store Name Changes ---------------- */
   useEffect(() => {
@@ -314,12 +314,20 @@ const currentDate = new Date().toLocaleDateString("en-GB", {
           <CardTitle className="text-lg sm:text-xl font-semibold">
             Create Store
           </CardTitle>
+          <div>
+            <Button type="submit" disabled={isPending} form="store-form" className="m-2">
+                {isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                {isPending ? "Saving..." : "Save Store"}
+              </Button>
           <Button
             variant="secondary"
             onClick={() => router.push("/admin/stores")}
           >
             Back to Stores
           </Button>
+          </div>
         </CardHeader>
 
         <CardContent>
@@ -454,20 +462,28 @@ const currentDate = new Date().toLocaleDateString("en-GB", {
 
 
 
-            {/* Categories Searchable Multi-select */}
             <div className="relative space-y-2" ref={categoryDropdownRef}>
               <Label>
                 Categories <span className="text-red-500">*</span>
               </Label>
               <Input
-                placeholder="Search categories..."
-                value={categorySearch}
+                placeholder="Select categories..."
+                value={selectedCategories
+                  .map((id) => filteredCategories.find((c) => c._id === id)?.name)
+                  .filter(Boolean)
+                  .join(", ")}
                 onFocus={() => setCategoryDropdownOpen(true)}
-                onChange={(e) => setCategorySearch(e.target.value)}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                readOnly
+                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700 cursor-pointer"
               />
               {categoryDropdownOpen && (
                 <div className="absolute z-10 w-full max-h-40 overflow-y-auto bg-white dark:bg-gray-700 border rounded mt-1 p-2 grid grid-cols-1 gap-2">
+                  <Input
+                    placeholder="Search categories..."
+                    value={categorySearch}
+                    onChange={(e) => setCategorySearch(e.target.value)}
+                    className="mb-2 border p-1"
+                  />
                   {filteredCategories.map((cat) => (
                     <label
                       key={cat._id}
@@ -496,6 +512,7 @@ const currentDate = new Date().toLocaleDateString("en-GB", {
                 </div>
               )}
             </div>
+
 
 
             {/* Description */}

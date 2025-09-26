@@ -470,20 +470,28 @@ export default function EditStoreForm({
                         )}
 
 
-                        {/* Categories */}
                         <div className="relative space-y-2" ref={categoryDropdownRef}>
                             <Label>
                                 Categories <span className="text-red-500">*</span>
                             </Label>
                             <Input
-                                placeholder="Search categories..."
-                                value={categorySearch}
+                                placeholder="Select categories..."
+                                value={selectedCategories
+                                    .map((id) => filteredCategories.find((c) => c._id === id)?.name)
+                                    .filter(Boolean)
+                                    .join(", ")}
                                 onFocus={() => setCategoryDropdownOpen(true)}
-                                onChange={(e) => setCategorySearch(e.target.value)}
-                                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                                readOnly
+                                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700 cursor-pointer"
                             />
                             {categoryDropdownOpen && (
                                 <div className="absolute z-10 w-full max-h-40 overflow-y-auto bg-white dark:bg-gray-700 border rounded mt-1 p-2 grid grid-cols-1 gap-2">
+                                    <Input
+                                        placeholder="Search categories..."
+                                        value={categorySearch}
+                                        onChange={(e) => setCategorySearch(e.target.value)}
+                                        className="mb-2 border p-1"
+                                    />
                                     {filteredCategories.map((cat) => (
                                         <label
                                             key={cat._id}
@@ -512,6 +520,7 @@ export default function EditStoreForm({
                                 </div>
                             )}
                         </div>
+
 
                         {/* Description */}
                         <div className="space-y-2">

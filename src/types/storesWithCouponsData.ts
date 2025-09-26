@@ -24,6 +24,8 @@ export interface StoreData {
   categories: string[]; // category IDs as strings
   totalCouponUsedTimes: number;
   image: string;
+  storeNetworkUrl?: string; // ✅ no size limit
+  directUrl?: string;
   description: string;
   metaTitle: string;
   metaDescription: string;

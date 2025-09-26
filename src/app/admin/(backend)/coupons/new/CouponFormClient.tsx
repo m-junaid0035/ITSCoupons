@@ -407,16 +407,18 @@ export default function CouponFormClient({ stores }: CouponFormClientProps) {
               />
               <Label htmlFor="verified">Verified</Label>
             </div>
-            {/* Store Name */}
-            <div className="space-y-2">
-              <Label htmlFor="storeName">Store Name (optional)</Label>
-              <Input
-                id="storeName"
-                name="storeName"
-                placeholder="Optional store name"
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-            </div>
+            {false && (
+              <div className="space-y-2">
+                <Label htmlFor="storeName">Store Name (optional)</Label>
+                <Input
+                  id="storeName"
+                  name="storeName"
+                  placeholder="Optional store name"
+                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                />
+              </div>
+            )}
+
 
             {/* Top One */}
             <div className="flex items-center space-x-2">

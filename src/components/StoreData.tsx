@@ -148,22 +148,33 @@ export default function StorePage({
               className="text-sm text-gray-600 prose max-w-none text-left"
               dangerouslySetInnerHTML={{ __html: store.description || "" }}
             />
+
+            {/* Shop Button */}
+            <a
+              href={store.storeNetworkUrl || store.directUrl || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block w-full h-auto mt-3 py-2 bg-purple-600 text-white font-semibold rounded-full hover:bg-purple-700 transition"
+            >
+              Shop
+            </a>
+
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Stat icon={<FaTags size={28}/>} value={coupons.length} label="Total Coupons" />
+            <Stat icon={<FaTags size={28} />} value={coupons.length} label="Total Coupons" />
             <Stat
-              icon={<FaHandshake size={28}/>}
+              icon={<FaHandshake size={28} />}
               value={coupons.filter((c) => c.couponType === "coupon").length}
               label="Promo Codes"
             />
             <Stat
-              icon={<FaHandshake size={28}/>}
+              icon={<FaHandshake size={28} />}
               value={coupons.filter((c) => c.couponType === "deal").length}
               label="Deals"
             />
             <Stat
-              icon={<FaClock size={28}/>}
+              icon={<FaClock size={28} />}
               value={coupons.filter(isExpired).length}
               label="Expired Coupons"
             />
@@ -328,12 +339,12 @@ export default function StorePage({
                     {/* Right Actions */}
                     <div className="flex flex-col items-center justify-center min-w-[120px] md:min-w-[200px] p-3 md:p-6 border-l border-gray-100">
                       <button
-                      onClick={() => handleOpenCouponNewTab(coupon)}
-                      className="relative w-36 h-11 bg-purple-700 hover:bg-purple-800 text-white font-semibold text-sm px-4 py-2 rounded-full text-center"
-                    >
-                      {coupon.couponType === "coupon" ? "Show Code" : "Get Deal"}
-                      <span className="absolute top-0 right-0 w-4 h-5 bg-gradient-to-br from-white to-purple-700 rounded-tr-md"></span>
-                    </button>
+                        onClick={() => handleOpenCouponNewTab(coupon)}
+                        className="relative w-36 h-11 bg-purple-700 hover:bg-purple-800 text-white font-semibold text-sm px-4 py-2 rounded-full text-center"
+                      >
+                        {coupon.couponType === "coupon" ? "Show Code" : "Get Deal"}
+                        <span className="absolute top-0 right-0 w-4 h-5 bg-gradient-to-br from-white to-purple-700 rounded-tr-md"></span>
+                      </button>
                       <button
                         onClick={() => toggleDetails(coupon._id)}
                         className="text-xs md:text-sm text-purple-700 mt-2 md:mt-3 font-medium hover:underline"

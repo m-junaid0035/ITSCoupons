@@ -138,12 +138,13 @@ export default function EditCouponForm({ coupon, stores }: EditCouponFormProps) 
     // Match "Free Shipping" (case-insensitive)
     const freeShippingMatch = value.match(/free\s+shipping/i);
 
-    if (percentMatch) {
+    if (freeShippingMatch) {
+      setDiscount("Free Shipping");
+    }
+    else if (percentMatch) {
       setDiscount(`${percentMatch[1]}%`);
     } else if (dollarMatch) {
       setDiscount(`$${dollarMatch[1]}`);
-    } else if (freeShippingMatch) {
-      setDiscount("Free Shipping");
     } else {
       setDiscount(""); // reset if nothing matches
     }
@@ -378,15 +379,18 @@ export default function EditCouponForm({ coupon, stores }: EditCouponFormProps) 
 
 
             {/* Store Name */}
-            <div className="space-y-2">
-              <Label htmlFor="storeName">Store Name (optional)</Label>
-              <Input
-                id="storeName"
-                name="storeName"
-                defaultValue={coupon.storeName || ""}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-              />
-            </div>
+            {coupon?.storeName && (
+              <div className="space-y-2">
+                <Label htmlFor="storeName">Store Name (optional)</Label>
+                <Input
+                  id="storeName"
+                  name="storeName"
+                  defaultValue={coupon.storeName}
+                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                />
+              </div>
+            )}
+
 
             {/* Is Top One */}
             <div className="flex items-center space-x-2">

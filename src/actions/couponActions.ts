@@ -14,6 +14,7 @@ import {
   getTopCouponsWithStores,
   getTopDealsWithStores,
   getCouponsByStore,
+  updateCouponInline,
 } from "@/functions/couponFunctions";
 import { updateMetaTitleWithDiscountIfHigher } from "./storeActions";
 
@@ -271,3 +272,22 @@ export async function fetchCouponsByStoreAction(storeId: string) {
     };
   }
 }
+// ✅ INLINE UPDATE ACTION
+export async function updateCouponInlineAction(
+  id: string,
+  data: Partial<{ isTopOne: boolean; verified: boolean; discount: string; uses: number }>
+) {
+  await connectToDatabase();
+
+  if (!id) {
+    return { error: { message: ["Coupon ID is required"] } };
+  }
+
+  try {
+    const updated = await updateCouponInline(id, data);
+    return { data: updated };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to update coupon"] } };
+  }
+}
+
