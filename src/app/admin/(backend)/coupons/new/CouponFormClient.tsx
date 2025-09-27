@@ -148,12 +148,13 @@ export default function CouponFormClient({ stores }: CouponFormClientProps) {
     // Match "Free Shipping" (case-insensitive)
     const freeShippingMatch = value.match(/free\s+shipping/i);
 
-    if (percentMatch) {
+    if (freeShippingMatch) {
+      setDiscount("Free Shipping");
+    }
+    else if (percentMatch) {
       setDiscount(`${percentMatch[1]}%`);
     } else if (dollarMatch) {
       setDiscount(`$${dollarMatch[1]}`);
-    } else if (freeShippingMatch) {
-      setDiscount("Free Shipping");
     } else {
       setDiscount(""); // reset if nothing matches
     }
