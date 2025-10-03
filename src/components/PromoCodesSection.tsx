@@ -9,7 +9,7 @@ interface PromoCodesSectionProps {
   couponId: string;
 }
 
-export default function PromoCodesSection({ coupons, couponId}: PromoCodesSectionProps) {
+export default function PromoCodesSection({ coupons, couponId }: PromoCodesSectionProps) {
   const [selectedCoupon, setSelectedCoupon] = useState<CouponWithStoreData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -22,7 +22,7 @@ export default function PromoCodesSection({ coupons, couponId}: PromoCodesSectio
   }, [isModalOpen]);
 
   // Open modal automatically if URL has couponId param (works in new tab)
- useEffect(() => {
+  useEffect(() => {
     if (couponId) {
       const coupon = coupons.find(c => c._id === couponId);
       if (coupon) {
@@ -67,10 +67,10 @@ export default function PromoCodesSection({ coupons, couponId}: PromoCodesSectio
         {coupons.map((coupon, idx) => {
           const expiration = coupon.expirationDate
             ? new Date(coupon.expirationDate).toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
             : "N/A";
 
           const displayStoreName = coupon.store?.name || coupon.storeName || "Unknown Store";
@@ -83,7 +83,10 @@ export default function PromoCodesSection({ coupons, couponId}: PromoCodesSectio
                   <img
                     src={`https://itscoupons.com${coupon.store.image}`}
                     alt={displayStoreName}
+                    width={280}        // ✅ Added explicit width
+                    height={150}       // ✅ Added explicit height
                     className="-mt-6 w-full h-full object-contain bg-white p-2"
+                    loading="lazy"     // ✅ Optional: improves performance
                   />
                 ) : (
                   <span className="text-gray-400 text-sm">No Image</span>

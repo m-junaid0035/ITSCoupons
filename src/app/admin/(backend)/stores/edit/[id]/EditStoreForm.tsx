@@ -379,7 +379,6 @@ export default function EditStoreForm({
                                 name="imageFile"
                                 type="file"
                                 accept="image/*"
-                                required
                                 onChange={handleImageChange}
                                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                             />

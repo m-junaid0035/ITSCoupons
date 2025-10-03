@@ -105,17 +105,10 @@ export async function createCouponAction(
 
   try {
     const coupon = await createCoupon(result.data);
-
-    // ✅ After creating coupon, update store meta title if discount is higher
     const storeId = parsed.storeId;
-    const discountStr = parsed.discount || "";
 
-    // Extract only the number before % (e.g. "55%" → 55)
-    const match = discountStr.match(/(\d+)\s*%/);
-    const discountValue = match ? parseInt(match[1], 10) : 0;
-
-    if (storeId && discountValue > 0) {
-      await updateMetaTitleWithDiscountIfHigher(storeId, discountValue);
+    if (storeId) {
+      await updateMetaTitleWithDiscountIfHigher(storeId);
     }
 
 
@@ -143,14 +136,8 @@ export async function updateCouponAction(
     const updated = await updateCoupon(id, result.data);
     
     const storeId = parsed.storeId;
-    const discountStr = parsed.discount || "";
-    
-        // Extract only the number before % (e.g. "55%" → 55)
-    const match = discountStr.match(/(\d+)\s*%/);
-    const discountValue = match ? parseInt(match[1], 10) : 0;
-
-    if (storeId && discountValue > 0) {
-      await updateMetaTitleWithDiscountIfHigher(storeId, discountValue);
+    if (storeId) {
+      await updateMetaTitleWithDiscountIfHigher(storeId);
     }
 
 
@@ -160,11 +147,28 @@ export async function updateCouponAction(
   }
 }
 
-// ✅ DELETE COUPON
 export async function deleteCouponAction(id: string) {
   await connectToDatabase();
+
   try {
+    // 1️⃣ Get the coupon first to know its storeId
+    const coupon = await getCouponById(id);
+    if (!coupon) {
+      return { error: { message: ["Coupon not found"] } };
+    }
+
+    const storeId = coupon.storeId?.toString();
+
+    // 2️⃣ Delete the coupon
     const deleted = await deleteCoupon(id);
+
+    // 3️⃣ After deletion, update store meta title based on remaining coupons
+    if (storeId) {
+      console.log("updateing after the delete of the coupon ->")
+      await updateMetaTitleWithDiscountIfHigher(storeId);
+
+    }
+
     return { data: deleted };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to delete coupon"] } };

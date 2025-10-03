@@ -97,7 +97,7 @@ export default function Footer() {
 
         {/* Deals & Shop */}
         <div>
-          <h2 className="font-semibold mb-2">Deals &amp; Shop</h2>
+          <p className="font-semibold mb-2">Deals &amp; Shop</p>
           <ul className="space-y-1">
             <li><Link href="/coupons" className="hover:underline">Promo Codes</Link></li>
             <li><Link href="/coupons" className="hover:underline">Latest Deals</Link></li>
@@ -109,7 +109,7 @@ export default function Footer() {
 
         {/* Quick Links */}
         <div>
-          <h4 className="font-semibold mb-2">Quick Links</h4>
+          <p className="font-semibold mb-2">Quick Links</p>
           <ul className="space-y-1">
             {[
               { href: "/", label: "Home" },
@@ -132,7 +132,7 @@ export default function Footer() {
 
         {/* About Section */}
         <div>
-          <h2 className="font-semibold mb-2">About</h2>
+          <p className="font-semibold mb-2">About</p>
           <ul className="space-y-1">
             <li><Link href="/contactus" className="hover:underline">Contact Us</Link></li>
             {aboutPages.length > 0 ? (
@@ -151,7 +151,7 @@ export default function Footer() {
 
         {/* Contact Info */}
         <div>
-          <h2 className="font-semibold mb-2">Contact Us</h2>
+          <p className="font-semibold mb-2">Contact Us</p>
           <ul className="space-y-1">
             <li className="max-w-full break-words">{latestSetting?.contactEmail || "support@itscoupons.com"}</li>
             <li className="max-w-full break-words">{latestSetting?.contactPhone || "(+92) 3143328342"}</li>

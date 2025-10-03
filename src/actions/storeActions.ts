@@ -2,6 +2,9 @@
 
 import { z } from "zod";
 import { connectToDatabase } from "@/lib/db";
+
+import { Coupon } from "@/models/Coupon";
+
 import {
   createStore,
   deleteStore,
@@ -408,40 +411,69 @@ export async function fetchStoreWithCouponsBySlugAction(slug: string) {
     };
   }
 }
-
-export async function updateMetaTitleWithDiscountIfHigher(
-  storeId: string,
-  newDiscount: number
-) {
+export async function updateMetaTitleWithDiscountIfHigher(storeId: string) {
   await connectToDatabase();
 
   if (!storeId) {
     return { error: { message: ["Store ID is required"] } };
   }
 
+  // 📝 1. Get all coupons for this store
+  const coupons = await Coupon.find({ storeId });
+
+  // If no coupons left, we can set discount to 0 or leave unchanged — here we handle it by setting 0
+  let maxDiscount = 0;
+
+  if (coupons && coupons.length > 0) {
+    for (const coupon of coupons) {
+      const discountStr = coupon.discount || "";
+      const match = discountStr.match(/(\d+)\s*%/);
+      const discountValue = match ? parseInt(match[1], 10) : 0;
+      if (discountValue > maxDiscount) {
+        maxDiscount = discountValue;
+      }
+    }
+  }
+
+  // 📝 2. Get store info
   const store = await getStoreById(storeId);
   if (!store) return { error: { message: ["Store not found"] } };
   if (!store.metaTitle) return { error: { message: ["Meta title is empty"] } };
 
-  // ✅ Extract the current discount before % (first occurrence)
+  // 📝 3. Extract current discount from metaTitle (if any)
   const match = store.metaTitle.match(/(\d+)%/);
   const currentDiscount = match ? parseInt(match[1], 10) : 0;
 
-  // ✅ Only update if newDiscount is greater
-  if (newDiscount > currentDiscount) {
-    const updatedMetaTitle = store.metaTitle.replace(/(\d+)%/g, `${newDiscount}%`);
-
-    try {
-      const updatedStore = await updateStoreInline(storeId, {
-        metaTitle: updatedMetaTitle,
-      });
-      if (!updatedStore) return { error: { message: ["Failed to update meta title"] } };
-      return { data: updatedStore };
-    } catch (error: any) {
-      return { error: { message: [error.message || "Failed to update meta title"] } };
-    }
+  // 📝 4. If maxDiscount equals currentDiscount → do nothing
+  if (maxDiscount === currentDiscount) {
+    return { data: null, message: "Discount already up to date" };
   }
 
-  // ✅ Nothing to update
-  return { data: null, message: "New discount is not greater than current" };
+  // 📝 5. Update metaTitle with the new maxDiscount
+  let updatedMetaTitle = store.metaTitle;
+
+  if (match) {
+    // Replace the existing discount number
+    updatedMetaTitle = updatedMetaTitle.replace(/(\d+)%/g, `${maxDiscount}%`);
+  } else if (maxDiscount > 0) {
+    // If no discount exists currently but coupons have discounts, append it
+    updatedMetaTitle += ` - Up to ${maxDiscount}% Off`;
+  } else {
+    // If no coupons left and metaTitle had discount, remove it
+    updatedMetaTitle = updatedMetaTitle.replace(/[-–]?\s*\d+%(\s*Off)?/gi, "").trim();
+  }
+
+  try {
+    const updatedStore = await updateStoreInline(storeId, {
+      metaTitle: updatedMetaTitle,
+    });
+
+    if (!updatedStore) {
+      return { error: { message: ["Failed to update meta title"] } };
+    }
+
+    return { data: updatedStore, message: `Meta title updated to ${maxDiscount}%` };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to update meta title"] } };
+  }
 }
