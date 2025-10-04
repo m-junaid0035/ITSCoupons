@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import CouponModal from "@/components/coupon_popup";
 import Image from "next/image";
 
@@ -13,6 +14,7 @@ interface TopDealsProps {
 const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
   const [selectedDeal, setSelectedDeal] = useState<CouponWithStoreData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   // Lock background scroll when modal is open
   useEffect(() => {
@@ -41,12 +43,21 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
     );
   }
 
-  // Open new tab with couponId param
+  // Horizontal scroll
+  const scroll = (direction: "left" | "right") => {
+    if (!scrollRef.current) return;
+    const { clientWidth } = scrollRef.current;
+    scrollRef.current.scrollBy({
+      left: direction === "left" ? -clientWidth : clientWidth,
+      behavior: "smooth",
+    });
+  };
+
+  // Open deal link
   const handleGetDealClick = (deal: CouponWithStoreData) => {
     const modalUrl = `/?couponId=${deal._id}`;
     window.open(modalUrl, "_blank", "noopener,noreferrer");
 
-    // Optional: navigate current tab if there's a couponUrl
     if (deal.couponUrl) {
       window.location.href = deal.couponUrl;
     }
@@ -58,58 +69,104 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
         Top Deals
       </h2>
 
-      <div className="flex justify-end mb-4">
+      {/* MOBILE: Scroll buttons left, VIEW ALL right */}
+      <div className="flex justify-between items-center mb-4 md:hidden">
+        <div className="flex gap-2">
+          <button
+            onClick={() => scroll("left")}
+            className="bg-white shadow-md rounded-full p-2 hover:bg-purple-50 focus:outline-none"
+          >
+            <ChevronLeft className="w-5 h-5 text-purple-700" />
+          </button>
+          <button
+            onClick={() => scroll("right")}
+            className="bg-white shadow-md rounded-full p-2 hover:bg-purple-50 focus:outline-none"
+          >
+            <ChevronRight className="w-5 h-5 text-purple-700" />
+          </button>
+        </div>
         <a href="/coupons" className="text-sm sm:text-base text-purple-700 hover:underline">
           VIEW ALL
         </a>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 justify-items-center">
-        {deals.map((deal, index) => (
-          <div
-            key={deal._id || index}
-            className="flex flex-col items-center w-full max-w-[247px]"
+      {/* DESKTOP: VIEW ALL on the right */}
+      <div className="flex justify-end mb-4 hidden md:flex">
+        <a href="/coupons" className="text-sm sm:text-base text-purple-700 hover:underline">
+          VIEW ALL
+        </a>
+      </div>
+
+      <div className="relative">
+        {/* DESKTOP: Arrow buttons left/right outside slider */}
+        <div className="absolute inset-y-0 -left-10 flex items-center hidden md:flex">
+          <button
+            onClick={() => scroll("left")}
+            className="bg-white shadow-md rounded-full p-2 hover:bg-purple-50 focus:outline-none"
           >
-            {/* Upper Box (Image) */}
-            <div className="w-full h-[150px] bg-gray-300 rounded-[16px] overflow-hidden flex items-center justify-center border border-gray-100">
-              {deal.store?.image ? (
-                <Image
-                  src={`https://itscoupons.com${deal.store.image}`}
-                  alt={deal.store?.name || deal.title}
-                  width={247}
-                  height={150}
-                  priority={index < 4}
-                  loading={index < 4 ? "eager" : "lazy"}
-                  className="-mt-6 w-full h-full object-contain bg-white p-2"
-                />
+            <ChevronLeft className="w-5 h-5 text-purple-700" />
+          </button>
+        </div>
 
-              ) : (
-                <span className="text-gray-400 text-sm flex items-center justify-center h-full">
-                  No Image
-                </span>
-              )}
-            </div>
+        <div className="absolute inset-y-0 -right-10 flex items-center hidden md:flex">
+          <button
+            onClick={() => scroll("right")}
+            className="bg-white shadow-md rounded-full p-2 hover:bg-purple-50 focus:outline-none"
+          >
+            <ChevronRight className="w-5 h-5 text-purple-700" />
+          </button>
+        </div>
 
-            {/* Lower Box (Details) */}
-            <div className="w-full min-h-[148px] bg-white rounded-[16px] shadow-md -mt-6 z-10 flex flex-col justify-between p-4">
-              <div>
-                <h3 className="font-bold text-sm text-gray-900 line-clamp-2">
-                  {deal.title}
-                </h3>
-                <DescriptionWithToggle text={deal.description} />
+        {/* Horizontal scroll container */}
+        <div
+          ref={scrollRef}
+          className="flex gap-4 sm:gap-6 md:gap-8 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 no-scrollbar"
+        >
+          {deals.map((deal, index) => (
+            <div
+              key={deal._id || index}
+              className="flex-shrink-0 snap-start flex flex-col items-center w-[247px]"
+            >
+              {/* Upper Box (Image) */}
+              <div className="w-full h-[150px] bg-gray-300 rounded-[16px] overflow-hidden flex items-center justify-center border border-gray-100">
+                {deal.store?.image ? (
+                  <Image
+                    src={`https://itscoupons.com${deal.store.image}`}
+                    alt={deal.store?.name || deal.title}
+                    width={247}
+                    height={150}
+                    priority={index < 4}
+                    loading={index < 4 ? "eager" : "lazy"}
+                    className="-mt-6 w-full h-full object-contain bg-white p-2"
+                  />
+                ) : (
+                  <span className="text-gray-400 text-sm flex items-center justify-center h-full">
+                    No Image
+                  </span>
+                )}
               </div>
 
-              {deal.couponCode && (
-                <button
-                  onClick={() => handleGetDealClick(deal)}
-                  className="w-full bg-purple-700 text-xs font-semibold text-white rounded-full py-2 hover:bg-purple-200 transition"
-                >
-                  Get Deal
-                </button>
-              )}
+              {/* Lower Box (Details) */}
+              <div className="w-full min-h-[148px] bg-white rounded-[16px] shadow-md -mt-6 z-10 flex flex-col justify-between p-4">
+                <div>
+                  <h3 className="font-bold text-sm text-gray-900 line-clamp-2">
+                    {deal.title}
+                  </h3>
+                  <DescriptionWithToggle text={deal.description} />
+                </div>
+
+                {deal.couponCode && (
+                  <button
+                    onClick={() => handleGetDealClick(deal)}
+                    className="w-full bg-purple-700 text-xs font-semibold text-white rounded-full py-2 hover:bg-purple-200 transition"
+                  >
+                    Get Deal
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Coupon Modal */}
@@ -136,16 +193,17 @@ const DescriptionWithToggle: React.FC<{ text?: string }> = ({ text }) => {
 
   if (!text) return null;
 
+  const words = text.split(" ");
+  const shouldTruncate = words.length > 6;
+  const displayedText = expanded ? text : words.slice(0, 6).join(" ") + (shouldTruncate ? "..." : "");
+
   return (
     <div>
-      <div
-        className={`text-xs text-gray-700 mt-1 ${expanded ? "" : "line-clamp-2"}`}
-        dangerouslySetInnerHTML={{ __html: text }}
-      />
-      {text.length > 60 && (
+      <div className="text-xs text-gray-700 mt-1" dangerouslySetInnerHTML={{ __html: displayedText }} />
+      {shouldTruncate && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="text-blue-600 text-xs mt-1 font-medium hover:underline"
+          className="text-blue-600 text-xs m-1 font-medium hover:underline"
         >
           {expanded ? "Show less" : "Show more"}
         </button>
