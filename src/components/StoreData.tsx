@@ -22,6 +22,7 @@ function Stat({ icon, value, label }: { icon: React.ReactNode; value: number; la
 
 function isExpired(coupon: CouponData) {
   if (!coupon.expirationDate) return false;
+  console.log("junaid is here!")
   return new Date(coupon.expirationDate) < new Date();
 }
 
@@ -72,6 +73,12 @@ export default function StorePage({
 
   const coupons: CouponData[] = store.coupons || [];
   const filteredCoupons = coupons.filter((coupon) => {
+    // Only show if expired or no expiration date
+    const expiredOrNoDate = !coupon.expirationDate || !(isExpired(coupon));
+
+
+    if (!expiredOrNoDate) return false;
+
     switch (activeTab) {
       case "promo":
         return coupon.couponType === "coupon";
@@ -81,6 +88,7 @@ export default function StorePage({
         return true;
     }
   });
+
 
   const totalPages = Math.ceil(filteredCoupons.length / itemsPerPage);
   const paginatedCoupons = filteredCoupons.slice(
@@ -293,25 +301,23 @@ export default function StorePage({
                   key={coupon._id}
                   className="flex flex-col border border-gray-200 rounded-xl bg-white shadow-md overflow-hidden"
                 >
-                  <div className="flex items-stretch">
-                    <div className="flex items-stretch">
-                      {/* Left Discount Section */}
-                      <div className="flex flex-col items-center justify-center min-w-[90px] md:min-w-[120px] p-3 md:p-6 text-purple-700 font-bold">
-                        {coupon.discount?.toLowerCase() === "free shipping" ? (
-                          <>
-                            <span className="text-lg md:text-3xl uppercase">Free</span>
-                            <span className="text-[10px] md:text-sm uppercase">Shipping</span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-[10px] md:text-sm uppercase">Up To</span>
-                            <span className="text-lg md:text-3xl">{coupon.discount || "0%"}</span>
-                            <span className="text-[10px] md:text-sm uppercase">Off</span>
-                          </>
-                        )}
-                      </div>
+                  {/* Main Content Row (same as desktop) */}
+                  <div className="flex flex-row items-stretch">
+                    {/* Left Discount Section */}
+                    <div className="flex flex-col items-center justify-center min-w-[90px] md:min-w-[120px] p-3 md:p-6 text-purple-700 font-bold">
+                      {coupon.discount?.toLowerCase() === "free shipping" ? (
+                        <>
+                          <span className="text-lg md:text-3xl uppercase">Free</span>
+                          <span className="text-[10px] md:text-sm uppercase">Shipping</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-[10px] md:text-sm uppercase">Up To</span>
+                          <span className="text-lg md:text-3xl">{coupon.discount || "0%"}</span>
+                          <span className="text-[10px] md:text-sm uppercase">Off</span>
+                        </>
+                      )}
                     </div>
-
 
                     {/* Middle Content */}
                     <div className="flex-1 p-3 md:p-6">
@@ -336,8 +342,8 @@ export default function StorePage({
                       </div>
                     </div>
 
-                    {/* Right Actions */}
-                    <div className="flex flex-col items-center justify-center min-w-[120px] md:min-w-[200px] p-3 md:p-6 border-l border-gray-100">
+                    {/* Right Actions (desktop only) */}
+                    <div className="hidden md:flex flex-col items-center justify-center min-w-[120px] md:min-w-[200px] p-3 md:p-6 border-l border-gray-100">
                       <button
                         onClick={() => handleOpenCouponNewTab(coupon)}
                         className="relative w-36 h-11 bg-purple-700 hover:bg-purple-800 text-white font-semibold text-sm px-4 py-2 rounded-full text-center"
@@ -345,12 +351,41 @@ export default function StorePage({
                         {coupon.couponType === "coupon" ? "Show Code" : "Get Deal"}
                         <span className="absolute top-0 right-0 w-4 h-5 bg-gradient-to-br from-white to-purple-700 rounded-tr-md"></span>
                       </button>
+
                       <button
-                        onClick={() => toggleDetails(coupon._id)}
+                        onClick={(e) => { e.stopPropagation(); toggleDetails(coupon._id); }}
                         className="text-xs md:text-sm text-purple-700 mt-2 md:mt-3 font-medium hover:underline"
                       >
                         {expandedCoupons.includes(coupon._id) ? "Hide Details -" : "See Details +"}
                       </button>
+
+                      <p className="mt-1 text-[11px] md:text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full font-medium">
+                        Used {coupon.uses} times
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Mobile-only Actions */}
+                  <div className="flex flex-col md:hidden gap-2 p-3">
+                    {/* Full-width button */}
+                    <button
+                      onClick={() => handleOpenCouponNewTab(coupon)}
+                      className="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold text-sm px-4 py-2 rounded-full text-center"
+                    >
+                      {coupon.couponType === "coupon" ? "Show Code" : "Get Deal"}
+                    </button>
+
+                    {/* Details + Used times row */}
+                    <div className="flex justify-between items-center mt-2 text-[11px] text-gray-700">
+                      <span
+                        className="text-purple-700 font-medium hover:underline"
+                        onClick={() => toggleDetails(coupon._id)}
+                      >
+                        {expandedCoupons.includes(coupon._id) ? "Hide Details -" : "See Details +"}
+                      </span>
+                      <span className="bg-gray-100 px-2 py-0.5 rounded-full font-medium">
+                        Used {coupon.uses} times
+                      </span>
                     </div>
                   </div>
 
@@ -363,6 +398,8 @@ export default function StorePage({
                 </div>
               );
             })}
+
+
           </div>
 
           {/* Pagination */}

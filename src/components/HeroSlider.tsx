@@ -1,10 +1,13 @@
 "use client";
 
+import React, { useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Pagination, Autoplay } from "swiper/modules";
+import { Pagination, Autoplay, Navigation } from "swiper/modules";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FaCheck } from "react-icons/fa";
 import "swiper/css";
 import "swiper/css/pagination";
+import "swiper/css/navigation";
 
 const slides = [
   {
@@ -31,48 +34,86 @@ const slides = [
 ];
 
 export default function HeroSlider() {
+  const prevRef = useRef(null);
+  const nextRef = useRef(null);
+
   return (
-    <section className="w-full">
+    <section
+      className="w-full relative max-w-[1400px] mx-auto px-3 md:px-6 lg:px-8 mt-3 md:mt-6 lg:mt-8
+      group" // 👈 group added for hover effect
+    >
+      {/* Desktop arrows (appear on hover) */}
+      <div className="absolute inset-y-0 left-3 z-10 hidden md:flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <button
+          ref={prevRef}
+          className="bg-white/80 backdrop-blur-md shadow-md rounded-full p-2 hover:bg-white focus:outline-none"
+        >
+          <ChevronLeft className="w-6 h-6 text-purple-700" />
+        </button>
+      </div>
+
+      <div className="absolute inset-y-0 right-3 z-10 hidden md:flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <button
+          ref={nextRef}
+          className="bg-white/80 backdrop-blur-md shadow-md rounded-full p-2 hover:bg-white focus:outline-none"
+        >
+          <ChevronRight className="w-6 h-6 text-purple-700" />
+        </button>
+      </div>
+
       <Swiper
-        modules={[Pagination, Autoplay]}
+        modules={[Pagination, Autoplay, Navigation]}
         pagination={{ clickable: true }}
-        autoplay={{ delay: 5000 }}
-        loop={true}
-        className="w-full"
+        autoplay={{ delay: 5000, disableOnInteraction: false }}
+        loop={true} // ✅ ensures looping
+        navigation={{
+          prevEl: prevRef.current,
+          nextEl: nextRef.current,
+        }}
+        onBeforeInit={(swiper) => {
+          // @ts-ignore
+          swiper.params.navigation.prevEl = prevRef.current;
+          // @ts-ignore
+          swiper.params.navigation.nextEl = nextRef.current;
+          swiper.navigation.init();
+          swiper.navigation.update();
+        }}
+        className="w-full rounded-2xl overflow-hidden"
       >
         {slides.map((slide, index) => (
           <SwiperSlide key={index}>
             <div
               className="relative bg-cover bg-center text-white 
-  min-h-[160px] sm:min-h-[220px] md:min-h-[280px] lg:min-h-[340px] 
-  px-4 sm:px-8 md:px-16 flex items-center"
+                h-[160px] sm:h-[210px] md:h-[270px] lg:h-[340px] xl:h-[400px]
+                flex items-center rounded-2xl overflow-hidden"
               style={{ backgroundImage: `url(${slide.bgImage})` }}
             >
-              {/* dark overlay */}
+              {/* Dark overlay */}
               <div className="absolute inset-0 bg-black/40 z-0" />
 
-              {/* content */}
-              <div className="relative z-10 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 items-center">
-                <div className="space-y-3 sm:space-y-4 md:space-y-5 p-4 sm:p-6 rounded-lg text-center md:text-left">
+              {/* Content */}
+              <div className="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 px-4 sm:px-8 lg:px-12">
+                <div className="space-y-3 sm:space-y-4 lg:space-y-6 text-center md:text-left">
                   {index === 0 ? (
-                    <h1 className="text-xl sm:text-2xl md:text-4xl font-extrabold leading-tight drop-shadow-lg">
+                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl font-extrabold leading-tight drop-shadow-lg">
                       {slide.title}
                     </h1>
                   ) : (
-                    <h2 className="text-xl sm:text-2xl md:text-4xl font-extrabold leading-tight drop-shadow-lg">
+                    <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl font-extrabold leading-tight drop-shadow-lg">
                       {slide.title}
                     </h2>
                   )}
 
-                  <h2 className="text-lg sm:text-xl md:text-3xl font-bold drop-shadow">
+                  <h3 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-semibold drop-shadow">
                     {slide.subtitle}
-                  </h2>
-                  <p className="text-xs sm:text-sm md:text-lg text-white/90 drop-shadow-sm">
+                  </h3>
+
+                  <p className="text-xs sm:text-sm md:text-base lg:text-lg text-white/90 max-w-xl mx-auto md:mx-0 drop-shadow-sm">
                     {slide.description}
                   </p>
 
-                  {/* bullet points */}
-                  <div className="flex flex-wrap justify-center md:justify-start items-center gap-2 sm:gap-3 md:gap-4 pt-1 sm:pt-2 md:pt-3 text-xs sm:text-sm md:text-base">
+                  {/* Bullet points */}
+                  <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 pt-2 text-xs sm:text-sm md:text-base lg:text-lg">
                     <div className="flex items-center gap-1.5">
                       <FaCheck className="text-green-400" />
                       Verified Coupons

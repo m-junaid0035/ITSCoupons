@@ -132,7 +132,7 @@ export const createStore = async (data: {
 export const getAllActiveStores = async () => {
   const stores = await Store.find({ isActive: true })
     .sort({ createdAt: -1 })
-    .limit(12)
+    .limit(24)
     .populate("network")
     .lean();
   return stores.map(serializeStore);
