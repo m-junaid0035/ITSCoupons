@@ -6,6 +6,8 @@ import { FaTags, FaHandshake, FaClock } from "react-icons/fa";
 import type { StoreWithCouponsData } from "@/types/storesWithCouponsData";
 import type { CouponData } from "@/types/coupon";
 import CouponModal from "@/components/coupon_popup";
+import { incrementCouponUsesAction } from "@/actions/couponActions"; // adjust path if needed
+
 
 /* ───────── Helpers ───────── */
 function Stat({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
@@ -119,15 +121,23 @@ export default function StorePage({
     }
   }, [couponId, coupons]);
 
-  const handleOpenCouponNewTab = (coupon: CouponData) => {
+  const handleOpenCouponNewTab = async (coupon: CouponData) => {
+  try {
+    // ✅ Increment coupon uses in DB
+    await incrementCouponUsesAction(coupon._id);
+
+    // ✅ Open coupon page in new tab
     const modalUrl = `/stores/${store.slug}?couponId=${coupon._id}`;
     window.open(modalUrl, "_blank", "noopener,noreferrer");
 
+    // ✅ Redirect to the coupon/deal URL if present
     if (coupon.couponUrl) {
       window.location.href = coupon.couponUrl;
     }
-  };
-
+  } catch (error) {
+    console.error("Failed to increment coupon uses:", error);
+  }
+};
   const today = new Date().toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",

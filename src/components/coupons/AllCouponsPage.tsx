@@ -5,6 +5,7 @@ import { FaSortAmountDown } from "react-icons/fa";
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import CouponModal from "@/components/coupon_popup";
 import type { CategoryData } from "@/types/category";
+import { incrementCouponUsesAction } from "@/actions/couponActions"; // adjust path if needed
 
 interface AllCouponsPageProps {
   category: string | undefined;
@@ -163,11 +164,21 @@ export default function AllCouponsPage({
   ]);
 
   // ───────── Open coupon in new tab & modal
-  const handleOpenCouponNewTab = (coupon: CouponWithStoreData) => {
-    const url = `/coupons/?couponId=${coupon._id}`;
-    window.open(url, "_blank", "noopener,noreferrer");
-    if (coupon.couponUrl) {
-      window.location.href = coupon.couponUrl;
+  const handleOpenCouponNewTab = async (coupon: CouponWithStoreData) => {
+    try {
+      // ✅ 1. Increment the coupon's uses count in the database
+      await incrementCouponUsesAction(coupon._id);
+
+      // ✅ 2. Open the coupon details page in a new tab
+      const couponPageUrl = `/coupons/?couponId=${coupon._id}`;
+      window.open(couponPageUrl, "_blank", "noopener,noreferrer");
+
+      // ✅ 3. Redirect the current tab to the actual deal URL if present
+      if (coupon.couponUrl) {
+        window.location.href = coupon.couponUrl;
+      }
+    } catch (error) {
+      console.error("❌ Failed to increment coupon uses:", error);
     }
   };
 
@@ -730,8 +741,8 @@ export default function AllCouponsPage({
                         onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                         disabled={currentPage === 1}
                         className={`px-4 py-2 rounded-lg font-medium ${currentPage === 1
-                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                            : "bg-purple-600 text-white hover:bg-purple-700"
+                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                          : "bg-purple-600 text-white hover:bg-purple-700"
                           }`}
                       >
                         Previous
@@ -745,8 +756,8 @@ export default function AllCouponsPage({
                         onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                         disabled={currentPage === totalPages}
                         className={`px-4 py-2 rounded-lg font-medium ${currentPage === totalPages
-                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                            : "bg-purple-600 text-white hover:bg-purple-700"
+                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                          : "bg-purple-600 text-white hover:bg-purple-700"
                           }`}
                       >
                         Next

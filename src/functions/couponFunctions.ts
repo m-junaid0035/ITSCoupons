@@ -309,3 +309,20 @@ export const updateCouponInline = async (
   if (!updated) throw new Error("Coupon not found");
   return serializeCoupon(updated);
 };
+
+/**
+ * Increment the 'uses' count of a coupon by 1.
+ */
+export const incrementCouponUses = async (couponId: string) => {
+  const updated = await Coupon.findByIdAndUpdate(
+    couponId,
+    { $inc: { uses: 1 } },
+    { new: true }
+  ).lean();
+
+  if (!updated) {
+    throw new Error("Coupon not found");
+  }
+
+  return serializeCoupon(updated);
+};

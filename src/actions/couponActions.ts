@@ -15,6 +15,7 @@ import {
   getTopDealsWithStores,
   getCouponsByStore,
   updateCouponInline,
+  incrementCouponUses,
 } from "@/functions/couponFunctions";
 import { updateMetaTitleWithDiscountIfHigher } from "./storeActions";
 
@@ -294,4 +295,17 @@ export async function updateCouponInlineAction(
     return { error: { message: [error.message || "Failed to update coupon"] } };
   }
 }
+export async function incrementCouponUsesAction(couponId: string) {
+  await connectToDatabase();
 
+  if (!couponId) {
+    return { error: { message: ["Coupon ID is required"] } };
+  }
+
+  try {
+    const updated = await incrementCouponUses(couponId);
+    return { data: updated };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to increment coupon uses"] } };
+  }
+}
