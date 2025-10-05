@@ -427,6 +427,60 @@ export default function StorePage({
         </div>
       </div>
 
+      {/* 🟣 Store Discount Codes Table */}
+      {filteredCoupons.length > 0 && (
+        <div className="w-full max-w-7xl mx-auto mt-10 mb-8 bg-white rounded-lg shadow-md overflow-hidden">
+          {/* Header */}
+          <div className="px-4 py-3 border-b bg-gray-50">
+            <h2 className="text-xl font-bold text-gray-900">
+              {store.name} Discount Codes Currently Available –{" "}
+              {new Date().toLocaleDateString("en-US", {
+                month: "long",
+                day: "numeric",
+                year: "numeric",
+              })}
+            </h2>
+          </div>
+
+          {/* Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-100 text-gray-700">
+                <tr>
+                  <th className="px-4 py-2 font-semibold">Description</th>
+                  <th className="px-4 py-2 font-semibold w-28">Discount</th>
+                  <th className="px-4 py-2 font-semibold w-32">End Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCoupons.map((coupon) => (
+                  <tr
+                    key={coupon._id}
+                    className="border-t hover:bg-gray-50 transition cursor-pointer"
+                    onClick={() => handleOpenCouponNewTab(coupon)}
+                  >
+                    <td className="px-4 py-2 text-gray-800">{coupon.title}</td>
+                    <td className="px-4 py-2 font-semibold text-purple-700">
+                      {coupon.discount || "—"}
+                    </td>
+                    <td className="px-4 py-2 text-gray-600">
+                      {coupon.expirationDate
+                        ? new Date(coupon.expirationDate).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                        : "Always active"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+
       {/* Store content */}
       {store.content && (
         <div className="max-w-[1150px] mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
@@ -436,6 +490,133 @@ export default function StorePage({
           />
         </div>
       )}
+
+      {/* 🟥 Expired Coupons Section */}
+      {coupons.some(
+        (c) => c.expirationDate && new Date(c.expirationDate) < new Date()
+      ) && (
+          <div className="w-full max-w-7xl mx-auto mt-12 text-center">
+            {/* Section Heading */}
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              Expired {store.name} Coupon Codes
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Check out these expired coupons for a {store.name} discount — sometimes they still work!
+            </p>
+
+            {/* Container Box (Wide) */}
+            <div className="w-full max-w-7xl mx-auto border border-gray-300 rounded-xl p-4 md:p-6 bg-white shadow-sm space-y-6 text-left">
+              {coupons
+                .filter(
+                  (c) => c.expirationDate && new Date(c.expirationDate) < new Date()
+                )
+                .map((coupon) => (
+                  <div
+                    key={coupon._id}
+                    className="max-w-4xl w-full mx-auto flex flex-col border border-gray-200 rounded-xl bg-white shadow-md overflow-hidden opacity-75"
+                  >
+                    {/* ─── Main Row ─── */}
+                    <div className="flex flex-row items-stretch">
+                      {/* Left: Discount */}
+                      <div className="flex flex-col items-center justify-center min-w-[90px] md:min-w-[120px] p-3 md:p-6 text-gray-400 font-bold">
+                        {coupon.discount?.toLowerCase() === "free shipping" ? (
+                          <>
+                            <span className="text-lg md:text-3xl uppercase">Free</span>
+                            <span className="text-[10px] md:text-sm uppercase">Shipping</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[10px] md:text-sm uppercase">Up To</span>
+                            <span className="text-lg md:text-3xl">
+                              {coupon.discount || "0%"}
+                            </span>
+                            <span className="text-[10px] md:text-sm uppercase">Off</span>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Middle: Content */}
+                      <div className="flex-1 p-3 md:p-6">
+                        <div className="inline-block bg-gray-100 text-gray-500 text-[10px] md:text-xs font-semibold px-1.5 py-0.5 rounded mb-2 md:mb-3">
+                          {coupon.couponType === "coupon" ? "Code" : "Deal"}
+                        </div>
+                        <h3 className="font-semibold text-sm md:text-xl text-gray-600 mb-2 md:mb-3 line-clamp-2">
+                          {coupon.title}
+                        </h3>
+                        <div className="flex flex-wrap items-center gap-1.5 md:gap-3 text-[10px] md:text-sm">
+                          <span className="bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">
+                            Expired
+                          </span>
+                          {coupon.expirationDate && (
+                            <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                              {new Date(coupon.expirationDate).toISOString().split("T")[0]}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right: Actions (Desktop) */}
+                      <div className="hidden md:flex flex-col items-center justify-center min-w-[120px] md:min-w-[200px] p-3 md:p-6 border-l border-gray-100">
+                        <button
+                          disabled
+                          className="w-36 h-11 bg-gray-300 text-white font-semibold text-sm px-4 py-2 rounded-full cursor-not-allowed"
+                        >
+                          Expired
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleDetails(coupon._id);
+                          }}
+                          className="text-xs md:text-sm text-purple-700 mt-2 md:mt-3 font-medium hover:underline"
+                        >
+                          {expandedCoupons.includes(coupon._id)
+                            ? "Hide Details -"
+                            : "See Details +"}
+                        </button>
+                        <p className="mt-1 text-[11px] md:text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full font-medium">
+                          Used {coupon.uses} times
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* ─── Mobile Actions ─── */}
+                    <div className="flex flex-col md:hidden gap-2 p-3">
+                      <button
+                        disabled
+                        className="w-full bg-gray-300 text-white font-semibold text-sm px-4 py-2 rounded-full cursor-not-allowed"
+                      >
+                        Expired
+                      </button>
+
+                      <div className="flex justify-between items-center mt-2 text-[11px] text-gray-700">
+                        <span
+                          className="text-purple-700 font-medium hover:underline"
+                          onClick={() => toggleDetails(coupon._id)}
+                        >
+                          {expandedCoupons.includes(coupon._id)
+                            ? "Hide Details -"
+                            : "See Details +"}
+                        </span>
+                        <span className="bg-gray-100 px-2 py-0.5 rounded-full font-medium">
+                          Used {coupon.uses} times
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* ─── Expanded Description ─── */}
+                    {expandedCoupons.includes(coupon._id) && coupon.description && (
+                      <div className="border-t border-gray-200 p-4 bg-gray-50 text-sm text-gray-700">
+                        {coupon.description}
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+
 
       {/* Coupon Modal */}
       <CouponModal
