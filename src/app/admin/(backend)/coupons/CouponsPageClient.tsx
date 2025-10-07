@@ -66,9 +66,11 @@ function CouponsTable({
   onView: (coupon: ICoupon) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
-  handleInlineUpdate: (id: string, field: string, value: boolean) => void;
+  handleInlineUpdate: (id: string, field: string, value: string | boolean) => void;
 
 }) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+
 
   return (
     <div className="overflow-x-auto">
@@ -93,7 +95,35 @@ function CouponsTable({
                 key={coupon._id}
                 className="hover:bg-muted/40 transition-colors"
               >
-                <TableCell className="font-medium">{coupon.title}</TableCell>
+                <TableCell
+                  className="font-medium cursor-pointer"
+                  onDoubleClick={() => setEditingId(coupon._id)}
+                >
+                  {editingId === coupon._id ? (
+                    <Input
+                      autoFocus
+                      defaultValue={coupon.title}
+                      className="w-full text-sm"
+                      onBlur={(e) => {
+                        const newValue = e.target.value.trim();
+                        if (newValue && newValue !== coupon.title) {
+                          handleInlineUpdate(coupon._id, "title", newValue);
+                        }
+                        setEditingId(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          (e.target as HTMLInputElement).blur();
+                        } else if (e.key === "Escape") {
+                          setEditingId(null);
+                        }
+                      }}
+                    />
+                  ) : (
+                    <span>{coupon.title}</span>
+                  )}
+                </TableCell>
+
                 <TableCell>
                   {coupon.couponCode === "NO_CODE" ? "Deal" : coupon.couponCode}
                 </TableCell>
@@ -206,7 +236,7 @@ export default function CouponsPageClient({
   initialStores.forEach((store) => {
     storesMap[store._id] = store.name;
   });
-  const handleInlineUpdate = async (id: string, field: string, value: boolean) => {
+  const handleInlineUpdate = async (id: string, field: string, value: string | boolean) => {
     const result = await updateCouponInlineAction(id, { [field]: value });
     if (result?.data) {
       setCoupons((prev) =>
@@ -221,6 +251,7 @@ export default function CouponsPageClient({
       });
     }
   };
+
   const handleDelete = async (id: string) => {
     startTransition(() => {
       deleteOptimistic(id);

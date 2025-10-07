@@ -288,6 +288,7 @@ export const getCouponsByStore = async (
 export const updateCouponInline = async (
   id: string,
   data: Partial<{
+    title: string;
     isTopOne: boolean;
     verified: boolean;
     discount: string;
@@ -296,6 +297,8 @@ export const updateCouponInline = async (
 ) => {
   // Only keep defined values to avoid overwriting existing fields with undefined
   const updateData: Record<string, any> = {};
+
+  if (data.title !== undefined) updateData.title = data.title.trim();
   if (data.isTopOne !== undefined) updateData.isTopOne = data.isTopOne;
   if (data.verified !== undefined) updateData.verified = data.verified;
   if (data.discount !== undefined) updateData.discount = data.discount.trim();
@@ -305,8 +308,14 @@ export const updateCouponInline = async (
     throw new Error("No valid fields to update");
   }
 
-  const updated = await Coupon.findByIdAndUpdate(id, { $set: updateData }, { new: true }).lean();
+  const updated = await Coupon.findByIdAndUpdate(
+    id,
+    { $set: updateData },
+    { new: true }
+  ).lean();
+
   if (!updated) throw new Error("Coupon not found");
+
   return serializeCoupon(updated);
 };
 

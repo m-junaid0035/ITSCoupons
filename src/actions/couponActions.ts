@@ -1,6 +1,6 @@
 "use server";
 
-import { z } from "zod";
+import { date, z } from "zod";
 import { connectToDatabase } from "@/lib/db";
 import {
   createCoupon,
@@ -135,7 +135,7 @@ export async function updateCouponAction(
 
   try {
     const updated = await updateCoupon(id, result.data);
-    
+
     const storeId = parsed.storeId;
     if (storeId) {
       await updateMetaTitleWithDiscountIfHigher(storeId);
@@ -280,7 +280,13 @@ export async function fetchCouponsByStoreAction(storeId: string) {
 // ✅ INLINE UPDATE ACTION
 export async function updateCouponInlineAction(
   id: string,
-  data: Partial<{ isTopOne: boolean; verified: boolean; discount: string; uses: number }>
+  data: Partial<{
+    title: string;
+    isTopOne: boolean;
+    verified: boolean;
+    discount: string;
+    uses: number;
+  }>
 ) {
   await connectToDatabase();
 
@@ -289,7 +295,33 @@ export async function updateCouponInlineAction(
   }
 
   try {
+    // 🔥 If title is being updated → auto-generate discount
+    if (data.title) {
+      console.log("junaid is here ...." + data.title)
+      const title = data.title;
+
+      // Match "50%" or "20%" → "50%"
+      const percentMatch = title.match(/(\d+)%/);
+
+      // Match "$50" or "50$" → "$50"
+      const dollarMatch = title.match(/\$?\s?(\d+)\$?/);
+
+      // Match "Free Shipping"
+      const freeShippingMatch = title.match(/free\s+shipping/i);
+
+      if (freeShippingMatch) {
+        data.discount = "Free Shipping";
+      } else if (percentMatch) {
+        data.discount = `${percentMatch[1]}%`;
+      } else if (dollarMatch) {
+        data.discount = `$${dollarMatch[1]}`;
+      } else {
+        data.discount = "";
+      }
+    }
+
     const updated = await updateCouponInline(id, data);
+
     return { data: updated };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to update coupon"] } };

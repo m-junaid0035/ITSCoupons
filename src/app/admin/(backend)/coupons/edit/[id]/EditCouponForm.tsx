@@ -73,7 +73,10 @@ export default function EditCouponForm({ coupon, stores }: EditCouponFormProps) 
   const storeName = stores.find((s) => s._id === coupon?.storeId)?.name || "";
   const [descriptionHtml, setDescriptionHtml] = useState(coupon?.description || "");
   const [couponType, setCouponType] = useState(coupon?.couponType || "coupon");
-  const [couponCode, setCouponCode] = useState(coupon?.couponCode || "");
+  const [couponCode, setCouponCode] = useState(
+    coupon?.couponCode === "NO_CODE" ? "" : (coupon?.couponCode || "")
+  );
+
   const [discount, setDiscount] = useState(coupon?.discount || "");
   const [couponUrl, setCouponUrl] = useState(coupon?.couponUrl || "");
   const [storeSearch, setStoreSearch] = useState(storeName);
