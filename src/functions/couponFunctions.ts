@@ -11,7 +11,7 @@ const sanitizeCouponData = (data: {
   couponType: "deal" | "coupon";
   status: "active" | "expired";
   couponCode: string;
-  expirationDate?: string;  // ✅ Made optional
+  expirationDate?: string;
   couponUrl?: string;
   storeName?: string;
   storeId: string;
@@ -19,13 +19,14 @@ const sanitizeCouponData = (data: {
   discount?: string;
   uses?: number;
   verified?: boolean;
+  position?: number; // 🆕 Added for drag-and-drop ordering
 }) => ({
   title: data.title.trim(),
   description: data.description?.trim(),
   couponType: data.couponType,
   status: data.status,
   couponCode: data.couponCode.trim(),
-  expirationDate: data.expirationDate ? new Date(data.expirationDate) : undefined, // ✅ Only set if provided
+  expirationDate: data.expirationDate ? new Date(data.expirationDate) : undefined,
   couponUrl: data.couponUrl?.trim(),
   storeName: data.storeName?.trim(),
   storeId: new Types.ObjectId(data.storeId),
@@ -33,6 +34,7 @@ const sanitizeCouponData = (data: {
   discount: data.discount?.trim(),
   uses: data.uses ?? 0,
   verified: data.verified ?? false,
+  position: data.position ?? 0, // 🆕 Default to 0
 });
 
 /**
@@ -45,7 +47,7 @@ const serializeCouponWithStore = (coupon: any) => ({
   couponType: coupon.couponType,
   status: coupon.status,
   couponCode: coupon.couponCode,
-  expirationDate: coupon.expirationDate?.toISOString?.(), // ✅ Already optional
+  expirationDate: coupon.expirationDate?.toISOString?.(),
   couponUrl: coupon.couponUrl,
   storeName: coupon.storeName,
   storeId: coupon.storeId?.toString(),
@@ -53,6 +55,7 @@ const serializeCouponWithStore = (coupon: any) => ({
   discount: coupon.discount,
   uses: coupon.uses,
   verified: coupon.verified,
+  position: coupon.position ?? 0, // 🆕 Include in serialization
   createdAt: coupon.createdAt?.toISOString?.(),
   updatedAt: coupon.updatedAt?.toISOString?.(),
   store: coupon.store
@@ -90,7 +93,7 @@ const serializeCoupon = (coupon: any) => ({
   couponType: coupon.couponType,
   status: coupon.status,
   couponCode: coupon.couponCode,
-  expirationDate: coupon.expirationDate?.toISOString?.(), // ✅ Safe optional
+  expirationDate: coupon.expirationDate?.toISOString?.(),
   couponUrl: coupon.couponUrl,
   storeName: coupon.storeName,
   storeId: coupon.storeId?.toString(),
@@ -98,12 +101,13 @@ const serializeCoupon = (coupon: any) => ({
   discount: coupon.discount,
   uses: coupon.uses,
   verified: coupon.verified,
+  position: coupon.position ?? 0, // 🆕 Added
   createdAt: coupon.createdAt?.toISOString?.(),
   updatedAt: coupon.updatedAt?.toISOString?.(),
 });
 
 /**
- * Create a new coupon.
+ * Create a new coupon with auto-incremented position.
  */
 export const createCoupon = async (data: {
   title: string;
@@ -111,7 +115,7 @@ export const createCoupon = async (data: {
   couponType: "deal" | "coupon";
   status: "active" | "expired";
   couponCode: string;
-  expirationDate?: string;  // ✅ Optional now
+  expirationDate?: string;
   couponUrl?: string;
   storeName?: string;
   storeId: string;
@@ -119,19 +123,29 @@ export const createCoupon = async (data: {
   discount?: string;
   uses?: number;
   verified?: boolean;
+  position?: number;
 }): Promise<ReturnType<typeof serializeCoupon>> => {
   const couponData = sanitizeCouponData(data);
-  const coupon = await new Coupon(couponData).save();
-  return serializeCoupon(coupon);
+
+  // 🧩 Find highest position and auto-assign next position
+  const lastCoupon = await Coupon.findOne().sort({ position: -1 }).select("position").lean();
+  const nextPosition = lastCoupon && lastCoupon.position ? lastCoupon.position + 1 : 1;
+
+  const coupon = await new Coupon({
+    ...couponData,
+    position: nextPosition,
+  }).save();
+
+  return serializeCoupon(coupon.toObject());
 };
 
 /**
- * Get all coupons, sorted by newest first.
+ * Get all coupons, sorted by position first (for drag-drop), then newest.
  */
 export const getAllCoupons = async (): Promise<
   ReturnType<typeof serializeCoupon>[]
 > => {
-  const coupons = await Coupon.find().sort({ createdAt: -1 }).lean();
+  const coupons = await Coupon.find().sort({ position: 1, createdAt: -1 }).lean();
   return coupons.map(serializeCoupon);
 };
 
@@ -156,7 +170,7 @@ export const updateCoupon = async (
     couponType: "deal" | "coupon";
     status: "active" | "expired";
     couponCode: string;
-    expirationDate?: string;  // ✅ Optional now
+    expirationDate?: string;
     couponUrl?: string;
     storeName?: string;
     storeId: string;
@@ -164,6 +178,7 @@ export const updateCoupon = async (
     discount?: string;
     uses?: number;
     verified?: boolean;
+    position?: number;
   }
 ): Promise<ReturnType<typeof serializeCoupon> | null> => {
   const updatedData = sanitizeCouponData(data);
@@ -192,7 +207,7 @@ export const getTopCoupons = async (): Promise<
   ReturnType<typeof serializeCoupon>[]
 > => {
   const coupons = await Coupon.find({ couponType: "coupon", isTopOne: true })
-    .sort({ createdAt: -1 })
+    .sort({ position: 1, createdAt: -1 })
     .lean();
   return coupons.map(serializeCoupon);
 };
@@ -204,7 +219,7 @@ export const getTopDeals = async (): Promise<
   ReturnType<typeof serializeCoupon>[]
 > => {
   const deals = await Coupon.find({ couponType: "deal", isTopOne: true })
-    .sort({ createdAt: -1 })
+    .sort({ position: 1, createdAt: -1 })
     .lean();
   return deals.map(serializeCoupon);
 };
@@ -223,7 +238,7 @@ export const getAllCouponsWithStores = async () => {
       },
     },
     { $unwind: { path: "$store", preserveNullAndEmptyArrays: true } },
-    { $sort: { createdAt: -1 } },
+    { $sort: { position: 1, createdAt: -1 } },
   ]);
   return couponsWithStores.map(serializeCouponWithStore);
 };
@@ -243,7 +258,7 @@ export const getTopCouponsWithStores = async () => {
       },
     },
     { $unwind: { path: "$store", preserveNullAndEmptyArrays: true } },
-    { $sort: { createdAt: -1 } },
+    { $sort: { position: 1, createdAt: -1 } },
   ]);
   return couponsWithStores.map(serializeCouponWithStore);
 };
@@ -263,7 +278,7 @@ export const getTopDealsWithStores = async () => {
       },
     },
     { $unwind: { path: "$store", preserveNullAndEmptyArrays: true } },
-    { $sort: { createdAt: -1 } },
+    { $sort: { position: 1, createdAt: -1 } },
   ]);
   return dealsWithStores.map(serializeCouponWithStore);
 };
@@ -275,15 +290,13 @@ export const getCouponsByStore = async (
   storeId: string
 ): Promise<ReturnType<typeof serializeCoupon>[]> => {
   const coupons = await Coupon.find({ storeId: new Types.ObjectId(storeId) })
-    .sort({ createdAt: -1 })
+    .sort({ position: 1, createdAt: -1 })
     .lean();
   return coupons.map(serializeCoupon);
 };
 
-
 /**
  * Update a coupon partially (inline updates like isTopOne, verified)
- * Does NOT require title, couponCode, or other mandatory fields.
  */
 export const updateCouponInline = async (
   id: string,
@@ -293,9 +306,9 @@ export const updateCouponInline = async (
     verified: boolean;
     discount: string;
     uses: number;
+    position: number;
   }>
 ) => {
-  // Only keep defined values to avoid overwriting existing fields with undefined
   const updateData: Record<string, any> = {};
 
   if (data.title !== undefined) updateData.title = data.title.trim();
@@ -303,6 +316,7 @@ export const updateCouponInline = async (
   if (data.verified !== undefined) updateData.verified = data.verified;
   if (data.discount !== undefined) updateData.discount = data.discount.trim();
   if (data.uses !== undefined) updateData.uses = data.uses;
+  if (data.position !== undefined) updateData.position = data.position;
 
   if (Object.keys(updateData).length === 0) {
     throw new Error("No valid fields to update");
@@ -334,4 +348,41 @@ export const incrementCouponUses = async (couponId: string) => {
   }
 
   return serializeCoupon(updated);
+};
+
+/**
+ * 🧩 Bulk update coupon positions (used for drag and drop reordering)
+ * Automatically normalizes and updates all positions in order.
+ */
+export const updateCouponPositions = async (
+  updates: { id: string; position: number }[]
+) => {
+  if (!Array.isArray(updates) || updates.length === 0) {
+    throw new Error("No position updates provided");
+  }
+
+  // ✅ Ensure unique IDs and normalize positions (1, 2, 3, ...)
+  const sorted = updates
+    .sort((a, b) => a.position - b.position)
+    .map((u, index) => ({
+      id: u.id,
+      position: index + 1,
+    }));
+
+  // ✅ Prepare bulk operations
+  const bulkOps = sorted.map(({ id, position }) => ({
+    updateOne: {
+      filter: { _id: new Types.ObjectId(id) },
+      update: { $set: { position } },
+    },
+  }));
+
+  // ✅ Perform all updates in one atomic operation
+  const result = await Coupon.bulkWrite(bulkOps, { ordered: true });
+
+  return {
+    success: true,
+    modifiedCount: result.modifiedCount,
+    totalUpdated: sorted.length,
+  };
 };

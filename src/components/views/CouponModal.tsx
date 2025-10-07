@@ -17,6 +17,7 @@ export interface ICoupon {
   isTopOne?: boolean;
   discount: number;
   uses: number;
+  position?: number;
   verified: boolean;
   createdAt?: string;
   updatedAt?: string;

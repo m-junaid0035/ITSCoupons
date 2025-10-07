@@ -16,10 +16,11 @@ import {
   getCouponsByStore,
   updateCouponInline,
   incrementCouponUses,
+  updateCouponPositions, // 🆕 for drag-and-drop ordering
 } from "@/functions/couponFunctions";
 import { updateMetaTitleWithDiscountIfHigher } from "./storeActions";
 
-// ✅ Coupon Validation Schema with new fields
+// ✅ Coupon Validation Schema with new fields (includes position)
 const couponSchema = z.object({
   title: z.string().trim().min(3).max(100),
   description: z.string().optional(),
@@ -45,6 +46,9 @@ const couponSchema = z.object({
   discount: z.string().optional(),
   uses: z.number().int().min(0).optional().default(0),
   verified: z.coerce.boolean().optional().default(false),
+
+  // 🆕 position (for drag-and-drop)
+  position: z.number().int().optional().default(0),
 });
 
 type CouponFormData = z.infer<typeof couponSchema>;
@@ -67,7 +71,6 @@ function parseCouponFormData(formData: FormData): CouponFormData {
     status: String(formData.get("status") || "active") as "active" | "expired",
     couponCode: String(formData.get("couponCode") || ""),
 
-    // ✅ expirationDate only if provided
     expirationDate: formData.get("expirationDate")
       ? String(formData.get("expirationDate"))
       : undefined,
@@ -87,6 +90,11 @@ function parseCouponFormData(formData: FormData): CouponFormData {
     uses: formData.get("uses") ? Number(formData.get("uses")) : 0,
     verified:
       formData.get("verified") === "true" || formData.get("verified") === "on",
+
+    // 🆕 Include position (optional)
+    position: formData.get("position")
+      ? Number(formData.get("position"))
+      : 0,
   };
 }
 
@@ -112,12 +120,12 @@ export async function createCouponAction(
       await updateMetaTitleWithDiscountIfHigher(storeId);
     }
 
-
     return { data: coupon };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to create coupon"] } };
   }
 }
+
 // ✅ UPDATE COUPON
 export async function updateCouponAction(
   prevState: CouponFormState,
@@ -141,33 +149,27 @@ export async function updateCouponAction(
       await updateMetaTitleWithDiscountIfHigher(storeId);
     }
 
-
     return { data: updated };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to update coupon"] } };
   }
 }
 
+// ✅ DELETE COUPON
 export async function deleteCouponAction(id: string) {
   await connectToDatabase();
 
   try {
-    // 1️⃣ Get the coupon first to know its storeId
     const coupon = await getCouponById(id);
     if (!coupon) {
       return { error: { message: ["Coupon not found"] } };
     }
 
     const storeId = coupon.storeId?.toString();
-
-    // 2️⃣ Delete the coupon
     const deleted = await deleteCoupon(id);
 
-    // 3️⃣ After deletion, update store meta title based on remaining coupons
     if (storeId) {
-      console.log("updateing after the delete of the coupon ->")
       await updateMetaTitleWithDiscountIfHigher(storeId);
-
     }
 
     return { data: deleted };
@@ -277,6 +279,7 @@ export async function fetchCouponsByStoreAction(storeId: string) {
     };
   }
 }
+
 // ✅ INLINE UPDATE ACTION
 export async function updateCouponInlineAction(
   id: string,
@@ -286,6 +289,7 @@ export async function updateCouponInlineAction(
     verified: boolean;
     discount: string;
     uses: number;
+    position: number; // 🆕 inline support for reordering one item
   }>
 ) {
   await connectToDatabase();
@@ -295,38 +299,26 @@ export async function updateCouponInlineAction(
   }
 
   try {
-    // 🔥 If title is being updated → auto-generate discount
     if (data.title) {
-      console.log("junaid is here ...." + data.title)
       const title = data.title;
-
-      // Match "50%" or "20%" → "50%"
       const percentMatch = title.match(/(\d+)%/);
-
-      // Match "$50" or "50$" → "$50"
       const dollarMatch = title.match(/\$?\s?(\d+)\$?/);
-
-      // Match "Free Shipping"
       const freeShippingMatch = title.match(/free\s+shipping/i);
 
-      if (freeShippingMatch) {
-        data.discount = "Free Shipping";
-      } else if (percentMatch) {
-        data.discount = `${percentMatch[1]}%`;
-      } else if (dollarMatch) {
-        data.discount = `$${dollarMatch[1]}`;
-      } else {
-        data.discount = "";
-      }
+      if (freeShippingMatch) data.discount = "Free Shipping";
+      else if (percentMatch) data.discount = `${percentMatch[1]}%`;
+      else if (dollarMatch) data.discount = `$${dollarMatch[1]}`;
+      else data.discount = "";
     }
 
     const updated = await updateCouponInline(id, data);
-
     return { data: updated };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to update coupon"] } };
   }
 }
+
+// ✅ INCREMENT COUPON USES
 export async function incrementCouponUsesAction(couponId: string) {
   await connectToDatabase();
 
@@ -339,5 +331,35 @@ export async function incrementCouponUsesAction(couponId: string) {
     return { data: updated };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to increment coupon uses"] } };
+  }
+}
+
+export async function updateCouponPositionsAction(
+  positions: { id: string; position: number }[]
+) {
+  await connectToDatabase();
+
+  // 🧩 Validate input
+  if (!Array.isArray(positions) || positions.length === 0) {
+    return { error: { message: ["Invalid or empty position data."] } };
+  }
+
+  try {
+    // ✅ Execute bulk update and normalize positions
+    const result = await updateCouponPositions(positions);
+
+    return {
+      success: true,
+      message: `Successfully updated ${result.modifiedCount} coupon positions.`,
+      data: result,
+    };
+  } catch (error: any) {
+    console.error("❌ Failed to update coupon positions:", error);
+
+    return {
+      error: {
+        message: [error.message || "An unexpected error occurred while updating positions."],
+      },
+    };
   }
 }

@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import {
   deleteCouponAction,
   updateCouponInlineAction,
+  updateCouponPositionsAction,
 } from "@/actions/couponActions";
 
 import {
@@ -52,8 +53,52 @@ import {
 } from "@/components/ui/pagination";
 import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-
 import CouponModal, { ICoupon } from "@/components/views/CouponModal";
+
+// 🧩 DnD Kit imports
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+function SortableRow({ coupon, children }: { coupon: ICoupon; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+    id: coupon._id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    cursor: "grab",
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      {/* drag handle cell */}
+      <TableCell
+        {...attributes}
+        {...listeners}
+        className="cursor-grab select-none w-4 text-gray-400 hover:text-gray-600"
+      >
+        ☰
+      </TableCell>
+
+      {/* rest of your row */}
+      {children}
+    </TableRow>
+
+  );
+}
 
 function CouponsTable({
   coupons,
@@ -61,150 +106,196 @@ function CouponsTable({
   onEdit,
   onDelete,
   handleInlineUpdate,
+  onReorder,
 }: {
   coupons: ICoupon[];
   onView: (coupon: ICoupon) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   handleInlineUpdate: (id: string, field: string, value: string | boolean) => void;
-
+  onReorder: (newCoupons: ICoupon[]) => void;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 150, // wait 150ms before starting a drag
+        tolerance: 5, // allow small cursor movement
+      },
+    })
+  );
+
+
+  const handleDragEnd = async (event: any) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      const oldIndex = coupons.findIndex((c) => c._id === active.id);
+      const newIndex = coupons.findIndex((c) => c._id === over?.id);
+
+      // Reorder locally (for instant UI feedback)
+      const reordered = arrayMove(coupons, oldIndex, newIndex);
+
+      // 🧩 Normalize global positions (1, 2, 3, …)
+      const updatedWithPositions = reordered.map((coupon, i) => ({
+        ...coupon,
+        position: i + 1,
+      }));
+
+      // Optimistic UI update
+      onReorder(updatedWithPositions);
+
+      // ✅ Send all new positions to server (bulk update)
+      const response = await updateCouponPositionsAction(
+        updatedWithPositions.map((c) => ({ id: c._id, position: c.position }))
+      );
+
+      if (response?.error) {
+        toast({
+          title: "Error",
+          description: response.error.message?.[0] || "Failed to update positions.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Order Updated",
+          description: "Coupons reordered successfully.",
+        });
+      }
+    }
+  };
 
 
   return (
     <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow className="border-b border-muted">
-            <TableHead>Title</TableHead>
-            <TableHead>Code</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Expires</TableHead>
-            <TableHead>Store</TableHead>
-            <TableHead>Top One</TableHead>
-            <TableHead>Verified</TableHead>
-            <TableHead className="w-[140px] text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {coupons.length > 0 ? (
-            coupons.map((coupon) => (
-              <TableRow
-                key={coupon._id}
-                className="hover:bg-muted/40 transition-colors"
-              >
-                <TableCell
-                  className="font-medium cursor-pointer"
-                  onDoubleClick={() => setEditingId(coupon._id)}
-                >
-                  {editingId === coupon._id ? (
-                    <Input
-                      autoFocus
-                      defaultValue={coupon.title}
-                      className="w-full text-sm"
-                      onBlur={(e) => {
-                        const newValue = e.target.value.trim();
-                        if (newValue && newValue !== coupon.title) {
-                          handleInlineUpdate(coupon._id, "title", newValue);
-                        }
-                        setEditingId(null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          (e.target as HTMLInputElement).blur();
-                        } else if (e.key === "Escape") {
-                          setEditingId(null);
-                        }
-                      }}
-                    />
-                  ) : (
-                    <span>{coupon.title}</span>
-                  )}
-                </TableCell>
-
-                <TableCell>
-                  {coupon.couponCode === "NO_CODE" ? "Deal" : coupon.couponCode}
-                </TableCell>
-
-                <TableCell className="capitalize">{coupon.couponType}</TableCell>
-                <TableCell className="capitalize">{coupon.status}</TableCell>
-                <TableCell>
-                  {coupon?.expirationDate && !isNaN(Date.parse(coupon.expirationDate))
-                    ? new Date(coupon.expirationDate).toLocaleDateString()
-                    : "N/A"}
-                </TableCell>
-                <TableCell>{coupon.storeName || "-"}</TableCell>
-                <TableCell
-                  onDoubleClick={() =>
-                    handleInlineUpdate(coupon._id, "isTopOne", !coupon.isTopOne)
-                  }
-                >
-                  {coupon.isTopOne ? (
-                    <span className="text-green-600 font-semibold cursor-pointer">Yes</span>
-                  ) : (
-                    <span className="text-gray-400 cursor-pointer">No</span>
-                  )}
-                </TableCell>
-
-                <TableCell
-                  onDoubleClick={() =>
-                    handleInlineUpdate(coupon._id, "verified", !coupon.verified)
-                  }
-                >
-                  {coupon.verified ? (
-                    <span className="text-green-600 font-semibold cursor-pointer">Yes</span>
-                  ) : (
-                    <span className="text-gray-400 cursor-pointer">No</span>
-                  )}
-                </TableCell>
-
-                <TableCell>
-                  <div className="flex justify-end items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onView(coupon)}
-                      title="View"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => onEdit(coupon._id)}
-                      title="Edit"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                      onClick={() => onDelete(coupon._id)}
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={coupons.map((c) => c._id)} strategy={verticalListSortingStrategy}>
+          <Table>
+            <TableHeader>
+              <TableRow className="border-b border-muted">
+                <TableHead></TableHead>
+                <TableHead>#</TableHead>
+                <TableHead>Title</TableHead>
+                <TableHead>Code</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Expires</TableHead>
+                <TableHead>Store</TableHead>
+                <TableHead>Top One</TableHead>
+                <TableHead>Verified</TableHead>
+                <TableHead className="w-[140px] text-right">Actions</TableHead>
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell
-                colSpan={8}
-                className="text-center text-muted-foreground py-6"
-              >
-                No coupons found.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            </TableHeader>
+            <TableBody>
+              {coupons.length > 0 ? (
+                coupons.map((coupon, index) => (
+                  <SortableRow key={coupon._id} coupon={coupon}>
+                    <TableCell className="text-gray-500 text-sm">{index + 1}</TableCell>
+                    <TableCell
+                      className="font-medium cursor-pointer"
+                      onDoubleClick={() => setEditingId(coupon._id)}
+                    >
+                      {editingId === coupon._id ? (
+                        <Input
+                          autoFocus
+                          defaultValue={coupon.title}
+                          className="w-full text-sm"
+                          onBlur={(e) => {
+                            const newValue = e.target.value.trim();
+                            if (newValue && newValue !== coupon.title) {
+                              handleInlineUpdate(coupon._id, "title", newValue);
+                            }
+                            setEditingId(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                            else if (e.key === "Escape") setEditingId(null);
+                          }}
+                        />
+                      ) : (
+                        <span>{coupon.title}</span>
+                      )}
+                    </TableCell>
+
+                    <TableCell>
+                      {coupon.couponCode === "NO_CODE" ? "Deal" : coupon.couponCode}
+                    </TableCell>
+                    <TableCell className="capitalize">{coupon.couponType}</TableCell>
+                    <TableCell className="capitalize">{coupon.status}</TableCell>
+                    <TableCell>
+                      {coupon?.expirationDate && !isNaN(Date.parse(coupon.expirationDate))
+                        ? new Date(coupon.expirationDate).toLocaleDateString()
+                        : "N/A"}
+                    </TableCell>
+                    <TableCell>{coupon.storeName || "-"}</TableCell>
+                    <TableCell
+                      onDoubleClick={() =>
+                        handleInlineUpdate(coupon._id, "isTopOne", !coupon.isTopOne)
+                      }
+                    >
+                      {coupon.isTopOne ? (
+                        <span className="text-green-600 font-semibold cursor-pointer">Yes</span>
+                      ) : (
+                        <span className="text-gray-400 cursor-pointer">No</span>
+                      )}
+                    </TableCell>
+                    <TableCell
+                      onDoubleClick={() =>
+                        handleInlineUpdate(coupon._id, "verified", !coupon.verified)
+                      }
+                    >
+                      {coupon.verified ? (
+                        <span className="text-green-600 font-semibold cursor-pointer">Yes</span>
+                      ) : (
+                        <span className="text-gray-400 cursor-pointer">No</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => onView(coupon)}
+                          title="View"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => onEdit(coupon._id)}
+                          title="Edit"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          onClick={() => onDelete(coupon._id)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </SortableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={10}
+                    className="text-center text-muted-foreground py-6"
+                  >
+                    No coupons found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </SortableContext>
+      </DndContext>
     </div>
   );
 }
@@ -224,7 +315,6 @@ export default function CouponsPageClient({
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [viewCoupon, setViewCoupon] = useState<ICoupon | null>(null);
-
   const [pageSize, setPageSize] = useState(8);
 
   const [optimisticCoupons, deleteOptimistic] = useOptimistic(
@@ -236,12 +326,11 @@ export default function CouponsPageClient({
   initialStores.forEach((store) => {
     storesMap[store._id] = store.name;
   });
+
   const handleInlineUpdate = async (id: string, field: string, value: string | boolean) => {
     const result = await updateCouponInlineAction(id, { [field]: value });
     if (result?.data) {
-      setCoupons((prev) =>
-        prev.map((c) => (c._id === id ? { ...c, ...result.data } : c))
-      );
+      setCoupons((prev) => prev.map((c) => (c._id === id ? { ...c, ...result.data } : c)));
       toast({ title: "Updated", description: "Coupon updated successfully." });
     } else if (result?.error) {
       toast({
@@ -251,6 +340,23 @@ export default function CouponsPageClient({
       });
     }
   };
+
+  const handleReorder = (reorderedPageCoupons: ICoupon[]) => {
+    setCoupons((prevCoupons) => {
+      // Clone the full global list
+      const updated = [...prevCoupons];
+
+      // Replace only the reordered coupons’ positions in the full array
+      reorderedPageCoupons.forEach((coupon) => {
+        const index = updated.findIndex((c) => c._id === coupon._id);
+        if (index !== -1) updated[index] = coupon;
+      });
+
+      // Sort globally by the new position
+      return [...updated].sort((a, b) => (a.position || 0) - (b.position || 0));
+    });
+  };
+
 
   const handleDelete = async (id: string) => {
     startTransition(() => {
@@ -263,7 +369,7 @@ export default function CouponsPageClient({
         description: result.error.message || "Failed to delete coupon",
         variant: "destructive",
       });
-      setCoupons(initialCoupons); // rollback
+      setCoupons(initialCoupons);
     } else {
       setCoupons((prev) => prev.filter((coupon) => coupon._id !== id));
       toast({
@@ -313,6 +419,7 @@ export default function CouponsPageClient({
           onEdit={(id) => router.push(`/admin/coupons/edit/${id}`)}
           onDelete={(id) => setConfirmDeleteId(id)}
           handleInlineUpdate={handleInlineUpdate}
+          onReorder={handleReorder}
         />
 
         {totalPages > 1 && (
@@ -321,9 +428,7 @@ export default function CouponsPageClient({
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    onClick={() =>
-                      setCurrentPage((p) => Math.max(1, p - 1))
-                    }
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   />
                 </PaginationItem>
                 {Array.from({ length: totalPages }, (_, i) => (
@@ -338,9 +443,7 @@ export default function CouponsPageClient({
                 ))}
                 <PaginationItem>
                   <PaginationNext
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   />
                 </PaginationItem>
                 <Select
@@ -364,18 +467,12 @@ export default function CouponsPageClient({
       </CardContent>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={!!confirmDeleteId}
-        onOpenChange={() => setConfirmDeleteId(null)}
-      >
+      <Dialog open={!!confirmDeleteId} onOpenChange={() => setConfirmDeleteId(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
-          <p>
-            Are you sure you want to delete this coupon? This action cannot be
-            undone.
-          </p>
+          <p>Are you sure you want to delete this coupon? This action cannot be undone.</p>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setConfirmDeleteId(null)}>
               Cancel

@@ -7,14 +7,15 @@ export interface ICoupon extends Document {
   couponType: "deal" | "coupon";
   status: "active" | "expired";
   couponCode: string;
-  expirationDate?: Date;   // Made optional
+  expirationDate?: Date;
   couponUrl?: string;
   storeName?: string;
   storeId: Types.ObjectId;
   isTopOne?: boolean;
-  discount?: string;       // NEW FIELD
-  uses?: number;           // NEW FIELD
-  verified?: boolean;      // NEW FIELD
+  discount?: string;
+  uses?: number;
+  verified?: boolean;
+  position?: number; // 🆕 Added for drag-and-drop ordering
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,7 +49,6 @@ const couponSchema = new Schema<ICoupon>(
     },
     expirationDate: {
       type: Date,
-      // Removed "required", now optional
     },
     couponUrl: {
       type: String,
@@ -78,6 +78,11 @@ const couponSchema = new Schema<ICoupon>(
     verified: {
       type: Boolean,
       default: false,
+    },
+    position: {
+      type: Number,
+      default: 0, // 🆕 Default to 0 for newly added coupons
+      index: true, // Useful for sorting
     },
   },
   {
