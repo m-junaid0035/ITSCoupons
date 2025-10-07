@@ -407,6 +407,7 @@ export default function CouponFormClient({ stores }: CouponFormClientProps) {
                 id="verified"
                 name="verified"
                 value="true"
+                defaultChecked
                 className="w-4 h-4"
               />
               <Label htmlFor="verified">Verified</Label>

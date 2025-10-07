@@ -7,18 +7,21 @@ import path from "path";
 const blogDir = "/www/var/ITSCoupons-uploads/uploads-blogs";
 
 // Ensure folder exists
-if (!fs.existsSync(blogDir)) fs.mkdirSync(blogDir, { recursive: true });
+if (!fs.existsSync(blogDir)) {
+  fs.mkdirSync(blogDir, { recursive: true });
+}
 
 export async function saveBlogImage(file: File): Promise<string> {
   if (!file) throw new Error("No file provided");
 
-  // Sanitize original filename
-  const originalName = file.name.replace(/\s+/g, "_"); // replace spaces with underscores
-
-  // Append timestamp to filename to avoid overwrites
-  const timestamp = Date.now();
-  const fileName = `${timestamp}-${originalName}`;
+  // ✅ Use only the original filename (sanitize it)
+  const fileName = file.name.replace(/\s+/g, "_");
   const filePath = path.join(blogDir, fileName);
+
+  // ✅ Overwrite if it already exists
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
 
   // Convert File → ArrayBuffer → Uint8Array
   const arrayBuffer = await file.arrayBuffer();
@@ -26,6 +29,6 @@ export async function saveBlogImage(file: File): Promise<string> {
 
   fs.writeFileSync(filePath, uint8Array);
 
-  // Return public path
+  // ✅ Return clean public path
   return `/uploads-blogs/${fileName}`;
 }

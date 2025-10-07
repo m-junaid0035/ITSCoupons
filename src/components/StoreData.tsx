@@ -493,7 +493,7 @@ export default function StorePage({
 
       {/* Store content */}
       {store.content && (
-        <div className="max-w-[1150px] mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-white rounded-lg shadow-md text-gray-800">
+        <div className="max-w-[1150px] mx-auto mt-10 px-4 sm:px-6 md:px-8 py-8 bg-gray-100 rounded-lg shadow-md text-gray-800">
           <div
             className="prose text-gray-800 max-w-none"
             dangerouslySetInnerHTML={{ __html: store.content }}
