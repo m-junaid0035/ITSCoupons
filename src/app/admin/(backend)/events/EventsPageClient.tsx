@@ -49,22 +49,30 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import Image from "next/image";
-import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 import EventModal, { IEvent } from "@/components/views/EventModal";
 
 function EventsTable({
   events,
+  stores,
   onView,
   onEdit,
   onDelete,
 }: {
   events: IEvent[];
+  stores: { _id: string; name: string }[];
   onView: (event: IEvent) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
+  const getStoreName = (storeId?: string) => {
+    if (!storeId) return "-";
+    const store = stores.find((s) => s._id === storeId);
+    return store ? store.name : "-";
+  };
+
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -74,6 +82,7 @@ function EventsTable({
             <TableHead>Date</TableHead>
             <TableHead>Image</TableHead>
             <TableHead>Slug</TableHead>
+            <TableHead>Store</TableHead>
             <TableHead className="w-[140px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -99,6 +108,7 @@ function EventsTable({
                   )}
                 </TableCell>
                 <TableCell>{event.slug || "-"}</TableCell>
+                <TableCell>{getStoreName(event.store)}</TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-2">
                     <Button
@@ -135,7 +145,7 @@ function EventsTable({
           ) : (
             <TableRow>
               <TableCell
-                colSpan={5}
+                colSpan={6}
                 className="text-center text-muted-foreground py-6"
               >
                 No events found.
@@ -148,18 +158,20 @@ function EventsTable({
   );
 }
 
-export default function EventsPage({
+export default function EventsPageClient({
   initialEvents,
+  allStores,
 }: {
   initialEvents: IEvent[];
+  allStores: { _id: string; name: string }[];
 }) {
   const router = useRouter();
   const [events, setEvents] = useState<IEvent[]>(initialEvents);
   const [search, setSearch] = useState("");
+  const [selectedStore, setSelectedStore] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [viewEvent, setViewEvent] = useState<IEvent | null>(null);
-
   const [pageSize, setPageSize] = useState(8);
 
   const [optimisticEvents, deleteOptimistic] = useOptimistic(
@@ -190,9 +202,13 @@ export default function EventsPage({
   };
 
   // Filter + paginate
-  const filteredEvents = optimisticEvents.filter((e) =>
-    e.title.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredEvents = optimisticEvents.filter((e) => {
+    const matchesSearch = e.title.toLowerCase().includes(search.toLowerCase());
+    const matchesStore =
+      selectedStore === "all" || e.store === selectedStore;
+    return matchesSearch && matchesStore;
+  });
+
   const totalPages = Math.ceil(filteredEvents.length / pageSize);
   const paginatedEvents = filteredEvents.slice(
     (currentPage - 1) * pageSize,
@@ -213,6 +229,25 @@ export default function EventsPage({
             }}
             className="sm:w-64"
           />
+          <Select
+            value={selectedStore}
+            onValueChange={(value) => {
+              setSelectedStore(value);
+              setCurrentPage(1);
+            }}
+          >
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="Filter by store" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Stores</SelectItem>
+              {allStores.map((store) => (
+                <SelectItem key={store._id} value={store._id}>
+                  {store.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button onClick={() => router.push("/admin/events/new")}>
             Create Event
           </Button>
@@ -222,6 +257,7 @@ export default function EventsPage({
       <CardContent>
         <EventsTable
           events={paginatedEvents}
+          stores={allStores}
           onView={(event) => setViewEvent(event)}
           onEdit={(id) => router.push(`/admin/events/edit/${id}`)}
           onDelete={(id) => setConfirmDeleteId(id)}

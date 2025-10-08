@@ -24,6 +24,7 @@ const eventSchema = z.object({
   metaKeywords: z.string().optional(),
   focusKeywords: z.string().optional(),
   slug: z.string().optional(),
+  store: z.string().optional(), // 👈 new store field
 });
 
 type EventFormData = z.infer<typeof eventSchema> & {
@@ -46,7 +47,6 @@ async function parseEventFormData(
   let imagePath: string | undefined = undefined;
 
   if (uploadedFile && uploadedFile.size > 0) {
-    // save new file
     imagePath = await saveEventImage(uploadedFile);
   } else {
     const existingImage = formData.get("image")?.toString().trim();
@@ -77,7 +77,8 @@ async function parseEventFormData(
       ? String(formData.get("focusKeywords"))
       : undefined,
     slug: formData.get("slug") ? String(formData.get("slug")) : undefined,
-    imageFile: uploadedFile || undefined, // ✅ only used in upload step
+    store: formData.get("store") ? String(formData.get("store")) : undefined, // 👈 parse store
+    imageFile: uploadedFile || undefined,
   };
 }
 
@@ -89,12 +90,11 @@ export async function createEventAction(
   await connectToDatabase();
 
   try {
-    const parsed = await parseEventFormData(formData, true); // require image
+    const parsed = await parseEventFormData(formData, true);
     const result = eventSchema.safeParse(parsed);
 
     if (!result.success) return { error: result.error.flatten().fieldErrors };
 
-    // ✅ only pass DB fields
     const event = await createEvent({
       ...result.data,
       image: parsed.image,
@@ -115,12 +115,11 @@ export async function updateEventAction(
   await connectToDatabase();
 
   try {
-    const parsed = await parseEventFormData(formData, false); // image optional
+    const parsed = await parseEventFormData(formData, false);
     const result = eventSchema.safeParse(parsed);
 
     if (!result.success) return { error: result.error.flatten().fieldErrors };
 
-    // ✅ only pass DB fields
     const updated = await updateEvent(id, {
       ...result.data,
       image: parsed.image,

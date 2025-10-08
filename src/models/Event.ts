@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
 // Interface for Event document
 export interface IEvent extends Document {
@@ -11,6 +11,7 @@ export interface IEvent extends Document {
   metaKeywords?: string[];
   focusKeywords?: string[];
   slug?: string;
+  store?: Types.ObjectId; // reference to Store
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,6 +57,10 @@ const eventSchema = new Schema<IEvent>(
       trim: true,
       unique: true,
       sparse: true, // allows multiple docs with undefined slug
+    },
+    store: {
+      type: Schema.Types.ObjectId,
+      ref: "Store", // reference to Store model
     },
   },
   {

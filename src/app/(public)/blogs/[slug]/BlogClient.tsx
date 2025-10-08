@@ -1,23 +1,71 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, startTransition } from "react";
 import Image from "next/image";
 import type { BlogData } from "@/types/blog";
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import BlogShow from "@/components/BlogShow";
 import CouponModal from "@/components/coupon_popup";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { useActionState } from "react";
+import { createSubscriberAction } from "@/actions/subscriberActions";
+
+interface FieldErrors {
+  [key: string]: string[];
+}
 
 interface BlogClientProps {
   blog: BlogData;
   topBlogs: BlogData[];
   topDeals: CouponWithStoreData[];
   couponId?: string;
-  slug?: string; // optional couponId to auto-open modal
+  slug?: string;
 }
 
-const BlogClient: React.FC<BlogClientProps> = ({ blog, topBlogs, topDeals, couponId, slug }) => {
+const BlogClient: React.FC<BlogClientProps> = ({
+  blog,
+  topBlogs,
+  topDeals,
+  couponId,
+  slug,
+}) => {
   const [selectedDeal, setSelectedDeal] = useState<CouponWithStoreData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Newsletter states
+  const [email, setEmail] = useState("");
+  const [formState, dispatch, isPending] = useActionState(createSubscriberAction, {});
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+
+  const errorFor = (field: string) => {
+    return formState.error &&
+      typeof formState.error === "object" &&
+      field in formState.error
+      ? (formState.error as FieldErrors)[field]?.[0]
+      : null;
+  };
+
+  useEffect(() => {
+    if (formState.data && !formState.error) {
+      setDialogMessage("You have been successfully subscribed!");
+      setDialogOpen(true);
+      setEmail("");
+    }
+
+    if (formState.error && "message" in formState.error) {
+      setDialogMessage((formState.error as any).message?.[0] || "Something went wrong!");
+      setDialogOpen(true);
+    }
+  }, [formState]);
 
   // Auto-open modal if couponId prop matches a deal
   useEffect(() => {
@@ -38,19 +86,18 @@ const BlogClient: React.FC<BlogClientProps> = ({ blog, topBlogs, topDeals, coupo
     };
   }, [isModalOpen]);
 
-  // Handle clicking "Get Deal" button
-    const handleGetDealClick = (deal: CouponWithStoreData) => {
-      const modalUrl = `/blogs/${slug}/?couponId=${deal._id}`;
-      window.open(modalUrl, "_blank", "noopener,noreferrer");
-  
-      if (deal.couponUrl) {
-        window.location.href = deal.couponUrl;
-      }
-    };
-  
+  const handleGetDealClick = (deal: CouponWithStoreData) => {
+    const modalUrl = `/blogs/${slug}/?couponId=${deal._id}`;
+    window.open(modalUrl, "_blank", "noopener,noreferrer");
+
+    if (deal.couponUrl) {
+      window.location.href = deal.couponUrl;
+    }
+  };
 
   return (
-    <div className="w-full flex justify-center bg-gray-50">
+    <div className="w-full flex flex-col items-center bg-gray-50">
+      {/* Main content + sidebar */}
       <div className="max-w-7xl w-full px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Main Blog Content */}
         <main className="lg:col-span-9 bg-white rounded-xl shadow border border-gray-100">
@@ -143,6 +190,61 @@ const BlogClient: React.FC<BlogClientProps> = ({ blog, topBlogs, topDeals, coupo
           </div>
         </aside>
       </div>
+
+      {/* Newsletter Section (Full Width at Bottom) */}
+      <section className="max-w-7xl w-full px-4 py-8 bg-white rounded-xl shadow border border-gray-100 mt-6 text-center">
+        <h2 className="text-xl font-bold mb-2">Join the Savings Revolution</h2>
+        <p className="text-gray-600 mb-4">
+          Get exclusive access to the best deals, early notifications of sales, and personalized coupon recommendations.
+        </p>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.set("email", email);
+            startTransition(() => {
+              dispatch(formData);
+            });
+          }}
+          className="flex flex-col sm:flex-row justify-center items-center gap-2"
+        >
+          <Input
+            type="email"
+            placeholder="Enter your email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="px-3 py-2 w-full sm:w-auto border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+          />
+          <Button
+            type="submit"
+            className="bg-purple-700 text-white px-4 py-2 rounded-md hover:bg-purple-800 transition shadow-sm w-full sm:w-auto"
+            disabled={isPending}
+          >
+            {isPending ? "Subscribing..." : "Subscribe"}
+          </Button>
+        </form>
+
+        {errorFor("email") && <p className="text-red-500 mt-2">{errorFor("email")}</p>}
+
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="sm:max-w-md mx-4 sm:mx-auto animate-fade-in">
+            <DialogHeader className="relative">
+              <DialogTitle className="text-lg sm:text-xl">Subscription Status</DialogTitle>
+            </DialogHeader>
+            <p className="py-2 text-sm sm:text-base">{dialogMessage}</p>
+            <DialogFooter>
+              <Button
+                className="bg-purple-700 text-white px-6 py-2 rounded-md hover:bg-purple-800 transition shadow-sm"
+                onClick={() => setDialogOpen(false)}
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </section>
 
       {/* Coupon Modal */}
       <CouponModal

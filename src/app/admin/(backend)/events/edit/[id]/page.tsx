@@ -15,9 +15,11 @@ import { format } from "date-fns";
 import LoadingSkeleton from "./loading";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 
 import { fetchEventByIdAction, updateEventAction } from "@/actions/eventActions";
-import { fetchLatestSEOAction } from "@/actions/seoActions"; // ✅ added
+import { fetchLatestSEOAction } from "@/actions/seoActions";
+import { fetchAllStoresAction } from "@/actions/storeActions"; // ✅ fetch stores
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -50,11 +52,11 @@ export default function EditEventForm() {
   const [descriptionHtml, setDescriptionHtml] = useState("");
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
-  // --- Image State
+  // Image State
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // ✅ SEO State
+  // SEO State
   const [seo, setSeo] = useState({
     metaTitle: "",
     metaDescription: "",
@@ -65,31 +67,45 @@ export default function EditEventForm() {
 
   const [title, setTitle] = useState("");
 
-  useEffect(() => {
-    async function loadEvent() {
-      const res = await fetchEventByIdAction(eventId);
-      if (res?.data) {
-        setEvent(res.data);
-        setDescriptionHtml(res.data.description || "");
-        setTitle(res.data.title || "");
-        if (res.data.date) setEventDate(new Date(res.data.date));
-        if (res.data.image) setImagePreview(res.data.image);
+  // ✅ Store state
+  const [allStores, setAllStores] = useState<{ _id: string; name: string }[]>([]);
+  const [selectedStore, setSelectedStore] = useState<string>("");
 
-        // ✅ Populate SEO state
+  useEffect(() => {
+    async function loadEventAndStores() {
+      setLoading(true);
+
+      // Fetch event
+      const resEvent = await fetchEventByIdAction(eventId);
+      if (resEvent?.data) {
+        setEvent(resEvent.data);
+        setDescriptionHtml(resEvent.data.description || "");
+        setTitle(resEvent.data.title || "");
+        if (resEvent.data.date) setEventDate(new Date(resEvent.data.date));
+        if (resEvent.data.image) setImagePreview(resEvent.data.image);
+        if (resEvent.data.store) setSelectedStore(resEvent.data.store);
+
+        // Populate SEO
         setSeo({
-          metaTitle: res.data.metaTitle || "",
-          metaDescription: res.data.metaDescription || "",
-          metaKeywords: res.data.metaKeywords || "",
-          focusKeywords: res.data.focusKeywords || "",
-          slug: res.data.slug || "",
+          metaTitle: resEvent.data.metaTitle || "",
+          metaDescription: resEvent.data.metaDescription || "",
+          metaKeywords: resEvent.data.metaKeywords || "",
+          focusKeywords: resEvent.data.focusKeywords || "",
+          slug: resEvent.data.slug || "",
         });
       }
+
+      // Fetch stores
+      const resStores = await fetchAllStoresAction();
+      setAllStores(resStores?.data || []);
+
       setLoading(false);
     }
-    loadEvent();
+
+    loadEventAndStores();
   }, [eventId]);
 
-  // ✅ Auto SEO update when title changes
+  // Auto SEO update when title changes
   const updateSEO = async (eventTitle: string) => {
     const { data: latestSEO } = await fetchLatestSEOAction("events");
     if (!latestSEO) return;
@@ -105,26 +121,18 @@ export default function EditEventForm() {
     setSeo({
       metaTitle: replaceEventTitle(latestSEO.metaTitle || ""),
       metaDescription: replaceEventTitle(latestSEO.metaDescription || ""),
-      metaKeywords: (latestSEO.metaKeywords || [])
-        .map(replaceEventTitle)
-        .join(", "),
-      focusKeywords: (latestSEO.focusKeywords || [])
-        .map(replaceEventTitle)
-        .join(", "),
+      metaKeywords: (latestSEO.metaKeywords || []).map(replaceEventTitle).join(", "),
+      focusKeywords: (latestSEO.focusKeywords || []).map(replaceEventTitle).join(", "),
       slug: processedSlug,
     });
   };
 
   useEffect(() => {
-    if (title.trim()) {
-      updateSEO(title);
-    }
+    if (title.trim()) updateSEO(title);
   }, [title]);
 
   useEffect(() => {
-    if (formState.data && !formState.error) {
-      setSuccessDialogOpen(true);
-    }
+    if (formState.data && !formState.error) setSuccessDialogOpen(true);
     if (formState.error && "message" in formState.error) {
       toast({
         title: "Error",
@@ -162,17 +170,15 @@ export default function EditEventForm() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+
+    formData.set("title", title);
     if (eventDate) formData.set("date", eventDate.toISOString());
     formData.set("description", descriptionHtml);
-    formData.set("title", title);
+    formData.set("store", selectedStore);
 
-    if (imageFile) {
-      formData.set("imageFile", imageFile);
-    } else if (imagePreview) {
-      formData.set("image", imagePreview);
-    }
+    if (imageFile) formData.set("imageFile", imageFile);
+    else if (imagePreview) formData.set("image", imagePreview);
 
-    // ✅ attach SEO fields
     formData.set("metaTitle", seo.metaTitle);
     formData.set("metaDescription", seo.metaDescription);
     formData.set("metaKeywords", seo.metaKeywords);
@@ -206,6 +212,21 @@ export default function EditEventForm() {
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
               />
               {errorFor("title") && <p className="text-sm text-red-500">{errorFor("title")}</p>}
+            </div>
+
+            {/* Store */}
+            <div className="space-y-2">
+              <Label>Store <span className="text-red-500">*</span></Label>
+              <Select value={selectedStore} onValueChange={setSelectedStore}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select store" />
+                </SelectTrigger>
+                <SelectContent position="popper" align="start" className="max-h-60 overflow-auto">
+                  {allStores.map((store) => (
+                    <SelectItem key={store._id} value={store._id}>{store.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Slug */}
@@ -250,7 +271,7 @@ export default function EditEventForm() {
               <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
             </div>
 
-            {/* Image Upload */}
+            {/* Image */}
             <div className="space-y-2">
               <Label htmlFor="imageFile">Event Image</Label>
               <Input

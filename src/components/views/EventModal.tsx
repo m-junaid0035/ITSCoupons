@@ -22,6 +22,7 @@ export interface IEvent {
   metaKeywords?: string[];
   focusKeywords?: string[];
   slug?: string;
+  store?: string;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -17,6 +17,7 @@ import { createEventAction } from "@/actions/eventActions";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import RichTextEditor from "@/components/RichTextEditor";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 
 interface FieldErrors {
   [key: string]: string[];
@@ -31,9 +32,10 @@ const initialState: FormState = { error: {} };
 
 interface Props {
   latestSEO?: any;
+  allStores: { _id: string; name: string }[];
 }
 
-export default function EventCreateForm({ latestSEO }: Props) {
+export default function EventCreateForm({ latestSEO, allStores }: Props) {
   const router = useRouter();
   const [formState, dispatch, isPending] = useActionState(createEventAction, initialState);
 
@@ -41,9 +43,10 @@ export default function EventCreateForm({ latestSEO }: Props) {
   const [descriptionHtml, setDescriptionHtml] = useState("");
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
 
-  /** ---------------- Image state ---------------- */
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const [selectedStore, setSelectedStore] = useState<string | "">("");
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -62,7 +65,6 @@ export default function EventCreateForm({ latestSEO }: Props) {
     setImagePreview(null);
   };
 
-  /** ---------------- SEO state ---------------- */
   const [seo, setSeo] = useState({
     metaTitle: latestSEO?.metaTitle || "",
     metaDescription: latestSEO?.metaDescription || "",
@@ -71,27 +73,17 @@ export default function EventCreateForm({ latestSEO }: Props) {
     slug: latestSEO?.slug || "",
   });
 
-  // ✅ Auto SEO update when title changes
   const updateSEO = (eventTitle: string) => {
     if (!latestSEO) return;
-
-    const replaceEventTitle = (text: string) =>
-      text.replace(/{{blogTitle}}|s_n/gi, eventTitle);
-
+    const replaceEventTitle = (text: string) => text.replace(/{{blogTitle}}|s_n/gi, eventTitle);
     const slugSource = latestSEO.slug || eventTitle;
-    const processedSlug = replaceEventTitle(slugSource)
-      .toLowerCase()
-      .replace(/\s+/g, "-");
+    const processedSlug = replaceEventTitle(slugSource).toLowerCase().replace(/\s+/g, "-");
 
     setSeo({
       metaTitle: replaceEventTitle(latestSEO.metaTitle || ""),
       metaDescription: replaceEventTitle(latestSEO.metaDescription || ""),
-      metaKeywords: (latestSEO.metaKeywords || [])
-        .map(replaceEventTitle)
-        .join(", "),
-      focusKeywords: (latestSEO.focusKeywords || [])
-        .map(replaceEventTitle)
-        .join(", "),
+      metaKeywords: (latestSEO.metaKeywords || []).map(replaceEventTitle).join(", "),
+      focusKeywords: (latestSEO.focusKeywords || []).map(replaceEventTitle).join(", "),
       slug: processedSlug,
     });
   };
@@ -99,17 +91,14 @@ export default function EventCreateForm({ latestSEO }: Props) {
   useEffect(() => {
     const titleInput = document.getElementById("title") as HTMLInputElement | null;
     if (!titleInput) return;
-
     const listener = () => {
       const eventTitle = titleInput.value.trim();
       if (eventTitle) updateSEO(eventTitle);
     };
-
     titleInput.addEventListener("input", listener);
     return () => titleInput.removeEventListener("input", listener);
   }, [latestSEO]);
 
-  /** ---------------- Error helper ---------------- */
   const errorFor = (field: string) => {
     return formState.error &&
       typeof formState.error === "object" &&
@@ -132,7 +121,6 @@ export default function EventCreateForm({ latestSEO }: Props) {
     }
   }, [formState]);
 
-  /** ---------------- Submit handler ---------------- */
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -147,12 +135,20 @@ export default function EventCreateForm({ latestSEO }: Props) {
       return;
     }
 
-    // Attach image, date and description
+    if (!selectedStore) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a store",
+        variant: "destructive",
+      });
+      return;
+    }
+
     formData.set("imageFile", imageFile);
     if (eventDate) formData.set("date", eventDate.toISOString());
     formData.set("description", descriptionHtml);
+    formData.set("store", selectedStore);
 
-    // ✅ attach SEO fields
     formData.set("metaTitle", seo.metaTitle);
     formData.set("metaDescription", seo.metaDescription);
     formData.set("metaKeywords", seo.metaKeywords);
@@ -180,6 +176,22 @@ export default function EventCreateForm({ latestSEO }: Props) {
               {errorFor("title") && <p className="text-sm text-red-500">{errorFor("title")}</p>}
             </div>
 
+            {/* Store */}
+            <div className="space-y-2">
+  <Label>Store <span className="text-red-500">*</span></Label>
+  <Select value={selectedStore} onValueChange={setSelectedStore}>
+    <SelectTrigger className="w-full border-none shadow-sm bg-gray-50 dark:bg-gray-700">
+      <SelectValue placeholder="Select store" />
+    </SelectTrigger>
+    <SelectContent position="popper" align="start" className="max-h-60 overflow-auto">
+      {allStores.map(store => (
+        <SelectItem key={store._id} value={store._id}>{store.name}</SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
+
+
             {/* Slug */}
             <div className="space-y-2">
               <Label htmlFor="slug">Slug (optional)</Label>
@@ -187,7 +199,7 @@ export default function EventCreateForm({ latestSEO }: Props) {
                 id="slug"
                 name="slug"
                 value={seo.slug}
-                onChange={(e) => setSeo((prev) => ({ ...prev, slug: e.target.value }))}
+                onChange={(e) => setSeo(prev => ({ ...prev, slug: e.target.value }))}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                 placeholder="example-event-slug"
               />
@@ -219,9 +231,7 @@ export default function EventCreateForm({ latestSEO }: Props) {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label>
-                Description
-              </Label>
+              <Label>Description</Label>
               <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
             </div>
 
@@ -240,54 +250,24 @@ export default function EventCreateForm({ latestSEO }: Props) {
               {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
             </div>
 
-            {/* SEO */}
+            {/* SEO Fields */}
             <div className="space-y-2">
               <Label htmlFor="metaTitle">Meta Title</Label>
-              <Input
-                id="metaTitle"
-                name="metaTitle"
-                value={seo.metaTitle}
-                onChange={(e) => setSeo((prev) => ({ ...prev, metaTitle: e.target.value }))}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="SEO meta title"
-              />
+              <Input id="metaTitle" name="metaTitle" value={seo.metaTitle} onChange={e => setSeo(prev => ({ ...prev, metaTitle: e.target.value }))} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="SEO meta title" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="metaDescription">Meta Description</Label>
-              <Textarea
-                id="metaDescription"
-                name="metaDescription"
-                value={seo.metaDescription}
-                onChange={(e) => setSeo((prev) => ({ ...prev, metaDescription: e.target.value }))}
-                rows={3}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="SEO meta description"
-              />
+              <Textarea id="metaDescription" name="metaDescription" value={seo.metaDescription} onChange={e => setSeo(prev => ({ ...prev, metaDescription: e.target.value }))} rows={3} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="SEO meta description" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="metaKeywords">Meta Keywords (comma separated)</Label>
-              <Input
-                id="metaKeywords"
-                name="metaKeywords"
-                value={seo.metaKeywords}
-                onChange={(e) => setSeo((prev) => ({ ...prev, metaKeywords: e.target.value }))}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="keyword1, keyword2, keyword3"
-              />
+              <Input id="metaKeywords" name="metaKeywords" value={seo.metaKeywords} onChange={e => setSeo(prev => ({ ...prev, metaKeywords: e.target.value }))} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="keyword1, keyword2, keyword3" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="focusKeywords">Focus Keywords (comma separated)</Label>
-              <Input
-                id="focusKeywords"
-                name="focusKeywords"
-                value={seo.focusKeywords}
-                onChange={(e) => setSeo((prev) => ({ ...prev, focusKeywords: e.target.value }))}
-                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                placeholder="focus1, focus2"
-              />
+              <Input id="focusKeywords" name="focusKeywords" value={seo.focusKeywords} onChange={e => setSeo(prev => ({ ...prev, focusKeywords: e.target.value }))} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" placeholder="focus1, focus2" />
             </div>
 
-            {/* General Error */}
             {"message" in (formState.error ?? {}) && (
               <p className="text-sm text-red-500">{(formState.error as any).message?.[0]}</p>
             )}
@@ -311,9 +291,7 @@ export default function EventCreateForm({ latestSEO }: Props) {
           </DialogHeader>
           <p>Event created successfully!</p>
           <DialogFooter>
-            <Button onClick={() => { setSuccessDialogOpen(false); router.push("/admin/events"); }}>
-              OK
-            </Button>
+            <Button onClick={() => { setSuccessDialogOpen(false); router.push("/admin/events"); }}>OK</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

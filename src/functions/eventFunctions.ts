@@ -15,6 +15,7 @@ const sanitizeEventData = async (data: {
   metaKeywords?: string;
   focusKeywords?: string;
   slug?: string;
+  store?: string; // 👈 new store field
 }) => {
   let imagePath: string | undefined = undefined;
 
@@ -35,6 +36,7 @@ const sanitizeEventData = async (data: {
     metaKeywords: data.metaKeywords?.trim(),
     focusKeywords: data.focusKeywords?.trim(),
     slug: data.slug?.trim(),
+    store: data.store ? new Types.ObjectId(data.store) : undefined, // 👈 convert to ObjectId
   };
 };
 
@@ -52,6 +54,7 @@ const serializeEvent = (event: any) => ({
   metaKeywords: event.metaKeywords,
   focusKeywords: event.focusKeywords,
   slug: event.slug,
+  store: event.store?.toString(), // 👈 serialize store ObjectId
   createdAt: event.createdAt?.toISOString?.(),
   updatedAt: event.updatedAt?.toISOString?.(),
 });
@@ -69,6 +72,7 @@ export const createEvent = async (data: {
   metaKeywords?: string;
   focusKeywords?: string;
   slug?: string;
+  store?: string; // 👈 new store
 }): Promise<ReturnType<typeof serializeEvent>> => {
   const eventData = await sanitizeEventData(data);
   const event = await new Event(eventData).save();
@@ -110,6 +114,7 @@ export const updateEvent = async (
     metaKeywords?: string;
     focusKeywords?: string;
     slug?: string;
+    store?: string; // 👈 new store
   }
 ): Promise<ReturnType<typeof serializeEvent> | null> => {
   const updatedData = await sanitizeEventData(data);
