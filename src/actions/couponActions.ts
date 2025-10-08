@@ -16,7 +16,8 @@ import {
   getCouponsByStore,
   updateCouponInline,
   incrementCouponUses,
-  updateCouponPositions, // 🆕 for drag-and-drop ordering
+  updateCouponPositions,
+  getTopDealsByUses, // 🆕 for drag-and-drop ordering
 } from "@/functions/couponFunctions";
 import { updateMetaTitleWithDiscountIfHigher } from "./storeActions";
 
@@ -258,6 +259,18 @@ export async function fetchTopDealsWithStoresAction() {
   } catch (error: any) {
     return {
       error: { message: [error.message || "Failed to fetch top deals with stores"] },
+    };
+  }
+}
+export async function fetchTopDealsByUsesAction() {
+  await connectToDatabase();
+
+  try {
+    const deals = await getTopDealsByUses();
+    return { data: deals };
+  } catch (error: any) {
+    return {
+      error: { message: [error.message || "Failed to fetch top deals by uses"] },
     };
   }
 }

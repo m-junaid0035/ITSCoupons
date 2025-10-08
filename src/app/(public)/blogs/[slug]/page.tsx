@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import type { BlogData } from "@/types/blog";
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
 import { fetchBlogBySlugAction, fetchTopBlogsAction } from "@/actions/blogActions";
-import { fetchTopDealsWithStoresAction } from "@/actions/couponActions";
+import { fetchTopDealsByUsesAction } from "@/actions/couponActions";
 import BlogClient from "./BlogClient";
 import BlogNotFound from "./BlogNotFound";
 
@@ -19,7 +19,7 @@ export default async function BlogPage({ params, searchParams } : { params:  Pro
 
   const [topBlogsRes, topDealsRes] = await Promise.all([
     fetchTopBlogsAction(),
-    fetchTopDealsWithStoresAction(),
+    fetchTopDealsByUsesAction(),
   ]);
 
   const topBlogs: BlogData[] = topBlogsRes?.data?.filter((b: any) => b._id !== blog._id) ?? [];

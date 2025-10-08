@@ -283,6 +283,33 @@ export const getTopDealsWithStores = async () => {
   return dealsWithStores.map(serializeCouponWithStore);
 };
 
+export const getTopDealsByUses = async () => {
+  const dealsWithStores = await Coupon.aggregate([
+    // Only include deals
+    { $match: { couponType: "deal" } },
+
+    // Join with stores collection
+    {
+      $lookup: {
+        from: "stores",
+        localField: "storeId",
+        foreignField: "_id",
+        as: "store",
+      },
+    },
+
+    // Unwind store array
+    { $unwind: { path: "$store", preserveNullAndEmptyArrays: true } },
+
+    // Sort by uses descending to get most used deals first
+    { $sort: { uses: -1, createdAt: -1 } },
+
+    // Limit to top 3
+    { $limit: 3 },
+  ]);
+
+  return dealsWithStores.map(serializeCouponWithStore);
+};
 /**
  * Get all coupons for a specific store.
  */

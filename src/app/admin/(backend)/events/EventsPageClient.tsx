@@ -97,7 +97,7 @@ function EventsTable({
                 <TableCell>
                   {event.image ? (
                     <Image
-                      src={event.image}
+                      src={`https://www.itscoupons.com${event.image}`}
                       alt={event.title}
                       width={50}
                       height={50}

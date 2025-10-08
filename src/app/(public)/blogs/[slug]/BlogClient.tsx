@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { useActionState } from "react";
 import { createSubscriberAction } from "@/actions/subscriberActions";
+import { incrementCouponUsesAction } from "@/actions/couponActions";
 
 interface FieldErrors {
   [key: string]: string[];
@@ -86,14 +87,24 @@ const BlogClient: React.FC<BlogClientProps> = ({
     };
   }, [isModalOpen]);
 
-  const handleGetDealClick = (deal: CouponWithStoreData) => {
+  const handleGetDealClick = async (deal: CouponWithStoreData) => {
+  try {
+    // ✅ Increment coupon uses
+    await incrementCouponUsesAction(deal._id);
+
+    // ✅ Open blog page in new tab with modal
     const modalUrl = `/blogs/${slug}/?couponId=${deal._id}`;
     window.open(modalUrl, "_blank", "noopener,noreferrer");
 
+    // ✅ Redirect current page to the coupon/deal URL if present
     if (deal.couponUrl) {
       window.location.href = deal.couponUrl;
     }
-  };
+  } catch (error) {
+    console.error("Failed to increment coupon uses:", error);
+  }
+};
+
 
   return (
     <div className="w-full flex flex-col items-center bg-gray-50">
@@ -137,14 +148,7 @@ const BlogClient: React.FC<BlogClientProps> = ({
             {topDeals.map((deal) => {
               const storeName = deal.store?.name || "Unknown Store";
               const storeInitial = storeName.charAt(0).toUpperCase();
-              const usedTimes = deal.uses ?? 0;
-              const expiration = deal.expirationDate
-                ? new Date(deal.expirationDate).toLocaleDateString("en-GB", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })
-                : null;
+              const usedTimes = deal.uses ?? 0; // Only 'uses' is relevant now
 
               return (
                 <div key={deal._id} className="flex flex-col bg-white rounded-lg shadow p-3 border border-gray-100">
@@ -181,13 +185,14 @@ const BlogClient: React.FC<BlogClientProps> = ({
                       Get Deal
                     </button>
                     <span className="text-xs text-gray-500">
-                      {expiration ? `Expires: ${expiration}` : `Used: ${usedTimes}`}
+                      Used: {usedTimes}
                     </span>
                   </div>
                 </div>
               );
             })}
           </div>
+
         </aside>
       </div>
 
