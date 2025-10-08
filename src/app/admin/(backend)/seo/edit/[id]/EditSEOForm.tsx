@@ -100,7 +100,7 @@ export default function EditSEOForm({ seo }: { seo: any }) {
                 name="metaTitle"
                 required
                 defaultValue={seo.metaTitle}
-                placeholder="Enter meta title (add s_n and c_d where you want to add the store name and current date respectively)"
+                placeholder="Enter meta title (add s_n and c_d where you want to add the standard notation and current date respectively)"
               />
               {errorFor("metaTitle") && (
                 <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
@@ -117,7 +117,7 @@ export default function EditSEOForm({ seo }: { seo: any }) {
                 name="metaDescription"
                 rows={3}
                 defaultValue={seo.metaDescription}
-                placeholder="Enter meta description (add s_n and c_d where you want to add the store name and current date respectively)"
+                placeholder="Enter meta description (add s_n and c_d where you want to add the standard notation and current date respectively)"
               />
               {errorFor("metaDescription") && (
                 <p className="text-sm text-red-500">
@@ -139,7 +139,7 @@ export default function EditSEOForm({ seo }: { seo: any }) {
                     ? seo.metaKeywords.join(", ")
                     : ""
                 }
-                placeholder="keyword1, keyword2 (add s_n and c_d where you want to add the store name and current date respectively)"
+                placeholder="keyword1, keyword2 (add s_n and c_d where you want to add the standard notation and current date respectively)"
               />
               {errorFor("metaKeywords") && (
                 <p className="text-sm text-red-500">{errorFor("metaKeywords")}</p>
@@ -159,7 +159,7 @@ export default function EditSEOForm({ seo }: { seo: any }) {
                     ? seo.focusKeywords.join(", ")
                     : ""
                 }
-                placeholder="focus1, focus2 (add s_n and c_d where you want to add the store name and current date respectively)"
+                placeholder="focus1, focus2 (add s_n and c_d where you want to add the standard notation and current date respectively)"
               />
               {errorFor("focusKeywords") && (
                 <p className="text-sm text-red-500">{errorFor("focusKeywords")}</p>
@@ -176,7 +176,7 @@ export default function EditSEOForm({ seo }: { seo: any }) {
                 name="slug"
                 required
                 defaultValue={seo.slug}
-                placeholder="seo-entry-slug (add s_n and c_d where you want to add the store name and current date respectively)"
+                placeholder="seo-entry-slug (add s_n and c_d where you want to add the standard notation and current date respectively)"
               />
               {errorFor("slug") && (
                 <p className="text-sm text-red-500">{errorFor("slug")}</p>
