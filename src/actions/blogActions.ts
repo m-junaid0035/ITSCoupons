@@ -8,6 +8,7 @@ import {
   getAllBlogs,
   getBlogById,
   getBlogBySlug,
+  getTopBlogs,
   updateBlog,
 } from "@/functions/blogFunctions";
 import { saveBlogImage } from "@/lib/uploadBlogImage";
@@ -167,5 +168,14 @@ export async function fetchBlogBySlugAction(slug: string) {
     return { data: blog };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch blog by slug"] } };
+  }
+}
+export async function fetchTopBlogsAction() {
+  await connectToDatabase();
+  try {
+    const blogs = await getTopBlogs();
+    return { data: blogs };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch top blogs"] } };
   }
 }

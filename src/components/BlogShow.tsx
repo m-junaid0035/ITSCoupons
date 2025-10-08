@@ -17,12 +17,13 @@ export default function BlogShow({ blog }: BlogShowProps) {
 
       {blog.date && (
         <p className="text-gray-500 text-sm sm:text-base mb-6">
-          {new Date(blog.date).toLocaleDateString(undefined, {
+          {new Date(blog.date).toLocaleDateString("en-GB", {
             year: "numeric",
             month: "long",
             day: "numeric",
           })}
         </p>
+
       )}
 
       {blog.image && (

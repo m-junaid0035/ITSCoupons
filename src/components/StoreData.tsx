@@ -24,7 +24,6 @@ function Stat({ icon, value, label }: { icon: React.ReactNode; value: number; la
 
 function isExpired(coupon: CouponData) {
   if (!coupon.expirationDate) return false;
-  console.log("junaid is here!")
   return new Date(coupon.expirationDate) < new Date();
 }
 

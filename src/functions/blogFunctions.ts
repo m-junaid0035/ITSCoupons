@@ -157,3 +157,14 @@ export const deleteBlog = async (id: string) => {
   const blog = await Blog.findByIdAndDelete(id).lean();
   return blog ? serializeBlog(blog) : null;
 };
+/**
+ * Get the top 4 latest blogs (sorted by creation date descending).
+ */
+export const getTopBlogs = async () => {
+  const blogs = await Blog.find()
+    .sort({ createdAt: -1 }) // newest first
+    .limit(4)
+    .lean();
+
+  return blogs.map(serializeBlog);
+};
