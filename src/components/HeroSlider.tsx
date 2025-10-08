@@ -1,61 +1,52 @@
 "use client";
 
 import React, { useRef } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay, Navigation } from "swiper/modules";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { FaCheck } from "react-icons/fa";
+import type { EventWithStore } from "@/types/event";
+
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
 
-const slides = [
-  {
-    title: "Find the Best Deals & Coupons",
-    subtitle: "Save Money Every Day",
-    description:
-      "Discover verified coupons and exclusive deals from thousands of top brands. Start saving today with our curated collection of money-saving offers.",
-    bgImage: "/images/img.webp",
-  },
-  {
-    title: "Exclusive Brand Partnerships",
-    subtitle: "Premium Savings Await",
-    description:
-      "Access exclusive discounts from premium brands and retailers. Get early access to sales and limited-time offers that you won't find anywhere else.",
-    bgImage: "/images/img.webp",
-  },
-  {
-    title: "Cashback Rewards Program",
-    subtitle: "Earn While You Save",
-    description:
-      "Join our cashback program and earn money back on every purchase. Stack cashback with coupons for maximum savings on all your favorite stores.",
-    bgImage: "/images/img.webp",
-  },
-];
+interface HeroSliderProps {
+  events: EventWithStore[];
+}
 
-export default function HeroSlider() {
-  const prevRef = useRef(null);
-  const nextRef = useRef(null);
+export default function HeroSlider({ events }: HeroSliderProps) {
+  const prevRef = useRef<HTMLButtonElement | null>(null);
+  const nextRef = useRef<HTMLButtonElement | null>(null);
+
+  if (!events || events.length === 0) return null;
+
+  const getFullImageUrl = (path?: string) => {
+    if (!path) return "/images/default-banner.webp";
+    if (path.startsWith("http")) return path;
+    return `https://itscoupons.com${path.startsWith("/") ? path : `/${path}`}`;
+  };
 
   return (
-    <section
-      className="w-full relative max-w-[1400px] mx-auto px-3 md:px-6 lg:px-8 mt-3 md:mt-6 lg:mt-8
-      group" // 👈 group added for hover effect
-    >
-      {/* Desktop arrows (appear on hover) */}
+    <section className="relative w-full max-w-[1400px] mx-auto mt-4 md:mt-8 px-3 md:px-6 lg:px-8 group">
+      {/* ← Prev Button */}
       <div className="absolute inset-y-0 left-3 z-10 hidden md:flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <button
           ref={prevRef}
-          className="bg-white/80 backdrop-blur-md shadow-md rounded-full p-2 hover:bg-white focus:outline-none"
+          aria-label="Previous Slide"
+          className="bg-white shadow-md rounded-full p-2 hover:bg-gray-100 focus:outline-none"
         >
           <ChevronLeft className="w-6 h-6 text-purple-700" />
         </button>
       </div>
 
+      {/* → Next Button */}
       <div className="absolute inset-y-0 right-3 z-10 hidden md:flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <button
           ref={nextRef}
-          className="bg-white/80 backdrop-blur-md shadow-md rounded-full p-2 hover:bg-white focus:outline-none"
+          aria-label="Next Slide"
+          className="bg-white shadow-md rounded-full p-2 hover:bg-gray-100 focus:outline-none"
         >
           <ChevronRight className="w-6 h-6 text-purple-700" />
         </button>
@@ -65,7 +56,7 @@ export default function HeroSlider() {
         modules={[Pagination, Autoplay, Navigation]}
         pagination={{ clickable: true }}
         autoplay={{ delay: 5000, disableOnInteraction: false }}
-        loop={true} // ✅ ensures looping
+        loop={true}
         navigation={{
           prevEl: prevRef.current,
           nextEl: nextRef.current,
@@ -80,53 +71,69 @@ export default function HeroSlider() {
         }}
         className="w-full rounded-2xl overflow-hidden"
       >
-        {slides.map((slide, index) => (
-          <SwiperSlide key={index}>
-            <div
-              className="relative bg-cover bg-center text-white 
-                h-[160px] sm:h-[210px] md:h-[270px] lg:h-[340px] xl:h-[400px]
-                flex items-center rounded-2xl overflow-hidden"
-              style={{ backgroundImage: `url(${slide.bgImage})` }}
-            >
-              {/* Dark overlay */}
-              <div className="absolute inset-0 bg-black/40 z-0" />
+        {events.map((event) => (
+          <SwiperSlide key={event._id}>
+            <div className="relative bg-white overflow-hidden rounded-2xl shadow-md flex flex-col md:grid md:grid-cols-2 h-auto md:h-[340px] lg:h-[400px]">
+              {/* Image Section */}
+              <div className="relative h-[200px] sm:h-[240px] md:h-auto flex items-center justify-center bg-gray-100">
+                <Image
+                  src={getFullImageUrl(event.image)}
+                  alt={event.title}
+                  fill
+                  className="object-cover"
+                  priority
+                />
 
-              {/* Content */}
-              <div className="relative z-10 w-full max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 px-4 sm:px-8 lg:px-12">
-                <div className="space-y-3 sm:space-y-4 lg:space-y-6 text-center md:text-left">
-                  {index === 0 ? (
-                    <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl font-extrabold leading-tight drop-shadow-lg">
-                      {slide.title}
-                    </h1>
-                  ) : (
-                    <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-5xl font-extrabold leading-tight drop-shadow-lg">
-                      {slide.title}
-                    </h2>
+                {/* Store Logo */}
+                {event.store && event.store.image && (
+                  <div
+                    className="
+                      absolute 
+                      bottom-3 left-1/2 -translate-x-1/2 
+                      md:left-4 md:translate-x-0 
+                      bg-white rounded-full p-2 shadow-lg 
+                      flex items-center justify-center
+                    "
+                    style={{
+                      width: "70px",
+                      height: "70px",
+                      borderRadius: "50%",
+                    }}
+                  >
+                    <Image
+                      src={getFullImageUrl(event.store.image)}
+                      alt={event.store.name}
+                      width={60}
+                      height={60}
+                      className="rounded-full object-contain p-2"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Text Section */}
+              <div className="relative flex flex-col justify-center px-4 py-4 md:px-10 bg-black text-white">
+                <div className="max-w-lg">
+                  <h2 className="text-lg sm:text-xl md:text-3xl lg:text-4xl font-bold mb-2 line-clamp-2">
+                    {event.title}
+                  </h2>
+
+                  {event.description && (
+                    <p
+                    suppressHydrationWarning
+                      className="text-sm sm:text-base lg:text-lg text-gray-200 mb-3 line-clamp-2"
+                      dangerouslySetInnerHTML={{ __html: event.description || "" }}
+                    />
                   )}
 
-                  <h3 className="text-sm sm:text-lg md:text-xl lg:text-2xl font-semibold drop-shadow">
-                    {slide.subtitle}
-                  </h3>
-
-                  <p className="text-xs sm:text-sm md:text-base lg:text-lg text-white/90 max-w-xl mx-auto md:mx-0 drop-shadow-sm">
-                    {slide.description}
-                  </p>
-
-                  {/* Bullet points */}
-                  <div className="flex flex-wrap justify-center md:justify-start items-center gap-3 pt-2 text-xs sm:text-sm md:text-base lg:text-lg">
-                    <div className="flex items-center gap-1.5">
-                      <FaCheck className="text-green-400" />
-                      Verified Coupons
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <FaCheck className="text-green-400" />
-                      1000+ Stores
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <FaCheck className="text-green-400" />
-                      Daily Updates
-                    </div>
-                  </div>
+                  {event.store && (
+                    <Link
+                      href={`/stores/${event.store.slug}`}
+                      className="inline-block bg-white text-black font-semibold px-4 py-2 rounded-md text-sm sm:text-base hover:bg-gray-100 transition"
+                    >
+                      {`Shop ${event.store.name}`}
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>

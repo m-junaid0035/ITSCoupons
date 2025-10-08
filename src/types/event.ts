@@ -1,6 +1,6 @@
-// types/event.ts
+import type { StoreData } from "./store";
 
-// Input type for creating/updating an event
+/* ───────── Input type ───────── */
 export interface EventInput {
   title: string;
   date: string; // ISO string format
@@ -11,9 +11,10 @@ export interface EventInput {
   metaKeywords?: string;
   focusKeywords?: string;
   slug?: string;
+  store?: string; // ✅ Store ID reference when creating/updating
 }
 
-// Output type for an event returned from API
+/* ───────── Base Event Data from API ───────── */
 export interface EventData {
   _id: string;
   title: string;
@@ -25,12 +26,16 @@ export interface EventData {
   metaKeywords?: string;
   focusKeywords?: string;
   slug?: string;
+  store?: string; // ✅ Store ID from API
   createdAt?: string | null;
   updatedAt?: string | null;
 }
 
-// List response type
-export type EventListResponse = EventData[];
+/* ───────── Extended Event with Store object ───────── */
+export type EventWithStore = Omit<EventData, "store"> & {
+  store: StoreData | null;
+};
 
-// Single response type
+/* ───────── Response Types ───────── */
+export type EventListResponse = EventData[];
 export type EventSingleResponse = EventData | null;
