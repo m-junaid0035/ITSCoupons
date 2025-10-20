@@ -25,11 +25,14 @@ export default function HeroSlider({ events }: HeroSliderProps) {
   const getFullImageUrl = (path?: string) => {
     if (!path) return "/images/default-banner.webp";
     if (path.startsWith("http")) return path;
-    return `https://itscoupons.com${path.startsWith("/") ? path : `/${path}`}`;
+    return `https://www.itscoupons.com${path.startsWith("/") ? path : `/${path}`}`;
   };
 
   return (
     <section className="relative w-full max-w-[1400px] mx-auto mt-4 md:mt-8 px-3 md:px-6 lg:px-8 group">
+      <h1 className="text-2xl font-bold sr-only">
+        Best Coupons, Promo Codes & Deals - ITS Coupons
+      </h1>
       {/* ← Prev Button */}
       <div className="absolute inset-y-0 left-3 z-10 hidden md:flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <button
@@ -71,6 +74,7 @@ export default function HeroSlider({ events }: HeroSliderProps) {
         }}
         className="w-full rounded-2xl overflow-hidden"
       >
+
         {events.map((event) => (
           <SwiperSlide key={event._id}>
             <div className="relative bg-white overflow-hidden rounded-2xl shadow-md flex flex-col md:grid md:grid-cols-2 h-auto md:h-[340px] lg:h-[400px]">
@@ -79,26 +83,23 @@ export default function HeroSlider({ events }: HeroSliderProps) {
                 <Image
                   src={getFullImageUrl(event.image)}
                   alt={event.title}
-                  fill
-                  className="object-cover"
+                  width={800}     // ✅ Set fixed width
+                  height={400}    // ✅ Set fixed height (adjust as needed)
                   priority
+                  className="w-full h-full object-cover rounded-t-2xl md:rounded-none"
                 />
 
                 {/* Store Logo */}
                 {event.store && event.store.image && (
                   <div
                     className="
-                      absolute 
-                      bottom-3 left-1/2 -translate-x-1/2 
-                      md:left-4 md:translate-x-0 
-                      bg-white rounded-full p-2 shadow-lg 
-                      flex items-center justify-center
-                    "
-                    style={{
-                      width: "70px",
-                      height: "70px",
-                      borderRadius: "50%",
-                    }}
+        absolute 
+        bottom-3 left-1/2 -translate-x-1/2 
+        md:left-4 md:translate-x-0 
+        bg-white rounded-full p-2 shadow-lg 
+        flex items-center justify-center
+      "
+                    style={{ width: "70px", height: "70px", borderRadius: "50%" }}
                   >
                     <Image
                       src={getFullImageUrl(event.store.image)}
@@ -111,6 +112,7 @@ export default function HeroSlider({ events }: HeroSliderProps) {
                 )}
               </div>
 
+
               {/* Text Section */}
               <div className="relative flex flex-col justify-center px-4 py-4 md:px-10 bg-black text-white">
                 <div className="max-w-lg">
@@ -120,7 +122,7 @@ export default function HeroSlider({ events }: HeroSliderProps) {
 
                   {event.description && (
                     <p
-                    suppressHydrationWarning
+                      suppressHydrationWarning
                       className="text-sm sm:text-base lg:text-lg text-gray-200 mb-3 line-clamp-2"
                       dangerouslySetInnerHTML={{ __html: event.description || "" }}
                     />

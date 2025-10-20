@@ -1,3 +1,4 @@
+// Updated TopDeals component with grid layout on mobile and fixed alignment
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -16,7 +17,6 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Lock background scroll when modal is open
   useEffect(() => {
     document.body.style.overflow = isModalOpen ? "hidden" : "auto";
     return () => {
@@ -24,7 +24,6 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
     };
   }, [isModalOpen]);
 
-  // Auto-open modal if couponId is in URL (new tab)
   useEffect(() => {
     if (couponId) {
       const coupon = deals.find((c) => c._id === couponId);
@@ -43,7 +42,6 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
     );
   }
 
-  // Horizontal scroll
   const scroll = (direction: "left" | "right") => {
     if (!scrollRef.current) return;
     const { clientWidth } = scrollRef.current;
@@ -53,7 +51,6 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
     });
   };
 
-  // Open deal link
   const handleGetDealClick = (deal: CouponWithStoreData) => {
     const modalUrl = `/?couponId=${deal._id}`;
     window.open(modalUrl, "_blank", "noopener,noreferrer");
@@ -69,7 +66,6 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
         Top Deals
       </h2>
 
-      {/* MOBILE: Scroll buttons left, VIEW ALL right */}
       <div className="flex justify-between items-center mb-4 md:hidden">
         <div className="flex gap-2">
           <button
@@ -90,16 +86,14 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
         </a>
       </div>
 
-      {/* DESKTOP: VIEW ALL on the right */}
       <div className="flex justify-end mb-4 hidden md:flex">
         <a href="/coupons" className="text-sm sm:text-base text-purple-700 hover:underline">
           VIEW ALL
         </a>
       </div>
 
-      <div className="relative">
-        {/* DESKTOP: Arrow buttons left/right outside slider */}
-        <div className="absolute inset-y-0 -left-10 flex items-center hidden md:flex">
+      <div className="relative hidden md:block">
+        <div className="absolute inset-y-0 -left-10 flex items-center">
           <button
             onClick={() => scroll("left")}
             className="bg-white shadow-md rounded-full p-2 hover:bg-purple-50 focus:outline-none"
@@ -107,8 +101,7 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
             <ChevronLeft className="w-5 h-5 text-purple-700" />
           </button>
         </div>
-
-        <div className="absolute inset-y-0 -right-10 flex items-center hidden md:flex">
+        <div className="absolute inset-y-0 -right-10 flex items-center">
           <button
             onClick={() => scroll("right")}
             className="bg-white shadow-md rounded-full p-2 hover:bg-purple-50 focus:outline-none"
@@ -117,17 +110,12 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
           </button>
         </div>
 
-        {/* Horizontal scroll container */}
         <div
           ref={scrollRef}
-          className="flex gap-4 sm:gap-6 md:gap-8 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 no-scrollbar"
+          className="flex gap-6 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 no-scrollbar"
         >
           {deals.map((deal, index) => (
-            <div
-              key={deal._id || index}
-              className="flex-shrink-0 snap-start flex flex-col items-center w-[247px]"
-            >
-              {/* Upper Box (Image) */}
+            <div key={deal._id || index} className="flex-shrink-0 snap-start w-[247px]">
               <div className="w-full h-[150px] bg-gray-300 rounded-[16px] overflow-hidden flex items-center justify-center border border-gray-100">
                 {deal.store?.image ? (
                   <Image
@@ -137,7 +125,7 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
                     height={150}
                     priority={index < 4}
                     loading={index < 4 ? "eager" : "lazy"}
-                    className="-mt-6 w-full h-full object-contain bg-white p-2"
+                    className="w-full h-full object-contain bg-white p-2"
                   />
                 ) : (
                   <span className="text-gray-400 text-sm flex items-center justify-center h-full">
@@ -145,16 +133,13 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
                   </span>
                 )}
               </div>
-
-              {/* Lower Box (Details) */}
-              <div className="w-full min-h-[148px] bg-white rounded-[16px] shadow-md -mt-6 z-10 flex flex-col justify-between p-4">
+              <div className="w-full min-h-[148px] bg-white rounded-[16px] shadow-md -mt-6 z-10 p-4 flex flex-col justify-between">
                 <div>
                   <h3 className="font-bold text-sm text-gray-900 line-clamp-2">
                     {deal.title}
                   </h3>
                   <DescriptionWithToggle text={deal.description} />
                 </div>
-
                 {deal.couponCode && (
                   <button
                     onClick={() => handleGetDealClick(deal)}
@@ -169,7 +154,43 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
         </div>
       </div>
 
-      {/* Coupon Modal */}
+      {/* Mobile Grid */}
+      <div className="grid grid-cols-2 gap-4 md:hidden">
+        {deals.map((deal, index) => (
+          <div key={deal._id || index} className="w-full">
+            <div className="w-full h-[150px] bg-gray-300 rounded-[16px] overflow-hidden flex items-center justify-center border border-gray-100">
+              {deal.store?.image ? (
+                <Image
+                  src={`https://itscoupons.com${deal.store.image}`}
+                  alt={deal.store?.name || deal.title}
+                  width={247}
+                  height={150}
+                  className="w-full h-full object-contain bg-white p-2"
+                />
+              ) : (
+                <span className="text-gray-400 text-sm flex items-center justify-center h-full">
+                  No Image
+                </span>
+              )}
+            </div>
+            <div className="bg-white rounded-[16px] shadow-md -mt-6 z-10 p-4 flex flex-col justify-between min-h-[148px]">
+              <h3 className="font-bold text-sm text-gray-900 line-clamp-2">
+                {deal.title}
+              </h3>
+              <DescriptionWithToggle text={deal.description} />
+              {deal.couponCode && (
+                <button
+                  onClick={() => handleGetDealClick(deal)}
+                  className="w-full bg-purple-700 text-xs font-semibold text-white rounded-full py-2 hover:bg-purple-200 transition"
+                >
+                  Get Deal
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
       <CouponModal
         storeName={selectedDeal?.store?.name}
         storeImageUrl={selectedDeal?.store?.image}
@@ -184,15 +205,10 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
   );
 };
 
-/**
- * Renders description with "Show more / Show less" toggle.
- * Supports HTML content safely.
- */
 const DescriptionWithToggle: React.FC<{ text?: string }> = ({ text }) => {
   const [expanded, setExpanded] = useState(false);
 
   if (!text) return null;
-
   const words = text.split(" ");
   const shouldTruncate = words.length > 6;
   const displayedText = expanded ? text : words.slice(0, 6).join(" ") + (shouldTruncate ? "..." : "");

@@ -96,7 +96,6 @@ export default function PromoCodesSection({ coupons, couponId }: PromoCodesSecti
         </a>
       </div>
 
-
       <div className="relative">
         {/* DESKTOP: Arrow buttons left/right outside slider */}
         <div className="absolute inset-y-0 -left-10 flex items-center hidden md:flex">
@@ -117,18 +116,21 @@ export default function PromoCodesSection({ coupons, couponId }: PromoCodesSecti
           </button>
         </div>
 
-        {/* Horizontal scroll container */}
+        {/* Horizontal scroll container (Updated for Mobile Grid) */}
         <div
           ref={scrollRef}
-          className="flex gap-4 sm:gap-6 md:gap-8 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-4 no-scrollbar"
+          className="
+            grid grid-cols-2 gap-4
+            sm:flex sm:gap-6 sm:overflow-x-auto sm:scroll-smooth sm:snap-x sm:snap-mandatory sm:pb-4 sm:no-scrollbar
+          "
         >
           {coupons.map((coupon, idx) => {
             const expiration = coupon.expirationDate
               ? new Date(coupon.expirationDate).toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
               : "N/A";
 
             const displayStoreName = coupon.store?.name || coupon.storeName || "Unknown Store";
@@ -137,7 +139,8 @@ export default function PromoCodesSection({ coupons, couponId }: PromoCodesSecti
             return (
               <div
                 key={coupon._id || idx}
-                className="flex-shrink-0 snap-start flex flex-col items-center w-[247px]"
+                className="flex-shrink-0 snap-start flex flex-col items-center w-full sm:w-[247px]"
+
               >
                 <div className="w-full h-[150px] bg-gray-100 rounded-[16px] overflow-hidden flex items-center justify-center border border-gray-100">
                   {coupon.store?.image ? (

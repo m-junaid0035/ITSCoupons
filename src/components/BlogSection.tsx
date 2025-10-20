@@ -31,9 +31,10 @@ export default function BlogSection({ blogs }: BlogSectionProps): JSX.Element {
 
           return (
             <div
-              key={blog._id}
-              className="flex flex-col items-center w-full max-w-[301px]"
-            >
+  key={blog._id}
+  className="flex flex-col items-center w-full max-w-[301px] lg:ml-12"
+>
+
               {/* Image box */}
               <div className="w-full h-[160px] bg-gray-200 rounded-[12px] overflow-hidden flex items-center justify-center border border-gray-100">
                 {blog.image ? (

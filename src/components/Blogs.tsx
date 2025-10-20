@@ -15,6 +15,7 @@ import {
 import { useActionState } from "react";
 import { createSubscriberAction } from "@/actions/subscriberActions";
 import { BlogListResponse } from "@/types/blog";
+import { Lightbulb, ShoppingBag, TrendingUp } from "lucide-react";
 
 interface FieldErrors {
   [key: string]: string[];
@@ -70,13 +71,36 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
   return (
     <div className="text-gray-800">
       {/* Hero Section */}
-      <section className="bg-purple-800 text-white text-center py-16 px-4">
-        <h1 className="text-4xl font-bold mb-4">Coupon Hunt Blogs</h1>
-        <p className="text-sm sm:text-base max-w-2xl mx-auto">
-          Stay updated with expert saving strategies, shopping guides, and industry insights that help you shop smarter every day.
-        </p>
-      </section>
+      <section className="bg-purple-800 text-white text-center py-16 sm:py-20 px-4">
+        {/* 🔹 Main Heading */}
+        <h1 className="text-4xl sm:text-5xl font-bold mb-4 sm:mb-6">
+          ITSCoupons Blogs
+        </h1>
 
+        {/* 🔹 Main Description */}
+        <p className="text-sm sm:text-base max-w-2xl mx-auto mb-6 sm:mb-8">
+          Discover insider shopping hacks, expert money-saving strategies,
+          and exclusive insights to help you shop smarter, save more,
+          and stay ahead of trends every day. Our blogs are designed to give
+          you actionable tips and the latest updates in the world of online shopping.
+        </p>
+
+        {/* 🔹 Icon Highlights */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 mt-4 sm:mt-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Lightbulb className="w-6 h-6 sm:w-7 sm:h-7" />
+            <span className="text-sm sm:text-base font-medium">Smart Saving Tips</span>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <ShoppingBag className="w-6 h-6 sm:w-7 sm:h-7" />
+            <span className="text-sm sm:text-base font-medium">Shopping Guides</span>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <TrendingUp className="w-6 h-6 sm:w-7 sm:h-7" />
+            <span className="text-sm sm:text-base font-medium">Industry Insights</span>
+          </div>
+        </div>
+      </section>
       {/* Blog Tabs */}
       <section className="py-10 px-4 max-w-6xl mx-auto">
         <h2 className="text-2xl font-bold text-center mb-6">Money-Saving Insights & Tips</h2>
@@ -97,48 +121,62 @@ export default function BlogPage({ blogs, categories }: BlogPageProps) {
         </div>
 
         {/* Featured Blogs */}
-        <div className="space-y-8">
-          {featured.map((blog) => (
-            <div key={blog._id} className="border rounded-xl shadow-sm overflow-hidden">
-              {blog.image && (
-                <div className="relative w-full h-32 sm:h-40">
-                  <Image
-                    src={`https://itscoupons.com/${blog.image}`}
-                    alt={blog.title}
-                    title={blog.title}       // ✅ added title
-                    fill
-                    sizes="(max-width: 768px) 100vw, 768px"
-                    className="object-cover"
-                    loading="lazy"          // ✅ added loading
-                  />
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 sm:gap-x-6 gap-y-6 sm:gap-y-10 justify-items-center">
+          {featured.map((blog, index) => {
+            const formattedDate = blog.createdAt
+              ? new Date(blog.createdAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+              })
+              : "";
+
+            return (
+              <div
+                key={blog._id}
+                className="flex flex-col items-center w-full max-w-[301px]"
+              >
+                {/* Image Box */}
+                <div className="w-full h-[160px] bg-gray-200 rounded-[12px] overflow-hidden flex items-center justify-center border border-gray-100">
+                  {blog.image ? (
+                    <Image
+                      src={`https://itscoupons.com/${blog.image}`}
+                      alt={blog.title}
+                      width={301}
+                      height={160}
+                      priority={index < 4} // preload first row
+                      loading={index < 4 ? "eager" : "lazy"}
+                      className="-mt-6 w-full h-full object-contain bg-white p-2 transition-transform duration-300 hover:scale-105"
+                    />
+                  ) : (
+                    <span className="text-gray-400 text-sm flex items-center justify-center h-full">
+                      No Image
+                    </span>
+                  )}
                 </div>
-              )}
-              <div className="bg-purple-700 text-white px-6 py-4 text-lg font-bold">
-                {blog.category || "Uncategorized"}
+
+                {/* Lower content box */}
+                <div
+                  className="w-full min-h-[148px] bg-white rounded-[12px] shadow-md -mt-6 z-10 flex flex-col justify-between p-4 text-left"
+                  style={{ boxShadow: "0px 4px 4px 0px #00000040" }}
+                >
+                  <p className="text-xs text-gray-500">{formattedDate}</p>
+                  <h3 className="text-sm font-semibold line-clamp-2">
+                    {blog.title}
+                  </h3>
+                  <Link
+                    href={`/blogs/${blog.slug}`}
+                    className="text-purple-700 font-semibold hover:underline flex items-center text-sm mt-2"
+                  >
+                    Read More <span className="ml-1 text-purple-700">→</span>
+                  </Link>
+                </div>
               </div>
-              <div className="p-6 space-y-3">
-                <h3 className="text-xl sm:text-2xl font-semibold">{blog.title}</h3>
-                {blog.createdAt && (
-                  <p className="text-xs sm:text-sm text-gray-500">
-                    {new Date(blog.createdAt).toISOString().split("T")[0]}
-                  </p>
-                )}
-{blog.description && (
-  <p className="text-sm sm:text-base text-gray-600">
-    {blog.description.replace(/<[^>]+>/g, "").slice(0, 150)}...
-  </p>
-)}
-<Link
-  href={`/blogs/${blog.slug}`}
-  className="text-purple-700 font-medium hover:underline"
->
-  Read More
-</Link>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
+
 
       {/* Recent Blogs */}
       <section className="py-10 px-4 max-w-5xl mx-auto">

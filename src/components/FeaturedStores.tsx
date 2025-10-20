@@ -123,7 +123,7 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
                       <Link
                         key={store._id}
                         href={`/stores/${store.slug}`}
-                        className="flex items-center justify-center bg-white overflow-hidden transition hover:scale-105"
+                        className="flex items-center justify-center bg-white overflow-hidden transition"
                         style={{
                           width: "160px",
                           height: "160px",
@@ -131,15 +131,17 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
                           border: "1px solid #C4C4C4",
                         }}
                       >
-                        <Image
-                          src={`https://itscoupons.com${store.image}` || "/placeholder-store.png"}
-                          alt={store.name}
-                          width={160}
-                          height={160}
-                          priority={index < 5}
-                          loading={index < 5 ? "eager" : "lazy"}
-                          className="object-contain rounded-full p-6 transition-transform duration-300 hover:scale-110 hover:brightness-105"
-                        />
+                        <div className="w-full h-full flex items-center justify-center rounded-full overflow-hidden">
+                          <Image
+                            src={`https://itscoupons.com${store.image}` || "/placeholder-store.png"}
+                            alt={store.name}
+                            width={160}
+                            height={160}
+                            priority={index < 5}
+                            loading={index < 5 ? "eager" : "lazy"}
+                            className="object-contain p-6 transition-transform duration-300 hover:scale-110"
+                          />
+                        </div>
                       </Link>
                     ))}
                   </div>
