@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -19,6 +19,7 @@ interface HeroSliderProps {
 export default function HeroSlider({ events }: HeroSliderProps) {
   const prevRef = useRef<HTMLButtonElement | null>(null);
   const nextRef = useRef<HTMLButtonElement | null>(null);
+  const swiperRef = useRef<any>(null);
 
   if (!events || events.length === 0) return null;
 
@@ -28,11 +29,27 @@ export default function HeroSlider({ events }: HeroSliderProps) {
     return `https://www.itscoupons.com${path.startsWith("/") ? path : `/${path}`}`;
   };
 
+  // ✅ Ensure Swiper navigation updates once refs are ready
+  useEffect(() => {
+    if (
+      swiperRef.current &&
+      prevRef.current &&
+      nextRef.current &&
+      swiperRef.current.params
+    ) {
+      swiperRef.current.params.navigation.prevEl = prevRef.current;
+      swiperRef.current.params.navigation.nextEl = nextRef.current;
+      swiperRef.current.navigation.init();
+      swiperRef.current.navigation.update();
+    }
+  }, []);
+
   return (
     <section className="relative w-full max-w-[1400px] mx-auto mt-4 md:mt-8 px-3 md:px-6 lg:px-8 group">
       <h1 className="text-2xl font-bold sr-only">
         Best Coupons, Promo Codes & Deals - ITS Coupons
       </h1>
+
       {/* ← Prev Button */}
       <div className="absolute inset-y-0 left-3 z-10 hidden md:flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <button
@@ -60,21 +77,11 @@ export default function HeroSlider({ events }: HeroSliderProps) {
         pagination={{ clickable: true }}
         autoplay={{ delay: 5000, disableOnInteraction: false }}
         loop={true}
-        navigation={{
-          prevEl: prevRef.current,
-          nextEl: nextRef.current,
-        }}
         onBeforeInit={(swiper) => {
-          // @ts-ignore
-          swiper.params.navigation.prevEl = prevRef.current;
-          // @ts-ignore
-          swiper.params.navigation.nextEl = nextRef.current;
-          swiper.navigation.init();
-          swiper.navigation.update();
+          swiperRef.current = swiper;
         }}
         className="w-full rounded-2xl overflow-hidden"
       >
-
         {events.map((event) => (
           <SwiperSlide key={event._id}>
             <div className="relative bg-white overflow-hidden rounded-2xl shadow-md flex flex-col md:grid md:grid-cols-2 h-auto md:h-[340px] lg:h-[400px]">
@@ -83,8 +90,8 @@ export default function HeroSlider({ events }: HeroSliderProps) {
                 <Image
                   src={getFullImageUrl(event.image)}
                   alt={event.title}
-                  width={800}     // ✅ Set fixed width
-                  height={400}    // ✅ Set fixed height (adjust as needed)
+                  width={800}
+                  height={400}
                   priority
                   className="w-full h-full object-cover rounded-t-2xl md:rounded-none"
                 />
@@ -93,12 +100,12 @@ export default function HeroSlider({ events }: HeroSliderProps) {
                 {event.store && event.store.image && (
                   <div
                     className="
-        absolute 
-        bottom-3 left-1/2 -translate-x-1/2 
-        md:left-4 md:translate-x-0 
-        bg-white rounded-full p-2 shadow-lg 
-        flex items-center justify-center
-      "
+                      absolute 
+                      bottom-3 left-1/2 -translate-x-1/2 
+                      md:left-4 md:translate-x-0 
+                      bg-white rounded-full p-2 shadow-lg 
+                      flex items-center justify-center
+                    "
                     style={{ width: "70px", height: "70px", borderRadius: "50%" }}
                   >
                     <Image
@@ -111,7 +118,6 @@ export default function HeroSlider({ events }: HeroSliderProps) {
                   </div>
                 )}
               </div>
-
 
               {/* Text Section */}
               <div className="relative flex flex-col justify-center px-4 py-4 md:px-10 bg-black text-white">
