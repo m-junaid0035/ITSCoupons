@@ -62,12 +62,14 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
           <div className="flex gap-2">
             <button
               onClick={() => scroll("left")}
+              aria-label="Scroll left"
               className="bg-white shadow-md rounded-full p-2 hover:bg-purple-50 focus:outline-none"
             >
               <ChevronLeft className="w-5 h-5 text-purple-700" />
             </button>
             <button
               onClick={() => scroll("right")}
+              aria-label="Scroll right"
               className="bg-white shadow-md rounded-full p-2 hover:bg-purple-50 focus:outline-none"
             >
               <ChevronRight className="w-5 h-5 text-purple-700" />

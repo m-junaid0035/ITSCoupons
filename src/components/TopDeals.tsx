@@ -70,12 +70,14 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
         <div className="flex gap-2">
           <button
             onClick={() => scroll("left")}
+            aria-label="Scroll deals left"
             className="bg-white shadow-md rounded-full p-2 hover:bg-purple-50 focus:outline-none"
           >
             <ChevronLeft className="w-5 h-5 text-purple-700" />
           </button>
           <button
             onClick={() => scroll("right")}
+            aria-label="Scroll deals right"
             className="bg-white shadow-md rounded-full p-2 hover:bg-purple-50 focus:outline-none"
           >
             <ChevronRight className="w-5 h-5 text-purple-700" />
@@ -96,6 +98,7 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
         <div className="absolute inset-y-0 -left-10 flex items-center">
           <button
             onClick={() => scroll("left")}
+            aria-label="Scroll deals left"
             className="bg-white shadow-md rounded-full p-2 hover:bg-purple-50 focus:outline-none"
           >
             <ChevronLeft className="w-5 h-5 text-purple-700" />
@@ -104,6 +107,7 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
         <div className="absolute inset-y-0 -right-10 flex items-center">
           <button
             onClick={() => scroll("right")}
+             aria-label="Scroll deals right"
             className="bg-white shadow-md rounded-full p-2 hover:bg-purple-50 focus:outline-none"
           >
             <ChevronRight className="w-5 h-5 text-purple-700" />
@@ -143,6 +147,7 @@ const TopDeals: React.FC<TopDealsProps> = ({ deals, couponId }) => {
                 {deal.couponCode && (
                   <button
                     onClick={() => handleGetDealClick(deal)}
+                    aria-label={`Get deal for ${deal.title}`}
                     className="w-full bg-purple-700 text-xs font-semibold text-white rounded-full py-2 hover:bg-purple-200 transition"
                   >
                     Get Deal
