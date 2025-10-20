@@ -23,14 +23,15 @@ export default function HeroSlider({ events }: HeroSliderProps) {
   const nextRef = useRef<HTMLButtonElement | null>(null);
   const swiperRef = useRef<SwiperType | null>(null);
 
-  // ✅ Ensure client-side render (avoids hydration mismatch)
+  // ✅ Ensures this component only renders after client-side hydration
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // ✅ Safely attach navigation refs when swiper is ready
+  // ✅ Attach navigation buttons after client is ready
   useEffect(() => {
     if (
+      isClient &&
       swiperRef.current &&
       swiperRef.current.params.navigation &&
       prevRef.current &&
@@ -45,7 +46,7 @@ export default function HeroSlider({ events }: HeroSliderProps) {
     }
   }, [isClient]);
 
-  // ✅ Image URL handler
+  // ✅ Build full image URL safely
   const getFullImageUrl = (path?: string) => {
     if (!path) return "/images/default-banner.webp";
     if (path.startsWith("http")) return path;
