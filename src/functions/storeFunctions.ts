@@ -314,9 +314,6 @@ export const getStoresByNetwork = async (
   return stores.map(serializeStore);
 };
 
-/**
- * Get a store with coupons by slug.
- */
 export const getStoreWithCouponsBySlug = async (slug: string) => {
   if (!slug) return null;
 
@@ -328,6 +325,14 @@ export const getStoreWithCouponsBySlug = async (slug: string) => {
         localField: "_id",
         foreignField: "storeId",
         as: "coupons",
+      },
+    },
+    // Sort the coupons array by `position` ascending
+    {
+      $addFields: {
+        coupons: {
+          $sortArray: { input: "$coupons", sortBy: { position: 1 } },
+        },
       },
     },
   ]);

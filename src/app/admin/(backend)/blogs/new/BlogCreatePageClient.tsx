@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, startTransition } from "react";
+import { useState, useEffect, startTransition, useRef } from "react";
 import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
@@ -41,7 +41,29 @@ export default function BlogCreatePageClient({
 
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+
+  // Type the ref as HTMLDivElement
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      // event.target is EventTarget, cast to Node for contains()
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(event.target as Node)
+      ) {
+        setCategoryDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+
   const [writer, setWriter] = useState("");
   const [descriptionHtml, setDescriptionHtml] = useState("");
 
@@ -187,24 +209,57 @@ export default function BlogCreatePageClient({
               {errorFor("writer") && <p className="text-sm text-red-500">{errorFor("writer")}</p>}
             </div>
 
-            {/* Category */}
-            <div className="space-y-2">
-              <Label htmlFor="category">Category <span className="text-red-500">*</span></Label>
-              <select
-                id="category"
-                name="category"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                required
-                className="w-full p-2 rounded"
-              >
-                <option value="">Select a category</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-              {errorFor("category") && <p className="text-sm text-red-500">{errorFor("category")}</p>}
+            {/* Category Search & Select */}
+            <div className="space-y-2 relative" ref={categoryDropdownRef}>
+              <Label htmlFor="category">
+                Category <span className="text-red-500">*</span>
+              </Label>
+
+              <div className="relative">
+                <Input
+                  placeholder="Search category..."
+                  value={categorySearch}
+                  onFocus={() => setCategoryDropdownOpen(true)}
+                  onChange={(e) => setCategorySearch(e.target.value)}
+                  required
+                />
+
+                {categoryDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border rounded shadow max-h-60 overflow-y-auto">
+                    {categories
+                      .filter((cat) =>
+                        cat.toLowerCase().includes(categorySearch.toLowerCase())
+                      )
+                      .map((cat) => (
+                        <div
+                          key={cat}
+                          className="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                          onClick={() => {
+                            setSelectedCategory(cat);
+                            setCategorySearch(cat);
+                            setCategoryDropdownOpen(false);
+                          }}
+                        >
+                          {cat}
+                        </div>
+                      ))}
+
+                    {categories.filter((cat) =>
+                      cat.toLowerCase().includes(categorySearch.toLowerCase())
+                    ).length === 0 && (
+                        <div className="px-4 py-2 text-gray-500">No categories found</div>
+                      )}
+                  </div>
+                )}
+              </div>
+
+              <input type="hidden" name="category" value={selectedCategory || ""} required />
+
+              {errorFor("category") && (
+                <p className="text-sm text-red-500">{errorFor("category")}</p>
+              )}
             </div>
+
 
             {/* Slug */}
             <div className="space-y-2">

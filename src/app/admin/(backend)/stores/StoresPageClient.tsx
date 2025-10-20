@@ -71,7 +71,7 @@ function StoresTable({
                         <TableHead className="w-[140px] text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
-                <TableBody>
+                <TableBody>  
                     {stores.length > 0 ? (
                         stores.map((store) => (
                             <TableRow

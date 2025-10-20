@@ -418,49 +418,61 @@ export async function updateMetaTitleWithDiscountIfHigher(storeId: string) {
     return { error: { message: ["Store ID is required"] } };
   }
 
-  // 📝 1. Get all coupons for this store
+  // 1️⃣ Get all coupons for this store
   const coupons = await Coupon.find({ storeId });
 
-  // If no coupons left, we can set discount to 0 or leave unchanged — here we handle it by setting 0
-  let maxDiscount = 0;
+  // Track max numeric discount
+  let maxDiscount: number | null = null;
+  let discountSymbol = "%"; // default symbol
 
   if (coupons && coupons.length > 0) {
     for (const coupon of coupons) {
       const discountStr = coupon.discount || "";
-      const match = discountStr.match(/(\d+)\s*%/);
-      const discountValue = match ? parseInt(match[1], 10) : 0;
-      if (discountValue > maxDiscount) {
-        maxDiscount = discountValue;
+      // Match $55, 55$, 50%, 50 % etc.
+      const match = discountStr.match(/(\$)?\s*(\d+)\s*(%|\$)?/);
+      if (match) {
+        const prefixDollar = match[1]; // $ before number
+        const value = parseInt(match[2], 10);
+        const suffixSymbol = match[3]; // % or $ after number
+
+        const symbol = prefixDollar ? "$" : suffixSymbol || "%";
+
+        if (maxDiscount === null || value > maxDiscount) {
+          maxDiscount = value;
+          discountSymbol = symbol;
+        }
       }
     }
   }
 
-  // 📝 2. Get store info
+  // 2️⃣ Get store info
   const store = await getStoreById(storeId);
   if (!store) return { error: { message: ["Store not found"] } };
   if (!store.metaTitle) return { error: { message: ["Meta title is empty"] } };
 
-  // 📝 3. Extract current discount from metaTitle (if any)
-  const match = store.metaTitle.match(/(\d+)%/);
-  const currentDiscount = match ? parseInt(match[1], 10) : 0;
-
-  // 📝 4. If maxDiscount equals currentDiscount → do nothing
-  if (maxDiscount === currentDiscount) {
-    return { data: null, message: "Discount already up to date" };
-  }
-
-  // 📝 5. Update metaTitle with the new maxDiscount
   let updatedMetaTitle = store.metaTitle;
 
-  if (match) {
-    // Replace the existing discount number
-    updatedMetaTitle = updatedMetaTitle.replace(/(\d+)%/g, `${maxDiscount}%`);
-  } else if (maxDiscount > 0) {
-    // If no discount exists currently but coupons have discounts, append it
-    updatedMetaTitle += ` - Up to ${maxDiscount}% Off`;
+  if (maxDiscount !== null) {
+    const maxDiscountText = `${discountSymbol}${maxDiscount} `; // ✅ added space after discount
+
+    // ✅ If metaTitle contains d_c, replace it
+    if (updatedMetaTitle.includes("d_c")) {
+      updatedMetaTitle = updatedMetaTitle.replace(/d_c/g, maxDiscountText);
+    } else {
+      // ✅ Check if metaTitle already has any numeric discount ($ or %)
+      const existingDiscountRegex = /(\$)?\d+\s*(%|\$)?/;
+      if (existingDiscountRegex.test(updatedMetaTitle)) {
+        updatedMetaTitle = updatedMetaTitle.replace(existingDiscountRegex, maxDiscountText);
+      } else {
+        // ✅ If no numeric discount exists, append max discount
+        updatedMetaTitle += ` - ${maxDiscountText}Off`;
+      }
+    }
   } else {
-    // If no coupons left and metaTitle had discount, remove it
-    updatedMetaTitle = updatedMetaTitle.replace(/[-–]?\s*\d+%(\s*Off)?/gi, "").trim();
+    // ✅ If no numeric discount in coupons, just replace d_c if exists
+    if (updatedMetaTitle.includes("d_c")) {
+      updatedMetaTitle = updatedMetaTitle.replace(/d_c/g, "d_c");
+    }
   }
 
   try {
@@ -472,8 +484,15 @@ export async function updateMetaTitleWithDiscountIfHigher(storeId: string) {
       return { error: { message: ["Failed to update meta title"] } };
     }
 
-    return { data: updatedStore, message: `Meta title updated to ${maxDiscount}%` };
+    return {
+      data: updatedStore,
+      message:
+        maxDiscount !== null
+          ? `Meta title updated with ${discountSymbol}${maxDiscount}`
+          : "No numeric discount found, meta title unchanged",
+    };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to update meta title"] } };
   }
 }
+

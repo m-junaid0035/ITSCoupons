@@ -10,9 +10,22 @@ import { incrementCouponUsesAction } from "@/actions/couponActions"; // adjust p
 
 
 /* ───────── Helpers ───────── */
-function Stat({ icon, value, label }: { icon: React.ReactNode; value: number; label: string }) {
+function Stat({
+  icon,
+  value,
+  label,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  value: number;
+  label: string;
+  onClick?: () => void;
+}) {
   return (
-    <div className="flex items-center gap-3">
+    <div
+      className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition"
+      onClick={onClick}
+    >
       <div className="text-purple-700 text-lg">{icon}</div>
       <div>
         <div className="text-xl font-bold text-purple-700">{value}</div>
@@ -21,6 +34,7 @@ function Stat({ icon, value, label }: { icon: React.ReactNode; value: number; la
     </div>
   );
 }
+
 
 function isExpired(coupon: CouponData) {
   if (!coupon.expirationDate) return false;
@@ -96,6 +110,8 @@ export default function StorePage({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+  const expiredSectionRef = React.useRef<HTMLDivElement>(null);
+
 
   const handlePrev = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
   const handleNext = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
@@ -121,22 +137,22 @@ export default function StorePage({
   }, [couponId, coupons]);
 
   const handleOpenCouponNewTab = async (coupon: CouponData) => {
-  try {
-    // ✅ Increment coupon uses in DB
-    await incrementCouponUsesAction(coupon._id);
+    try {
+      // ✅ Increment coupon uses in DB
+      await incrementCouponUsesAction(coupon._id);
 
-    // ✅ Open coupon page in new tab
-    const modalUrl = `/stores/${store.slug}?couponId=${coupon._id}`;
-    window.open(modalUrl, "_blank", "noopener,noreferrer");
+      // ✅ Open coupon page in new tab
+      const modalUrl = `/stores/${store.slug}?couponId=${coupon._id}`;
+      window.open(modalUrl, "_blank", "noopener,noreferrer");
 
-    // ✅ Redirect to the coupon/deal URL if present
-    if (coupon.couponUrl) {
-      window.location.href = coupon.couponUrl;
+      // ✅ Redirect to the coupon/deal URL if present
+      if (coupon.couponUrl) {
+        window.location.href = coupon.couponUrl;
+      }
+    } catch (error) {
+      console.error("Failed to increment coupon uses:", error);
     }
-  } catch (error) {
-    console.error("Failed to increment coupon uses:", error);
-  }
-};
+  };
   const today = new Date().toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -179,22 +195,28 @@ export default function StorePage({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Stat icon={<FaTags size={28} />} value={coupons.length} label="Total Coupons" />
+            <Stat icon={<FaTags size={28} />} value={coupons.length} label="Total Coupons" onClick={() => setActiveTab("all")} />
             <Stat
               icon={<FaHandshake size={28} />}
               value={coupons.filter((c) => c.couponType === "coupon").length}
               label="Promo Codes"
+              onClick={() => setActiveTab("promo")}
             />
             <Stat
               icon={<FaHandshake size={28} />}
               value={coupons.filter((c) => c.couponType === "deal").length}
               label="Deals"
+              onClick={() => setActiveTab("deal")}
             />
             <Stat
               icon={<FaClock size={28} />}
               value={coupons.filter(isExpired).length}
               label="Expired Coupons"
+              onClick={() => {
+                expiredSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+              }}
             />
+
           </div>
 
         </aside>
@@ -285,13 +307,12 @@ export default function StorePage({
                   }`}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab === "all" && `All Coupons (${coupons.length})`}
-                {tab === "promo" &&
-                  `Promo Codes (${coupons.filter((c) => c.couponType === "coupon").length})`}
-                {tab === "deal" &&
-                  `Deals (${coupons.filter((c) => c.couponType === "deal").length})`}
+                {tab === "all" && `All Coupons (${coupons.filter(c => !c.expirationDate || new Date(c.expirationDate) >= new Date()).length})`}
+                {tab === "promo" && `Promo Codes (${coupons.filter(c => c.couponType === "coupon" && (!c.expirationDate || new Date(c.expirationDate) >= new Date())).length})`}
+                {tab === "deal" && `Deals (${coupons.filter(c => c.couponType === "deal" && (!c.expirationDate || new Date(c.expirationDate) >= new Date())).length})`}
               </button>
             ))}
+
           </div>
 
           {/* Coupons List */}
@@ -504,7 +525,7 @@ export default function StorePage({
       {coupons.some(
         (c) => c.expirationDate && new Date(c.expirationDate) < new Date()
       ) && (
-          <div className="w-full max-w-7xl mx-auto mt-12 text-center">
+          <div ref={expiredSectionRef} className="w-full max-w-7xl mx-auto mt-12 text-center">
             {/* Section Heading */}
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
               Expired {store.name} Coupon Codes
@@ -567,11 +588,12 @@ export default function StorePage({
                       {/* Right: Actions (Desktop) */}
                       <div className="hidden md:flex flex-col items-center justify-center min-w-[120px] md:min-w-[200px] p-3 md:p-6 border-l border-gray-100">
                         <button
-                          disabled
-                          className="w-36 h-11 bg-gray-300 text-white font-semibold text-sm px-4 py-2 rounded-full cursor-not-allowed"
-                        >
-                          Expired
-                        </button>
+  onClick={() => handleOpenCouponNewTab(coupon)}
+  className="w-36 h-11 bg-gray-400 hover:bg-gray-500 text-white font-semibold text-sm px-4 py-2 rounded-full"
+>
+  Expired
+</button>
+
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

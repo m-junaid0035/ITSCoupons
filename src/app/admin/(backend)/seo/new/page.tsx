@@ -98,7 +98,7 @@ export default function SEOForm() {
                 id="metaTitle"
                 name="metaTitle"
                 required
-                placeholder="Enter meta title (add s_n and c_d where you want to add the standard notation and current date respectively)"
+                placeholder="Enter meta title (add s_n, d_c and c_d where you want to add the standard notation, discount and current date respectively)"
               />
               {errorFor("metaTitle") && (
                 <p className="text-sm text-red-500">{errorFor("metaTitle")}</p>
@@ -114,7 +114,7 @@ export default function SEOForm() {
                 id="metaDescription"
                 name="metaDescription"
                 rows={3}
-                placeholder="Enter meta description (add s_n and c_d where you want to add the standard notation and current date respectively)"
+                placeholder="Enter meta description (add s_n, d_c and c_d where you want to add the standard notation, discount and current date respectively)"
               />
               {errorFor("metaDescription") && (
                 <p className="text-sm text-red-500">
@@ -129,7 +129,7 @@ export default function SEOForm() {
               <Input
                 id="metaKeywords"
                 name="metaKeywords"
-                placeholder="keyword1, keyword2 (add s_n and c_d where you want to add the standard notation and current date respectively)"
+                placeholder="keyword1, keyword2 (add s_n, d_c and c_d where you want to add the standard notation, discount and current date respectively)"
               />
               {errorFor("metaKeywords") && (
                 <p className="text-sm text-red-500">
@@ -146,7 +146,7 @@ export default function SEOForm() {
               <Input
                 id="focusKeywords"
                 name="focusKeywords"
-                placeholder="focus1, focus2 (add s_n and c_d where you want to add the standard notation and current date respectively)"
+                placeholder="focus1, focus2 (add s_n, d_c and c_d where you want to add the standard notation, discount and current date respectively)"
               />
               {errorFor("focusKeywords") && (
                 <p className="text-sm text-red-500">
@@ -164,7 +164,7 @@ export default function SEOForm() {
                 id="slug"
                 name="slug"
                 required
-                placeholder="seo-entry-slug (add s_n and c_d where you want to add the standard notation and current date respectively)"
+                placeholder="seo-entry-slug (add s_n, d_c and c_d where you want to add the standard notation, discount and current date respectively)"
               />
               {errorFor("slug") && (
                 <p className="text-sm text-red-500">{errorFor("slug")}</p>

@@ -47,6 +47,7 @@ export default function CouponModal({
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState("");
   const [confirmation, setConfirmation] = useState("");
+  const [feedbackMsg, setFeedbackMsg] = useState("");
   const [formState, dispatch, isPending] = useActionState(
     createSubscriberAction,
     {}
@@ -231,12 +232,24 @@ export default function CouponModal({
 
             {/* Did this code work? */}
             <div className="mt-6 flex justify-center gap-4">
-              <button className="flex items-center gap-1 rounded-md bg-gray-100 px-4 py-2 text-sm hover:bg-gray-200 text-gray-700">
-                <ThumbsDown size={16} className="text-red-500" /> No
-              </button>
-              <button className="flex items-center gap-1 rounded-md bg-gray-100 px-4 py-2 text-sm hover:bg-gray-200 text-gray-700">
-                <ThumbsUp size={16} className="text-green-600" /> Yes
-              </button>
+              {!feedbackMsg ? (
+                <>
+                  <button
+                    onClick={() => setFeedbackMsg("Thanks for the feedback!")}
+                    className="flex items-center gap-1 rounded-md bg-gray-100 px-4 py-2 text-sm hover:bg-gray-200 text-gray-700"
+                  >
+                    <ThumbsDown size={16} className="text-red-500" /> No
+                  </button>
+                  <button
+                    onClick={() => setFeedbackMsg("Thanks for the feedback!")}
+                    className="flex items-center gap-1 rounded-md bg-gray-100 px-4 py-2 text-sm hover:bg-gray-200 text-gray-700"
+                  >
+                    <ThumbsUp size={16} className="text-green-600" /> Yes
+                  </button>
+                </>
+              ) : (
+                <p className="text-sm text-gray-800">{feedbackMsg}</p>
+              )}
             </div>
             {/* Redeem */}
             <a

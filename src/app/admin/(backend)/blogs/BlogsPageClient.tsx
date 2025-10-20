@@ -38,7 +38,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { Eye, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Eye, Pencil, Trash2, Loader2, ExternalLink } from "lucide-react";
 import BlogModal from "@/components/views/BlogModal";
 
 interface IBlog {
@@ -81,6 +81,7 @@ function BlogsTable({
             <TableHead>Date</TableHead>
             <TableHead>Image</TableHead>
             <TableHead>Slug</TableHead>
+            <TableHead>Live View</TableHead>
             <TableHead className="w-[140px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -109,6 +110,20 @@ function BlogsTable({
                   )}
                 </TableCell>
                 <TableCell>{blog.slug || "-"}</TableCell>
+                <TableCell>
+                  {blog.slug ? (
+                    <a
+                      href={`/blogs/${blog.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline flex items-center gap-1"
+                    >
+                      Live View <ExternalLink className="h-4 w-4" />
+                    </a>
+                  ) : (
+                    "-"
+                  )}
+                </TableCell>
                 <TableCell>
                   <div className="flex justify-end items-center gap-2">
                     <Button
