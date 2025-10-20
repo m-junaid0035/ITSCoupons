@@ -92,6 +92,7 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
           <div className="absolute inset-y-0 -left-6 hidden md:flex items-center z-10">
             <button
               onClick={() => scroll("left")}
+              aria-label="Scroll left"
               className="bg-white shadow-md rounded-full p-3 hover:bg-purple-50 focus:outline-none"
             >
               <ChevronLeft className="w-6 h-6 text-purple-700" />
@@ -101,6 +102,7 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
           <div className="absolute inset-y-0 -right-6 hidden md:flex items-center z-10">
             <button
               onClick={() => scroll("right")}
+              aria-label="Scroll right"
               className="bg-white shadow-md rounded-full p-3 hover:bg-purple-50 focus:outline-none"
             >
               <ChevronRight className="w-6 h-6 text-purple-700" />
