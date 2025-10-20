@@ -85,12 +85,12 @@ export default function HeroSlider({ events }: HeroSliderProps) {
           <h2 className="text-lg sm:text-xl md:text-3xl lg:text-4xl font-bold mb-2 line-clamp-2">
             {event.title}
           </h2>
-          {event.description && (
-            <p
-              className="text-sm sm:text-base lg:text-lg text-gray-200 mb-3 line-clamp-2"
-              dangerouslySetInnerHTML={{ __html: event.description || "" }}
-            />
-          )}
+          <div
+        className="prose prose-purple max-w-full sm:prose-lg md:prose-xl mx-auto"
+        dangerouslySetInnerHTML={{
+          __html: event.description || "<p>No description available.</p>",
+        }}
+      />
           {event.store && (
             <Link
               href={`/stores/${event.store.slug}`}
