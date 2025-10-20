@@ -615,7 +615,7 @@ export default function StorePage({
                     <div className="flex flex-col md:hidden gap-2 p-3">
                       <button
                         onClick={() => handleOpenCouponNewTab(coupon)}
-                        className="w-full bg-gray-300 text-white font-semibold text-sm px-4 py-2 rounded-full cursor-not-allowed"
+                        className="w-full bg-gray-400 hover:bg-gray-500 text-white font-semibold text-sm px-4 py-2 rounded-full cursor-not-allowed"
                       >
                         Expired
                       </button>
