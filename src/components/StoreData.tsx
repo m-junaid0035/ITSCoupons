@@ -307,7 +307,7 @@ export default function StorePage({
                   }`}
                 onClick={() => setActiveTab(tab)}
               >
-                {tab === "all" && `All Coupons (${coupons.filter(c => !c.expirationDate || new Date(c.expirationDate) >= new Date()).length})`}
+                {tab === "all" && `All Coupons (${coupons.length})`}
                 {tab === "promo" && `Promo Codes (${coupons.filter(c => c.couponType === "coupon" && (!c.expirationDate || new Date(c.expirationDate) >= new Date())).length})`}
                 {tab === "deal" && `Deals (${coupons.filter(c => c.couponType === "deal" && (!c.expirationDate || new Date(c.expirationDate) >= new Date())).length})`}
               </button>
@@ -588,11 +588,11 @@ export default function StorePage({
                       {/* Right: Actions (Desktop) */}
                       <div className="hidden md:flex flex-col items-center justify-center min-w-[120px] md:min-w-[200px] p-3 md:p-6 border-l border-gray-100">
                         <button
-  onClick={() => handleOpenCouponNewTab(coupon)}
-  className="w-36 h-11 bg-gray-400 hover:bg-gray-500 text-white font-semibold text-sm px-4 py-2 rounded-full"
->
-  Expired
-</button>
+                          onClick={() => handleOpenCouponNewTab(coupon)}
+                          className="w-36 h-11 bg-gray-400 hover:bg-gray-500 text-white font-semibold text-sm px-4 py-2 rounded-full"
+                        >
+                          Expired
+                        </button>
 
                         <button
                           onClick={(e) => {
@@ -614,7 +614,7 @@ export default function StorePage({
                     {/* ─── Mobile Actions ─── */}
                     <div className="flex flex-col md:hidden gap-2 p-3">
                       <button
-                        disabled
+                        onClick={() => handleOpenCouponNewTab(coupon)}
                         className="w-full bg-gray-300 text-white font-semibold text-sm px-4 py-2 rounded-full cursor-not-allowed"
                       >
                         Expired
