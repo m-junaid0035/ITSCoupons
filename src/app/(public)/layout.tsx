@@ -6,60 +6,87 @@ import Footer from "@/components/Footer";
 import { fetchLatestSettingAction } from "@/actions/settingActions";
 import type { SettingData } from "@/types/setting";
 
-// ✅ Generate metadata dynamically
+// ✅ Dynamically generate site metadata from database settings
 export async function generateMetadata(): Promise<Metadata> {
   const settingResult = await fetchLatestSettingAction();
   const latestSetting: SettingData | null = settingResult?.data || null;
 
-  const metaTitle = latestSetting?.metaTitle || "ITS Coupons - Your Trusted Coupon & Deal Finder";
+  const DOMAIN = process.env.DOMAIN || "https://www.itscoupons.com";
+
+  const metaTitle =
+    latestSetting?.metaTitle ||
+    "ITS Coupons - Your Trusted Coupon & Deal Finder";
   const metaDescription =
     latestSetting?.metaDescription ||
     "ITS Coupons brings you hand-picked, verified discount codes and offers from leading brands. Enjoy safe, reliable, and updated coupons to save money on every purchase.";
+
   const logoUrl = latestSetting?.logo
-    ? `${process.env.DOMAIN}${latestSetting.logo}`
-    : `${process.env.DOMAIN}/images/og-image.jpg`;
+    ? `${DOMAIN}${latestSetting.logo}`
+    : `${DOMAIN}/images/og-image.jpg`;
 
   return {
+    metadataBase: new URL(DOMAIN),
     title: metaTitle,
     description: metaDescription,
     alternates: {
-      canonical: `${process.env.DOMAIN}`,
+      canonical: DOMAIN,
     },
     openGraph: {
-      url: `${process.env.DOMAIN}`,
+      url: DOMAIN,
       title: metaTitle,
       description: metaDescription,
       type: "website",
-      images: logoUrl,
+      siteName: "ITS Coupons",
+      images: [
+        {
+          url: logoUrl,
+          width: 1200,
+          height: 630,
+          alt: metaTitle,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: metaTitle,
       description: metaDescription,
-      images: logoUrl,
+      images: [logoUrl],
     },
     icons: {
       icon: "/logos/ITS-Coupons-FV-Icon-2.png",
       apple: "/logos/ITS-Coupons-FV-Icon-2.png",
       shortcut: "/logos/ITS-Coupons-FV-Icon-2.png",
     },
+    manifest: "/manifest.json",
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-snippet": -1,
+        "max-image-preview": "large",
+        "max-video-preview": -1,
+      },
+    },
   };
 }
 
-
-// ✅ Single RootLayout
+// ✅ Main Root Layout
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
-      <body className={GeistSans.className}>
+      <head>
+        {/* ✅ Sitemap link (helps crawlers discover your URLs) */}
+        <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+      </head>
+      <body className={`${GeistSans.className} bg-white text-gray-900`}>
         <Header />
-        {children}
+        <main>{children}</main>
         <Footer />
       </body>
     </html>
