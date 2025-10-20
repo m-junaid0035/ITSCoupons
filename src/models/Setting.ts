@@ -15,7 +15,7 @@ export interface ISetting extends Document {
   XUrl?: string;           // renamed from twitterUrl → XUrl
   instagramUrl?: string;
   linkedinUrl?: string;
-  whatsappUrl?: string;    // new (replaces telegramUrl)
+  yahooUrl?: string;       // new added
   createdAt: Date;
   updatedAt: Date;
 }
@@ -72,11 +72,11 @@ const settingSchema = new Schema<ISetting>(
       type: String,
       trim: true,
     },
-    linkedinUrl: {
+    linkedinUrl: {           // ✅ unchanged
       type: String,
       trim: true,
     },
-    whatsappUrl: {           // ✅ added
+    yahooUrl: {              // ✅ added
       type: String,
       trim: true,
     },

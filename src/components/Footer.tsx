@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FaWhatsapp, FaFacebookF, FaInstagram } from "react-icons/fa";
+import { FaFacebookF, FaInstagram, FaYahoo } from "react-icons/fa"; // ✅ FaYahoo for Yahoo
 import { SiX } from "react-icons/si";
 import Link from "next/link";
-import Image from "next/image"; // ✅ Import added
+import Image from "next/image"; 
 import { fetchLatestSettingAction } from "@/actions/settingActions";
 import { fetchLatestStaticPageTitlesAndSlugsAction } from "@/actions/staticPagesActions";
 import type { SettingData } from "@/types/setting";
@@ -48,15 +48,15 @@ export default function Footer() {
             favorite stores.
           </p>
           <div className="flex justify-center md:justify-start space-x-4">
-            {latestSetting?.whatsappUrl && (
+            {latestSetting?.yahooUrl && (
               <Link
-                href={latestSetting.whatsappUrl}
+                href={latestSetting.yahooUrl}
                 className="bg-purple-900 p-2 rounded"
                 target="_blank"
                 rel="noreferrer"
               >
-                <FaWhatsapp />
-                <span className="sr-only">Whatsapp Link</span>
+                <FaYahoo />
+                <span className="sr-only">Yahoo Link</span>
               </Link>
             )}
             {latestSetting?.facebookUrl && (

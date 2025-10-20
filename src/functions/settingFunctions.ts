@@ -17,7 +17,7 @@ const sanitizeSettingData = (data: {
   facebookUrl?: string;
   XUrl?: string;
   instagramUrl?: string;
-  whatsappUrl?: string;
+  yahooUrl?: string;
 }) => ({
   siteName: data.siteName.trim(),
   logo: data.logo?.trim(),
@@ -31,7 +31,7 @@ const sanitizeSettingData = (data: {
   facebookUrl: data.facebookUrl?.trim(),
   XUrl: data.XUrl?.trim(),
   instagramUrl: data.instagramUrl?.trim(),
-  whatsappUrl: data.whatsappUrl?.trim(),
+  yahooUrl: data.yahooUrl?.trim(),
 });
 
 /**
@@ -51,7 +51,7 @@ const serializeSetting = (setting: any) => ({
   facebookUrl: setting.facebookUrl,
   XUrl: setting.XUrl,
   instagramUrl: setting.instagramUrl,
-  whatsappUrl: setting.whatsappUrl,
+  yahooUrl: setting.yahooUrl,
   createdAt: setting.createdAt?.toISOString?.(),
   updatedAt: setting.updatedAt?.toISOString?.(),
 });
@@ -76,7 +76,7 @@ export const createSetting = async (data: {
   facebookUrl?: string;
   XUrl?: string;
   instagramUrl?: string;
-  whatsappUrl?: string;
+  yahooUrl?: string;
 }) => {
   // ✅ Save uploaded images
   const logoPath = await saveSettingLogo(data.logoFile);
@@ -128,7 +128,7 @@ export const updateSetting = async (
     facebookUrl?: string;
     XUrl?: string;
     instagramUrl?: string;
-    whatsappUrl?: string;
+    yahooUrl?: string;
   }
 ) => {
   let logoPath = data.logo ?? "";

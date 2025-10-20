@@ -1,9 +1,10 @@
-# *
 User-agent: *
 Allow: /
 
-# Host
-Host: https://itscoupons.com
+Disallow: /admin/
+Disallow: /api/
+Disallow: /drafts/
+Disallow: /search
 
-# Sitemaps
-Sitemap: https://itscoupons.com/sitemap.xml
+Sitemap: https://www.itscoupons.com/sitemap.xml
+Host: https://www.itscoupons.com

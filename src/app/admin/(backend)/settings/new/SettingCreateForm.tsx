@@ -398,16 +398,16 @@ export default function SettingForm({
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="whatsappUrl">WhatsApp URL</Label>
+                <Label htmlFor="yahooUrl">Yahoo URL</Label>
                 <Input
-                  id="whatsappUrl"
-                  name="whatsappUrl"
+                  id="yahooUrl"
+                  name="yahooUrl"
                   type="url"
                   className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
-                  placeholder="https://wa.me/yourNumber"
+                  placeholder="https://yahoo.com/yourprofile"
                 />
-                {errorFor("whatsappUrl") && (
-                  <p className="text-sm text-red-500">{errorFor("whatsappUrl")}</p>
+                {errorFor("yahooUrl") && (
+                  <p className="text-sm text-red-500">{errorFor("yahooUrl")}</p>
                 )}
               </div>
             </div>
