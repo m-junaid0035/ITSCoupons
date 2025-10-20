@@ -22,9 +22,12 @@ export default function BlogShow({ blog }: BlogShowProps) {
             month: "long",
             day: "numeric",
           })}
+          {blog.writer && (
+            <span className="text-purple-700 pl-6">by {blog.writer}</span>
+          )}
         </p>
-
       )}
+
 
       {blog.image && (
         <div className="w-full h-64 sm:h-80 md:h-96 mb-8 overflow-hidden rounded-2xl shadow-lg relative">

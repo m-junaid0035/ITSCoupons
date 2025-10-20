@@ -8,6 +8,7 @@ import {
   getAllBlogs,
   getBlogById,
   getBlogBySlug,
+  getLatestBlogs,
   getTopBlogs,
   updateBlog,
 } from "@/functions/blogFunctions";
@@ -132,6 +133,15 @@ export async function fetchAllBlogsAction() {
   await connectToDatabase();
   try {
     const blogs = await getAllBlogs();
+    return { data: blogs };
+  } catch (error: any) {
+    return { error: { message: [error.message || "Failed to fetch blogs"] } };
+  }
+}
+export async function fetchLatestBlogsAction() {
+  await connectToDatabase();
+  try {
+    const blogs = await getLatestBlogs();
     return { data: blogs };
   } catch (error: any) {
     return { error: { message: [error.message || "Failed to fetch blogs"] } };

@@ -2,7 +2,7 @@ import React from "react";
 import type { Metadata } from "next";
 import type { BlogData } from "@/types/blog";
 import type { CouponWithStoreData } from "@/types/couponsWithStoresData";
-import { fetchBlogBySlugAction, fetchTopBlogsAction } from "@/actions/blogActions";
+import { fetchBlogBySlugAction, fetchLatestBlogsAction, fetchTopBlogsAction } from "@/actions/blogActions";
 import { fetchTopDealsByUsesAction } from "@/actions/couponActions";
 import BlogClient from "./BlogClient";
 import BlogNotFound from "./BlogNotFound";
@@ -17,21 +17,25 @@ export default async function BlogPage({ params, searchParams } : { params:  Pro
 
   if (!blog) return <BlogNotFound />;
 
-  const [topBlogsRes, topDealsRes] = await Promise.all([
+    const [topBlogsRes, latestBlogsRes, topDealsRes] = await Promise.all([
     fetchTopBlogsAction(),
+    fetchLatestBlogsAction(), // ✅ latest blogs
     fetchTopDealsByUsesAction(),
   ]);
 
   const topBlogs: BlogData[] = topBlogsRes?.data?.filter((b: any) => b._id !== blog._id) ?? [];
+  const latestBlogs: BlogData[] = latestBlogsRes?.data?.filter((b: any) => b._id !== blog._id) ?? [];
   const topDeals: CouponWithStoreData[] = topDealsRes?.data ?? [];
 
   return (
     <BlogClient
       blog={blog}
       topBlogs={topBlogs}
+      latestBlogs={latestBlogs} 
       topDeals={topDeals}
       couponId={couponId}
-      slug={slug} // <-- pass couponId to client component
+      slug={slug}
+      domain={process.env.DOMAIN} // <-- pass couponId to client component
     />
   );
 }

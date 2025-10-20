@@ -109,6 +109,17 @@ export const getBlogBySlug = async (slug: string) => {
   return blog ? serializeBlog(blog) : null;
 };
 
+/**
+ * Get the 4 latest blogs (newest first).
+ */
+export const getLatestBlogs = async () => {
+  const blogs = await Blog.find()
+    .sort({ createdAt: -1 }) // sort by newest first
+    .limit(4)
+    .lean();
+
+  return blogs.map(serializeBlog);
+};
 
 /**
  * Update a blog by ID (optionally with new image).
