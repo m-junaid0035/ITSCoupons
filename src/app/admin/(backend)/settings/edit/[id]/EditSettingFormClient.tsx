@@ -415,6 +415,18 @@ export default function EditSettingFormClient({
                   placeholder="https://yahoo.com/yourprofile"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="linkedinUrl">LinkedIn URL</Label>
+                <Input
+                  id="linkedinUrl"
+                  name="linkedinUrl"
+                  type="url"
+                  defaultValue={initialSetting.linkedinUrl}
+                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                  placeholder="https://linkedin.com/company/yourpage"
+                />
+              </div>
+
             </div>
 
             {/* General Error */}

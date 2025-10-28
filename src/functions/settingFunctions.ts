@@ -17,6 +17,7 @@ const sanitizeSettingData = (data: {
   facebookUrl?: string;
   XUrl?: string;
   instagramUrl?: string;
+  linkedinUrl?: string; // ✅ added
   yahooUrl?: string;
 }) => ({
   siteName: data.siteName.trim(),
@@ -31,6 +32,7 @@ const sanitizeSettingData = (data: {
   facebookUrl: data.facebookUrl?.trim(),
   XUrl: data.XUrl?.trim(),
   instagramUrl: data.instagramUrl?.trim(),
+  linkedinUrl: data.linkedinUrl?.trim(), // ✅ added
   yahooUrl: data.yahooUrl?.trim(),
 });
 
@@ -51,6 +53,7 @@ const serializeSetting = (setting: any) => ({
   facebookUrl: setting.facebookUrl,
   XUrl: setting.XUrl,
   instagramUrl: setting.instagramUrl,
+  linkedinUrl: setting.linkedinUrl, // ✅ added
   yahooUrl: setting.yahooUrl,
   createdAt: setting.createdAt?.toISOString?.(),
   updatedAt: setting.updatedAt?.toISOString?.(),
@@ -76,6 +79,7 @@ export const createSetting = async (data: {
   facebookUrl?: string;
   XUrl?: string;
   instagramUrl?: string;
+  linkedinUrl?: string; // ✅ added
   yahooUrl?: string;
 }) => {
   // ✅ Save uploaded images
@@ -128,6 +132,7 @@ export const updateSetting = async (
     facebookUrl?: string;
     XUrl?: string;
     instagramUrl?: string;
+    linkedinUrl?: string; // ✅ added
     yahooUrl?: string;
   }
 ) => {

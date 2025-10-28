@@ -34,6 +34,7 @@ const settingSchema = z.object({
   facebookUrl: z.string().url("Invalid Facebook URL").optional(),
   XUrl: z.string().url("Invalid X URL").optional(),
   instagramUrl: z.string().url("Invalid Instagram URL").optional(),
+  linkedinUrl: z.string().url("Invalid LinkedIn URL").optional(), // ✅ added
   yahooUrl: z.string().url("Invalid Yahoo URL").optional(),
 });
 
@@ -72,6 +73,7 @@ async function parseSettingFormData(
     facebookUrl: String(formData.get("facebookUrl") || ""),
     XUrl: String(formData.get("XUrl") || ""),
     instagramUrl: String(formData.get("instagramUrl") || ""),
+    linkedinUrl: String(formData.get("linkedinUrl") || ""), // ✅ added
     yahooUrl: String(formData.get("yahooUrl") || ""),
     logoFile: logoFile || undefined,
     faviconFile: faviconFile || undefined,

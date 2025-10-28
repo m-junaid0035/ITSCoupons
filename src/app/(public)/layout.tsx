@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { fetchLatestSettingAction } from "@/actions/settingActions";
 import type { SettingData } from "@/types/setting";
+import DynamicSchema from "@/components/DynamicSchema"; // ✅ Dynamic Schema Component
 
 // ✅ Dynamically generate site metadata from database settings
 export async function generateMetadata(): Promise<Metadata> {
@@ -86,6 +87,10 @@ export default async function RootLayout({
       </head>
       <body className={`${GeistSans.className} bg-white text-gray-900`}>
         <Header />
+
+        {/* ✅ Inject Dynamic JSON-LD Schema Here */}
+        <DynamicSchema />
+
         <main>{children}</main>
         <Footer />
       </body>

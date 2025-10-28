@@ -25,7 +25,7 @@ function ButtonGrid({ stores }: ButtonGridProps) {
               borderWidth: "1px",
               padding: "6px 16px",
               gap: "10px",
-              boxShadow: "0px 2px 6px rgba(0,0,0,0.15)",
+              boxShadow: "0px 2px 6px rgba(88, 28, 135, 0.6)",
             }}
             className="border border-gray-300 bg-white shadow-sm hover:bg-gray-100 transition font-medium truncate"
           >

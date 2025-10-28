@@ -335,7 +335,10 @@ export default function SettingForm({
                 name="metaDescription"
                 value={seo.metaDescription}
                 onChange={(e) =>
-                  setSeo((prev) => ({ ...prev, metaDescription: e.target.value }))
+                  setSeo((prev) => ({
+                    ...prev,
+                    metaDescription: e.target.value,
+                  }))
                 }
                 rows={3}
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
@@ -397,6 +400,22 @@ export default function SettingForm({
                   <p className="text-sm text-red-500">{errorFor("instagramUrl")}</p>
                 )}
               </div>
+
+              {/* ✅ Added LinkedIn URL */}
+              <div className="space-y-2">
+                <Label htmlFor="linkedinUrl">LinkedIn URL</Label>
+                <Input
+                  id="linkedinUrl"
+                  name="linkedinUrl"
+                  type="url"
+                  className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                  placeholder="https://linkedin.com/company/yourpage"
+                />
+                {errorFor("linkedinUrl") && (
+                  <p className="text-sm text-red-500">{errorFor("linkedinUrl")}</p>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="yahooUrl">Yahoo URL</Label>
                 <Input

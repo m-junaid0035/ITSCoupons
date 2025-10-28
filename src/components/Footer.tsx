@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FaFacebookF, FaInstagram, FaYahoo } from "react-icons/fa"; // ✅ FaYahoo for Yahoo
+import { FaFacebookF, FaInstagram, FaYahoo, FaLinkedinIn } from "react-icons/fa"; // ✅ Added FaLinkedinIn
 import { SiX } from "react-icons/si";
 import Link from "next/link";
-import Image from "next/image"; 
+import Image from "next/image";
 import { fetchLatestSettingAction } from "@/actions/settingActions";
 import { fetchLatestStaticPageTitlesAndSlugsAction } from "@/actions/staticPagesActions";
 import type { SettingData } from "@/types/setting";
@@ -92,6 +92,17 @@ export default function Footer() {
                 <span className="sr-only">Instagram Link</span>
               </Link>
             )}
+            {latestSetting?.linkedinUrl && (
+              <Link
+                href={latestSetting.linkedinUrl}
+                className="bg-purple-900 p-2 rounded"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FaLinkedinIn />
+                <span className="sr-only">LinkedIn Link</span>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -99,11 +110,11 @@ export default function Footer() {
         <div>
           <p className="font-semibold mb-2">Deals &amp; Shop</p>
           <ul className="space-y-1">
-            <li><Link href="/coupons" className="hover:underline">Promo Codes</Link></li>
-            <li><Link href="/coupons" className="hover:underline">Latest Deals</Link></li>
-            <li><Link href="/coupons" className="hover:underline">Exclusives</Link></li>
-            <li><Link href="/coupons" className="hover:underline">Product Deals</Link></li>
-            <li><Link href="/coupons" className="hover:underline">Stores</Link></li>
+            <li><Link href="/coupons" className="hover:underline">Get Promo Codes</Link></li>
+            <li><Link href="/coupons" className="hover:underline">Get Latest Deals</Link></li>
+            <li><Link href="/categories" className="hover:underline">Browse Categories</Link></li>
+            <li><Link href="/blogs" className="hover:underline">The Real Deal Blog</Link></li>
+            <li><Link href="/stores" className="hover:underline">Browse Stores</Link></li>
           </ul>
         </div>
 

@@ -13,7 +13,8 @@ export interface SettingInput {
   facebookUrl?: string;
   XUrl?: string;          // changed from twitterUrl to XUrl
   instagramUrl?: string;
-  yahooUrl?: string;   // changed from linkedinUrl to whatsappUrl
+  yahooUrl?: string;
+  linkedinUrl?: string;   // changed from linkedinUrl to whatsappUrl
 }
 
 export interface SettingData {
@@ -30,6 +31,7 @@ export interface SettingData {
   facebookUrl?: string;
   XUrl?: string;           // changed from twitterUrl to XUrl
   instagramUrl?: string;
+  linkedinUrl?: string;
   yahooUrl?: string;    // changed from linkedinUrl to whatsappUrl
   createdAt?: string | null;
   updatedAt?: string | null;

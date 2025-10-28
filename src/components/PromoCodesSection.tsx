@@ -187,7 +187,7 @@ export default function PromoCodesSection({ coupons, couponId }: PromoCodesSecti
                     <button
                       onClick={() => handleGetCouponClick(coupon)}
                       aria-label={`Get coupon code for ${coupon.title}`}
-                      className="w-full bg-purple-700 text-xs font-semibold text-white rounded-full py-2 hover:bg-purple-200 transition"
+                      className="w-full bg-purple-700 hover:bg-purple-800 text-xs font-semibold text-white rounded-full py-2 transition"
                     >
                       Get Coupon Code
                     </button>
