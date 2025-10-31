@@ -184,13 +184,10 @@ export const updateStore = async (
 
   const existingStore = await Store.findById(id).lean();
 
-  if (data.imageFile && !imagePath) {
-    // Delete old image if it exists
-    if (existingStore?.image) {
-      await deleteUploadedFile(existingStore.image);
-    }
-    imagePath = await saveStoreImage(data.imageFile);
+  if (!data.imageFile && existingStore?.image) {
+    await deleteUploadedFile(existingStore.image);
   }
+
 
   const updatedData = sanitizeStoreData({
     ...data,
