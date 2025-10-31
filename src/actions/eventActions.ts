@@ -19,8 +19,8 @@ const eventSchema = z.object({
   }),
   description: z.string().optional(),
   image: z.string().min(1, "Image is required"), // only path is saved in DB
-  metaTitle: z.string().max(60).optional(),
-  metaDescription: z.string().max(160).optional(),
+  metaTitle: z.string().max(100).optional(),
+  metaDescription: z.string().max(200).optional(),
   metaKeywords: z.string().optional(),
   focusKeywords: z.string().optional(),
   slug: z.string().optional(),
