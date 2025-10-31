@@ -9,6 +9,7 @@ import { connectToDatabase } from "@/lib/db"
 const sanitizeUserData = async (data: {
   name: string
   email: string
+  existingImage?: string;
   password?: string | null
   roleId: string
   imageFile?: File | null
@@ -19,6 +20,9 @@ const sanitizeUserData = async (data: {
 
   if (data.imageFile) {
     imagePath = await saveUserProfileImage(data.imageFile)
+  }
+  else if (data.existingImage) {
+    imagePath = data.existingImage
   }
 
   return {
@@ -102,6 +106,7 @@ export const updateUser = async (
   if (!existingUser) return null
 
   const name = formData.get("name") as string
+  const existingImage = formData.get("existingImage") as string
   const email = formData.get("email") as string
   const password = (formData.get("password") as string) || null
   const roleId = formData.get("roleId") as string
@@ -114,6 +119,7 @@ export const updateUser = async (
     password,
     roleId,
     imageFile,
+    existingImage,
     existingPassword: existingUser.password,
     isActive,
   })
