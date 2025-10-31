@@ -2,6 +2,7 @@ import { Store } from "@/models/Store";
 import { Types } from "mongoose";
 import { saveStoreImage } from "@/lib/uploadStoreImage";
 import { Coupon } from "@/models/Coupon";
+import { deleteUploadedFile } from "@/lib/deleteFile";
 
 /**
  * Sanitize and format incoming store data before saving/updating.
@@ -181,7 +182,13 @@ export const updateStore = async (
 ) => {
   let imagePath = data.image ?? "";
 
+  const existingStore = await Store.findById(id).lean();
+
   if (data.imageFile && !imagePath) {
+    // Delete old image if it exists
+    if (existingStore?.image) {
+      await deleteUploadedFile(existingStore.image);
+    }
     imagePath = await saveStoreImage(data.imageFile);
   }
 
@@ -207,8 +214,12 @@ export const updateStore = async (
  */
 export const deleteStore = async (id: string) => {
   const store = await Store.findByIdAndDelete(id).populate("network").lean();
+  if (store?.image) {
+    await deleteUploadedFile(store.image);
+  }
   return store ? serializeStore(store) : null;
 };
+
 
 /**
  * Get popular stores.
