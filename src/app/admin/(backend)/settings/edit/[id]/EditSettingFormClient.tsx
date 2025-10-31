@@ -151,19 +151,33 @@ export default function EditSettingFormClient({
     formData.set("metaKeywords", seo.metaKeywords);
 
     // ✅ attach logo & favicon
-    if (logoFile) formData.set("logoFile", logoFile);
-    else if (!logoFile && logoPreview)
-      formData.set(
-        "logoFile",
-        await urlToFile(logoPreview, "logo.jpg", "image/jpeg")
-      );
+    if (logoFile) {
+      formData.set("logoFile", logoFile);
+    } else if (logoPreview && logoPreview === initialSetting.logo) {
+      formData.set("existingLogo", initialSetting.logo);
+    } else {
+      toast({
+        title: "Validation Error",
+        description: "Logo is required",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    if (faviconFile) formData.set("faviconFile", faviconFile);
-    else if (!faviconFile && faviconPreview)
-      formData.set(
-        "faviconFile",
-        await urlToFile(faviconPreview, "favicon.ico", "image/x-icon")
-      );
+    // ✅ attach favicon
+    if (faviconFile) {
+      formData.set("faviconFile", faviconFile);
+    } else if (faviconPreview && faviconPreview === initialSetting.favicon) {
+      formData.set("existingFavicon", initialSetting.favicon);
+    } else {
+      toast({
+        title: "Validation Error",
+        description: "Favicon is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
 
     startTransition(() => dispatch(formData));
   };

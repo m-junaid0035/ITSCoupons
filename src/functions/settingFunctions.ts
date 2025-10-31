@@ -1,5 +1,6 @@
 import { Setting } from "@/models/Setting";
 import { saveSettingLogo, saveSettingFavicon } from "@/lib/uploadSettingImage"; // ✅ new
+import { deleteUploadedFile } from "@/lib/deleteFile";
 
 /**
  * Sanitize and format incoming settings data.
@@ -139,12 +140,25 @@ export const updateSetting = async (
   let logoPath = data.logo ?? "";
   let faviconPath = data.favicon ?? "";
 
+  // ✅ Fetch existing setting first
+  const existingSetting = await Setting.findById(id).lean();
+
   if (data.logoFile) {
+    // Delete old logo if it exists
+    if (existingSetting?.logo) {
+      await deleteUploadedFile(existingSetting.logo);
+    }
     logoPath = await saveSettingLogo(data.logoFile);
   }
+
   if (data.faviconFile) {
+    // Delete old favicon if it exists
+    if (existingSetting?.favicon) {
+      await deleteUploadedFile(existingSetting.favicon);
+    }
     faviconPath = await saveSettingFavicon(data.faviconFile);
   }
+
 
   const updatedData = sanitizeSettingData({
     ...data,
@@ -165,8 +179,12 @@ export const updateSetting = async (
  * Delete setting by ID
  */
 export const deleteSetting = async (id: string) => {
-  const setting = await Setting.findByIdAndDelete(id).lean();
-  return setting ? serializeSetting(setting) : null;
+    const setting = await Setting.findByIdAndDelete(id).lean();
+    if (setting) {
+      if (setting.logo) await deleteUploadedFile(setting.logo);
+      if (setting.favicon) await deleteUploadedFile(setting.favicon);
+    }
+    return setting ? serializeSetting(setting) : null;
 };
 
 /**

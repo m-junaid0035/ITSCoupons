@@ -1,6 +1,7 @@
 import { Types } from "mongoose"
 import { User } from "@/models/User"
 import { saveUserProfileImage } from "@/lib/saveImageLocally"
+import { deleteUploadedFile } from "@/lib/deleteFile"
 import bcrypt from "bcrypt"
 import { connectToDatabase } from "@/lib/db"
 
@@ -117,6 +118,11 @@ export const updateUser = async (
     isActive,
   })
 
+  // 🧹 Delete old image if new image uploaded
+  if (imageFile && existingUser.image) {
+    await deleteUploadedFile(existingUser.image)
+  }
+
   const user = await User.findByIdAndUpdate(id, { $set: updatedData }, { new: true }).lean()
   return user ? serializeUser(user) : null
 }
@@ -129,5 +135,10 @@ export const deleteUser = async (
 ): Promise<ReturnType<typeof serializeUser> | null> => {
   await connectToDatabase()
   const user = await User.findByIdAndDelete(id).lean()
+
+  if (user && user.image) {
+    await deleteUploadedFile(user.image)
+  }
+
   return user ? serializeUser(user) : null
 }

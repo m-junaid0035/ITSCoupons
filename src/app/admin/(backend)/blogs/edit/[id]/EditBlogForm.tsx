@@ -54,21 +54,21 @@ export default function EditBlogForm({
   );
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState(blog?.category || "");
-const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
-const categoryDropdownRef = useRef<HTMLDivElement>(null);
-useEffect(() => {
-  function handleClickOutside(event: MouseEvent) {
-    if (
-      categoryDropdownRef.current &&
-      !categoryDropdownRef.current.contains(event.target as Node)
-    ) {
-      setCategoryDropdownOpen(false);
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        categoryDropdownRef.current &&
+        !categoryDropdownRef.current.contains(event.target as Node)
+      ) {
+        setCategoryDropdownOpen(false);
+      }
     }
-  }
 
-  document.addEventListener("mousedown", handleClickOutside);
-  return () => document.removeEventListener("mousedown", handleClickOutside);
-}, []);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const [writer, setWriter] = useState(blog?.writer || "");
   const [descriptionHtml, setDescriptionHtml] = useState(blog?.description || "");
@@ -149,7 +149,7 @@ useEffect(() => {
 
   if (loading) return <LoadingSkeleton />;
   if (!blog) return <p className="text-red-500">Blog not found</p>;
- 
+
   const errorFor = (field: string) =>
     formState.error &&
       typeof formState.error === "object" &&
@@ -166,15 +166,22 @@ useEffect(() => {
       const blob = await res.blob();
       return new File([blob], filename, { type: mimeType });
     }
-    if (!imageFile && imagePreview) {
-      const existingFile = await urlToFile(imagePreview, "existing.jpg", "image/jpeg");
-      formData.set("imageFile", existingFile);
-    } else if (imageFile) {
+    if (imageFile) {
+      // ✅ User selected a new image
       formData.set("imageFile", imageFile);
+    } else if (imagePreview && imagePreview === blog.image) {
+      // ✅ User didn’t change image → keep the same existing one
+      formData.set("existingImage", blog.image);
     } else {
-      toast({ title: "Validation Error", description: "Store image is required", variant: "destructive" });
+      // 🚫 No image at all → show error
+      toast({
+        title: "Validation Error",
+        description: "Store image is required",
+        variant: "destructive",
+      });
       return;
     }
+
     formData.set("category", selectedCategory);
     formData.set("writer", writer);
     formData.set("description", descriptionHtml);
@@ -244,62 +251,62 @@ useEffect(() => {
             </div>
 
             {/* Category Search & Select */}
-<div className="space-y-2 relative" ref={categoryDropdownRef}>
-  <Label htmlFor="category">
-    Category <span className="text-red-500">*</span>
-  </Label>
+            <div className="space-y-2 relative" ref={categoryDropdownRef}>
+              <Label htmlFor="category">
+                Category <span className="text-red-500">*</span>
+              </Label>
 
-  <div className="relative">
-    <Input
-      placeholder="Search category..."
-      value={categorySearch}
-      onFocus={() => setCategoryDropdownOpen(true)}
-      onChange={(e) => setCategorySearch(e.target.value)}
-      required
-      className="w-full p-2 rounded"
-    />
+              <div className="relative">
+                <Input
+                  placeholder="Search category..."
+                  value={categorySearch}
+                  onFocus={() => setCategoryDropdownOpen(true)}
+                  onChange={(e) => setCategorySearch(e.target.value)}
+                  required
+                  className="w-full p-2 rounded"
+                />
 
-    {categoryDropdownOpen && (
-      <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border rounded shadow max-h-60 overflow-y-auto">
-        {categories
-          .filter((cat) =>
-            cat.toLowerCase().includes(categorySearch.toLowerCase())
-          )
-          .map((cat) => (
-            <div
-              key={cat}
-              className="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
-              onClick={() => {
-                setSelectedCategory(cat);
-                setCategorySearch(cat);
-                setCategoryDropdownOpen(false);
-              }}
-            >
-              {cat}
+                {categoryDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border rounded shadow max-h-60 overflow-y-auto">
+                    {categories
+                      .filter((cat) =>
+                        cat.toLowerCase().includes(categorySearch.toLowerCase())
+                      )
+                      .map((cat) => (
+                        <div
+                          key={cat}
+                          className="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                          onClick={() => {
+                            setSelectedCategory(cat);
+                            setCategorySearch(cat);
+                            setCategoryDropdownOpen(false);
+                          }}
+                        >
+                          {cat}
+                        </div>
+                      ))}
+
+                    {categories.filter((cat) =>
+                      cat.toLowerCase().includes(categorySearch.toLowerCase())
+                    ).length === 0 && (
+                        <div className="px-4 py-2 text-gray-500">No categories found</div>
+                      )}
+                  </div>
+                )}
+              </div>
+
+              {/* Hidden input for form submission */}
+              <input
+                type="hidden"
+                name="category"
+                value={selectedCategory || ""}
+                required
+              />
+
+              {errorFor("category") && (
+                <p className="text-sm text-red-500">{errorFor("category")}</p>
+              )}
             </div>
-          ))}
-
-        {categories.filter((cat) =>
-          cat.toLowerCase().includes(categorySearch.toLowerCase())
-        ).length === 0 && (
-          <div className="px-4 py-2 text-gray-500">No categories found</div>
-        )}
-      </div>
-    )}
-  </div>
-
-  {/* Hidden input for form submission */}
-  <input
-    type="hidden"
-    name="category"
-    value={selectedCategory || ""}
-    required
-  />
-
-  {errorFor("category") && (
-    <p className="text-sm text-red-500">{errorFor("category")}</p>
-  )}
-</div>
 
 
             {/* Slug */}

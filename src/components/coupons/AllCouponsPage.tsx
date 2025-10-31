@@ -600,10 +600,10 @@ export default function AllCouponsPage({
       ) && (
           <div className="w-full max-w-7xl mx-auto mt-12 text-center">
             {/* Section Heading */}
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl md:text-3xl font-bold text-black mb-2">
               Expired Coupon Codes
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-black mb-6">
               Check out these expired coupons — sometimes they still work!
             </p>
 
@@ -626,16 +626,16 @@ export default function AllCouponsPage({
               return (
                 <>
                   {/* Container Box */}
-                  <div className="w-full mx-auto border border-gray-300 rounded-xl p-4 md:p-6 bg-white shadow-sm space-y-6 text-left">
+                  <div className="w-full mx-auto rounded-xl p-4 md:p-6 bg-gray-50 shadow-sm space-y-6 text-left">
                     {currentCoupons.map((coupon) => (
                       <div
                         key={coupon._id}
-                        className="max-w-4xl w-full mx-auto flex flex-col border border-gray-200 rounded-xl bg-white shadow-md overflow-hidden opacity-75"
+                        className="max-w-4xl w-full mx-auto flex flex-col border border-black rounded-xl bg-white shadow-md overflow-hidden opacity-75"
                       >
                         {/* Main Row */}
                         <div className="flex flex-row items-stretch">
                           {/* Left: Discount */}
-                          <div className="flex flex-col items-center justify-center min-w-[90px] md:min-w-[120px] p-3 md:p-6 text-gray-400 font-bold">
+                          <div className="flex flex-col items-center justify-center min-w-[90px] md:min-w-[120px] p-3 md:p-6 text-black font-bold">
                             {coupon.discount?.toLowerCase() === "free shipping" ? (
                               <>
                                 <span className="text-lg md:text-3xl uppercase">Free</span>
@@ -656,10 +656,10 @@ export default function AllCouponsPage({
 
                           {/* Middle: Content */}
                           <div className="flex-1 p-3 md:p-6">
-                            <div className="inline-block bg-gray-100 text-gray-500 text-[10px] md:text-xs font-semibold px-1.5 py-0.5 rounded mb-2 md:mb-3">
+                            <div className="inline-block bg-gray-100 text-black text-[10px] md:text-xs font-semibold px-1.5 py-0.5 rounded mb-2 md:mb-3">
                               {coupon.couponType === "coupon" ? "Code" : "Deal"}
                             </div>
-                            <h3 className="font-semibold text-sm md:text-xl text-gray-600 mb-2 md:mb-3 line-clamp-2">
+                            <h3 className="font-semibold text-sm md:text-xl text-black mb-2 md:mb-3 line-clamp-2">
                               {coupon.title}
                             </h3>
                             <div className="flex flex-wrap items-center gap-1.5 md:gap-3 text-[10px] md:text-sm">
@@ -667,7 +667,7 @@ export default function AllCouponsPage({
                                 Expired
                               </span>
                               {coupon.expirationDate && (
-                                <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                <span className="bg-gray-100 text-black px-1.5 py-0.5 rounded">
                                   {new Date(coupon.expirationDate)
                                     .toISOString()
                                     .split("T")[0]}
@@ -677,10 +677,10 @@ export default function AllCouponsPage({
                           </div>
 
                           {/* Right: Actions (Desktop) */}
-                          <div className="hidden md:flex flex-col items-center justify-center min-w-[120px] md:min-w-[200px] p-3 md:p-6 border-l border-gray-100">
+                          <div className="hidden md:flex flex-col items-center justify-center min-w-[120px] md:min-w-[200px] p-3 md:p-6 border-l border-black">
                             <button
                               onClick={() => handleOpenCouponNewTab(coupon)}
-                              className="w-36 h-11 bg-gray-400 hover:bg-gray-500 text-white font-semibold text-sm px-4 py-2 rounded-full"
+                              className="w-36 h-11 bg-black hover:bg-gray-500 text-white font-semibold text-sm px-4 py-2 rounded-full"
                             >
                               Expired
                             </button>
@@ -693,7 +693,7 @@ export default function AllCouponsPage({
                                 ? "Hide Details -"
                                 : "See Details +"}
                             </button>
-                            <p className="mt-1 text-[11px] md:text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full font-medium">
+                            <p className="mt-1 text-[11px] md:text-xs bg-gray-100 text-black px-2 py-0.5 rounded-full font-medium">
                               Used {coupon.uses} times
                             </p>
                           </div>
@@ -703,11 +703,11 @@ export default function AllCouponsPage({
                         <div className="flex flex-col md:hidden gap-2 p-3">
                           <button
                             onClick={() => handleOpenCouponNewTab(coupon)}
-                            className="w-full bg-gray-400 hover:bg-gray-500 text-white font-semibold text-sm px-4 py-2 rounded-full cursor-not-allowed"
+                            className="w-full bg-black hover:bg-gray-500 text-white font-semibold text-sm px-4 py-2 rounded-full cursor-not-allowed"
                           >
                             Expired
                           </button>
-                          <div className="flex justify-between items-center mt-2 text-[11px] text-gray-700">
+                          <div className="flex justify-between items-center mt-2 text-[11px] text-black">
                             <span
                               className="text-purple-700 font-medium hover:underline"
                               onClick={() => toggleCouponDetails(coupon._id)}
@@ -724,7 +724,7 @@ export default function AllCouponsPage({
 
                         {/* Expanded Description */}
                         {expandedCouponId === coupon._id && coupon.description && (
-                          <div className="border-t border-gray-200 p-4 bg-gray-50 text-sm text-gray-700">
+                          <div className="border-t border-black p-4 bg-gray-50 text-sm text-black">
                             {coupon.description}
                           </div>
                         )}

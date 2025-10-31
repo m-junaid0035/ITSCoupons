@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 import { Event } from "@/models/Event"; // adjust path based on your project
 import { saveEventImage } from "@/lib/uploadEventImage"; // 👈 helper for saving event images
+import { deleteUploadedFile } from "@/lib/deleteFile";
 
 /**
  * Helper to sanitize and format incoming event data.
@@ -118,6 +119,14 @@ export const updateEvent = async (
   }
 ): Promise<ReturnType<typeof serializeEvent> | null> => {
   const updatedData = await sanitizeEventData(data);
+
+  if (data.image instanceof File) {
+    const existingEvent = await Event.findById(id).lean();
+    if (existingEvent?.image) {
+      await deleteUploadedFile(existingEvent.image);
+    }
+  }
+
   const event = await Event.findByIdAndUpdate(
     id,
     { $set: updatedData },
@@ -133,5 +142,9 @@ export const deleteEvent = async (
   id: string
 ): Promise<ReturnType<typeof serializeEvent> | null> => {
   const event = await Event.findByIdAndDelete(id).lean();
+  if (event?.image) {
+    await deleteUploadedFile(event.image);
+  }
   return event ? serializeEvent(event) : null;
+
 };

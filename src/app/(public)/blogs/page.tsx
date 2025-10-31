@@ -4,6 +4,10 @@ import { fetchCategoryNamesAction } from "@/actions/categoryActions";
 import { fetchAllBlogsAction } from "@/actions/blogActions";
 import { Metadata } from "next";
 
+// ✅ Add these two lines for best performance and freshness
+export const revalidate = 60; // Revalidate every 60 seconds
+export const dynamic = "force-dynamic"; // Prevent static caching
+
 export const metadata: Metadata = {
   title: "All Blogs & Guides - ITSCoupons",
   description:
@@ -33,7 +37,7 @@ export const metadata: Metadata = {
       "Read money-saving blogs, coupon guides, and shopping tips on ITSCoupons. Stay ahead with the latest verified offers and advice.",
     images: [`${process.env.DOMAIN}/images/og-image.png`],
   },
-}
+};
 
 export default async function Home() {
   // Fetch blogs and categories in parallel
@@ -42,8 +46,12 @@ export default async function Home() {
     fetchCategoryNamesAction(),
   ]);
 
-  const blogs = blogsResult.status === "fulfilled" ? blogsResult.value?.data ?? [] : [];
-  const categories = categoriesResult.status === "fulfilled" ? categoriesResult.value?.data ?? [] : [];
+  const blogs =
+    blogsResult.status === "fulfilled" ? blogsResult.value?.data ?? [] : [];
+  const categories =
+    categoriesResult.status === "fulfilled"
+      ? categoriesResult.value?.data ?? []
+      : [];
 
   return <Blogs blogs={blogs} categories={categories} />;
 }

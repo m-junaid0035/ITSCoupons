@@ -4,6 +4,7 @@ import "../globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { fetchLatestSettingAction } from "@/actions/settingActions";
+import ScrollToTopButton from "@/components/ScrollToTopButton";
 import type { SettingData } from "@/types/setting";
 import DynamicSchema from "@/components/DynamicSchema"; // ✅ Dynamic Schema Component
 
@@ -92,6 +93,7 @@ export default async function RootLayout({
         <DynamicSchema />
 
         <main>{children}</main>
+        <ScrollToTopButton />
         <Footer />
       </body>
     </html>

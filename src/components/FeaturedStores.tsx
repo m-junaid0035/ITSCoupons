@@ -115,12 +115,27 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
             className="overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar"
           >
             <div className="flex gap-8 snap-start">
-              {Array.from({ length: Math.ceil(stores.length / 10) }).map((_, slideIndex) => {
-                const slideStores = stores.slice(slideIndex * 10, slideIndex * 10 + 10);
+              {Array.from({
+                length: Math.ceil(stores.length / 10),
+              }).map((_, slideIndex) => {
+                const slideStores = stores.slice(
+                  slideIndex * 10,
+                  slideIndex * 10 + 10
+                );
                 return (
                   <div
                     key={slideIndex}
-                    className="grid grid-rows-2 grid-cols-5 gap-8 justify-items-center flex-shrink-0 snap-start"
+                    className="
+                      grid 
+                      grid-rows-2 
+                      grid-cols-2
+                      sm:grid-cols-3
+                      md:grid-cols-5 
+                      gap-6 sm:gap-8 
+                      justify-items-center 
+                      flex-shrink-0 
+                      snap-start
+                    "
                     style={{ minWidth: "100%" }}
                   >
                     {slideStores.map((store, index) => (
@@ -129,8 +144,8 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
                         href={`/stores/${store.slug}`}
                         className="flex items-center justify-center bg-white overflow-hidden transition"
                         style={{
-                          width: "160px",
-                          height: "160px",
+                          width: "140px",
+                          height: "140px",
                           borderRadius: "100px",
                           border: "1px solid #C4C4C4",
                         }}
@@ -139,11 +154,11 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
                           <Image
                             src={`https://itscoupons.com${store.image}` || "/placeholder-store.png"}
                             alt={store.name}
-                            width={160}
-                            height={160}
+                            width={140}
+                            height={140}
                             priority={index < 5}
                             loading={index < 5 ? "eager" : "lazy"}
-                            className="object-contain p-6 transition-transform duration-300 hover:scale-110"
+                            className="object-contain p-5 transition-transform duration-300 hover:scale-110"
                           />
                         </div>
                       </Link>

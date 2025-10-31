@@ -56,13 +56,18 @@ export default function EditUserForm({ user, roles }: EditUserFormProps) {
   );
   const [isActive, setIsActive] = useState(user.isActive ?? true);
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
 
   const [formState, dispatch, isPending] = useActionState(
     async (prevState: FormState, formData: FormData) => {
       const file = formData.get("image") as File;
-      if (!file || file.size === 0) {
+
+      // ✅ If no new image selected, skip re-upload and send existing image URL
+      if (!selectedImage || !file || file.size === 0) {
         formData.delete("image");
+        formData.set("existingImage", user.image || "");
       }
+
       formData.set("isActive", JSON.stringify(isActive));
       return await updateUserAction(prevState, user._id, formData);
     },
@@ -172,12 +177,25 @@ export default function EditUserForm({ user, roles }: EditUserFormProps) {
             {/* Profile Image */}
             <div className="space-y-2">
               <Label htmlFor="image">Profile Image</Label>
+              {user.image && (
+                <div className="flex items-center gap-3 mb-2">
+                  <img
+                    src={user.image}
+                    alt="Current profile"
+                    className="w-16 h-16 rounded-full object-cover border"
+                  />
+                  <p className="text-sm text-gray-500">
+                    Current image — upload new to replace.
+                  </p>
+                </div>
+              )}
               <Input
                 id="image"
                 name="image"
                 type="file"
                 accept="image/*"
                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
               />
               {errorFor("image") && (
                 <p className="text-sm text-red-500">{errorFor("image")}</p>

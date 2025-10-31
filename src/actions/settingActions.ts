@@ -31,11 +31,23 @@ const settingSchema = z.object({
       if (Array.isArray(val)) return val;
       return val.split(",").map((k) => k.trim()).filter(Boolean);
     }),
-  facebookUrl: z.string().url("Invalid Facebook URL").optional(),
-  XUrl: z.string().url("Invalid X URL").optional(),
-  instagramUrl: z.string().url("Invalid Instagram URL").optional(),
-  linkedinUrl: z.string().url("Invalid LinkedIn URL").optional(), // ✅ added
-  yahooUrl: z.string().url("Invalid Yahoo URL").optional(),
+  facebookUrl: z
+    .string()
+    .url("Invalid Facebook URL")
+    .optional()
+    .or(z.literal("")),
+  XUrl: z.string().url("Invalid X URL").optional().or(z.literal("")),
+  instagramUrl: z
+    .string()
+    .url("Invalid Instagram URL")
+    .optional()
+    .or(z.literal("")),
+  linkedinUrl: z
+    .string()
+    .url("Invalid LinkedIn URL")
+    .optional()
+    .or(z.literal("")),
+  yahooUrl: z.string().url("Invalid Yahoo URL").optional().or(z.literal("")),
 });
 
 type SettingFormData = z.infer<typeof settingSchema>;

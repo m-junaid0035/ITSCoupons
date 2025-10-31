@@ -1,6 +1,8 @@
 import { Blog } from "@/models/Blog";
 import { Types } from "mongoose";
 import { saveBlogImage } from "@/lib/uploadBlogImage"; // ✅ like saveStoreImage
+import { deleteUploadedFile } from "@/lib/deleteFile";
+
 
 /**
  * Sanitize and format incoming blog data before saving/updating.
@@ -145,7 +147,13 @@ export const updateBlog = async (
 
   if (data.imageFile) {
     imagePath = await saveBlogImage(data.imageFile);
+
+    const existingBlog = await Blog.findById(id).lean();
+    if (existingBlog?.image) {
+      await deleteUploadedFile(existingBlog.image);
+    }
   }
+
 
   const updatedData = sanitizeBlogData({
     ...data,
@@ -166,7 +174,11 @@ export const updateBlog = async (
  */
 export const deleteBlog = async (id: string) => {
   const blog = await Blog.findByIdAndDelete(id).lean();
+  if (blog?.image) {
+    await deleteUploadedFile(blog.image);
+  }
   return blog ? serializeBlog(blog) : null;
+
 };
 /**
  * Get the top 4 latest blogs (sorted by creation date descending).

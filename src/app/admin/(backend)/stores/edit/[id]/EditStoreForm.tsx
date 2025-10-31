@@ -265,15 +265,12 @@ export default function EditStoreForm({
             return new File([blob], filename, { type: mimeType });
         }
 
-        if (!imageFile && imagePreview) {
-            const existingFile = await urlToFile(
-                imagePreview,
-                "existing.jpg",
-                "image/jpeg"
-            );
-            formData.set("imageFile", existingFile);
-        } else if (imageFile) {
+        if (imageFile) {
+            // User selected a new image
             formData.set("imageFile", imageFile);
+        } else if (imagePreview && imagePreview === store.image) {
+            // Keep the existing image URL
+            formData.set("existingImage", store.image);
         } else {
             toast({
                 title: "Validation Error",
@@ -282,7 +279,6 @@ export default function EditStoreForm({
             });
             return;
         }
-
         const cleanedContent = contentHtml?.trim() || "";
 
         formData.set("description", descriptionHtml);

@@ -107,13 +107,17 @@ function CouponsTable({
   onDelete,
   handleInlineUpdate,
   onReorder,
+  currentPage,
+  pageSize,
 }: {
   coupons: ICoupon[];
   onView: (coupon: ICoupon) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   handleInlineUpdate: (id: string, field: string, value: string | boolean) => void;
-  onReorder: (newCoupons: ICoupon[]) => void;
+  onReorder: (activeId: string, overId: string) => void;
+  currentPage: number;   // 👈 Add this
+  pageSize: number;      // 👈 Add this
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const sensors = useSensors(
@@ -126,43 +130,15 @@ function CouponsTable({
   );
 
 
-  const handleDragEnd = async (event: any) => {
-    const { active, over } = event;
-    if (active.id !== over?.id) {
-      const oldIndex = coupons.findIndex((c) => c._id === active.id);
-      const newIndex = coupons.findIndex((c) => c._id === over?.id);
+const handleDragEnd = (event: any) => {
+  const { active, over } = event;
+  if (active.id !== over?.id) {
+    const activeId = active.id;
+    const overId = over.id;
+    onReorder(activeId, overId); // pass IDs to parent
+  }
+};
 
-      // Reorder locally (for instant UI feedback)
-      const reordered = arrayMove(coupons, oldIndex, newIndex);
-
-      // 🧩 Normalize global positions (1, 2, 3, …)
-      const updatedWithPositions = reordered.map((coupon, i) => ({
-        ...coupon,
-        position: i + 1,
-      }));
-
-      // Optimistic UI update
-      onReorder(updatedWithPositions);
-
-      // ✅ Send all new positions to server (bulk update)
-      const response = await updateCouponPositionsAction(
-        updatedWithPositions.map((c) => ({ id: c._id, position: c.position }))
-      );
-
-      if (response?.error) {
-        toast({
-          title: "Error",
-          description: response.error.message?.[0] || "Failed to update positions.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Order Updated",
-          description: "Coupons reordered successfully.",
-        });
-      }
-    }
-  };
 
 
   return (
@@ -189,7 +165,8 @@ function CouponsTable({
               {coupons.length > 0 ? (
                 coupons.map((coupon, index) => (
                   <SortableRow key={coupon._id} coupon={coupon}>
-                    <TableCell className="text-gray-500 text-sm">{index + 1}</TableCell>
+                    <TableCell className="text-gray-500 text-sm">{coupon.position}</TableCell>
+
                     <TableCell
                       className="font-medium cursor-pointer"
                       onDoubleClick={() => setEditingId(coupon._id)}
@@ -341,21 +318,41 @@ export default function CouponsPageClient({
     }
   };
 
-  const handleReorder = (reorderedPageCoupons: ICoupon[]) => {
-    setCoupons((prevCoupons) => {
-      // Clone the full global list
-      const updated = [...prevCoupons];
+const handleReorder = async (activeId: string, overId: string) => {
+  const oldIndex = coupons.findIndex((c) => c._id === activeId);
+  const newIndex = coupons.findIndex((c) => c._id === overId);
+  if (oldIndex === -1 || newIndex === -1) return;
 
-      // Replace only the reordered coupons’ positions in the full array
-      reorderedPageCoupons.forEach((coupon) => {
-        const index = updated.findIndex((c) => c._id === coupon._id);
-        if (index !== -1) updated[index] = coupon;
-      });
+  // Reorder entire coupons array
+  const reordered = arrayMove(coupons, oldIndex, newIndex);
 
-      // Sort globally by the new position
-      return [...updated].sort((a, b) => (a.position || 0) - (b.position || 0));
+  // Normalize global positions
+  const updatedWithPositions = reordered.map((c, i) => ({
+    ...c,
+    position: i + 1,
+  }));
+
+  // Optimistic update
+  setCoupons(updatedWithPositions);
+
+  // Persist to DB
+  const result = await updateCouponPositionsAction(
+    updatedWithPositions.map((c) => ({ id: c._id, position: c.position }))
+  );
+
+  if (result?.error) {
+    toast({
+      title: "Error",
+      description: result.error.message?.[0] || "Failed to update positions.",
+      variant: "destructive",
     });
-  };
+  } else {
+    toast({
+      title: "Order Updated",
+      description: "Coupons reordered successfully.",
+    });
+  }
+};
 
 
   const handleDelete = async (id: string) => {
@@ -420,6 +417,8 @@ export default function CouponsPageClient({
           onDelete={(id) => setConfirmDeleteId(id)}
           handleInlineUpdate={handleInlineUpdate}
           onReorder={handleReorder}
+          currentPage={currentPage}      // 👈 Add this
+          pageSize={pageSize}
         />
 
         {totalPages > 1 && (
