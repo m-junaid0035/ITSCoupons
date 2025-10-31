@@ -184,7 +184,7 @@ export const updateStore = async (
 
   const existingStore = await Store.findById(id).lean();
 
-  if (!data.imageFile && existingStore?.image) {
+  if (data.imageFile && existingStore?.image) {
     await deleteUploadedFile(existingStore.image);
   }
 
