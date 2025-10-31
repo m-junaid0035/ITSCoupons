@@ -166,7 +166,7 @@ export const updateStore = async (
     directUrl?: string;
     categories: string[];
     totalCouponUsedTimes?: number;
-    imageFile?: File;
+    imageFile?: File | null;
     image?: string;
     description: string;
     metaTitle: string;

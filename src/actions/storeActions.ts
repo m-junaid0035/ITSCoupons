@@ -55,6 +55,45 @@ export type StoreFormState = {
 /* ---------------------------- 🛠️ Helper Parser ---------------------------- */
 async function parseStoreFormData(
   formData: FormData
+): Promise<StoreFormData & { imageFile: File }> {
+  const categoryIds = formData.getAll("categories") as string[];
+
+  const parseCSV = (value: FormDataEntryValue | null) =>
+    (value?.toString() || "")
+      .split(",")
+      .map((k) => k.trim())
+      .filter(Boolean);
+
+  const uploadedFile = formData.get("imageFile") as File | null;
+  if (!uploadedFile || uploadedFile.size === 0) {
+    throw new Error("Image file is required");
+  }
+
+  const imagePath = await saveStoreImage(uploadedFile);
+
+  return {
+    name: String(formData.get("name") || ""),
+    network: String(formData.get("network") || ""),
+    storeNetworkUrl: String(formData.get("storeNetworkUrl") || ""),
+    directUrl: String(formData.get("directUrl") || ""),
+    categories: categoryIds,
+    totalCouponUsedTimes: Number(formData.get("totalCouponUsedTimes") || 0),
+    image: imagePath,
+    description: String(formData.get("description") || ""),
+    metaTitle: String(formData.get("metaTitle") || ""),
+    metaDescription: String(formData.get("metaDescription") || ""),
+    metaKeywords: parseCSV(formData.get("metaKeywords")),
+    focusKeywords: parseCSV(formData.get("focusKeywords")),
+    slug: String(formData.get("slug") || ""),
+    isPopular: ["true", "on", "1"].includes(String(formData.get("isPopular"))),
+    isActive: ["true", "on", "1"].includes(String(formData.get("isActive"))),
+    content: String(formData.get("content") || ""), // ✅ optional default to ""
+    imageFile: uploadedFile,
+  };
+}
+
+async function parseUpdatedStoreFormData(
+  formData: FormData
 ): Promise<StoreFormData & { imageFile: File | null }> {
   const categoryIds = formData.getAll("categories") as string[];
 
@@ -66,18 +105,19 @@ async function parseStoreFormData(
 
   let imagePath = "";
   const uploadedFile = formData.get("imageFile") as File | null;
-  const alreadyFile = formData.get("existingImage") as string | null;
+  const existingImage = formData.get("existingImage") as string | null;
 
-  // 🧩 Validation: must have at least one source of image
-  if ((!uploadedFile || uploadedFile.size === 0) && !alreadyFile) {
+  // 🧩 Allow existing image OR new upload
+  if ((!uploadedFile || uploadedFile.size === 0) && !existingImage) {
     throw new Error("Image file is required");
   }
 
-  // 🧠 Determine image path
   if (uploadedFile && uploadedFile.size > 0) {
+    // 🖼️ New upload — save and replace
     imagePath = await saveStoreImage(uploadedFile);
-  } else if (alreadyFile) {
-    imagePath = alreadyFile;
+  } else if (existingImage) {
+    // 🧾 Keep existing image path
+    imagePath = existingImage;
   }
 
   return {
@@ -97,10 +137,9 @@ async function parseStoreFormData(
     isPopular: ["true", "on", "1"].includes(String(formData.get("isPopular"))),
     isActive: ["true", "on", "1"].includes(String(formData.get("isActive"))),
     content: String(formData.get("content") || ""),
-    imageFile: uploadedFile,
+    imageFile: uploadedFile || null,
   };
 }
-
 
 
 /* ---------------------------- 🔹 CREATE ---------------------------- */
@@ -136,7 +175,7 @@ export async function updateStoreAction(
   await connectToDatabase();
 
   try {
-    const parsed = await parseStoreFormData(formData);
+    const parsed = await parseUpdatedStoreFormData(formData);
     const result = storeSchema.safeParse(parsed);
 
     if (!result.success) return { error: result.error.flatten().fieldErrors };
