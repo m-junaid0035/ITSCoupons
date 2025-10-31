@@ -55,7 +55,7 @@ export type StoreFormState = {
 /* ---------------------------- 🛠️ Helper Parser ---------------------------- */
 async function parseStoreFormData(
   formData: FormData
-): Promise<StoreFormData & { imageFile: File }> {
+): Promise<StoreFormData & { imageFile: File | null }> {
   const categoryIds = formData.getAll("categories") as string[];
 
   const parseCSV = (value: FormDataEntryValue | null) =>
@@ -64,12 +64,21 @@ async function parseStoreFormData(
       .map((k) => k.trim())
       .filter(Boolean);
 
+  let imagePath = "";
   const uploadedFile = formData.get("imageFile") as File | null;
-  if (!uploadedFile || uploadedFile.size === 0) {
+  const alreadyFile = formData.get("existingImage") as string | null;
+
+  // 🧩 Validation: must have at least one source of image
+  if ((!uploadedFile || uploadedFile.size === 0) && !alreadyFile) {
     throw new Error("Image file is required");
   }
 
-  const imagePath = await saveStoreImage(uploadedFile);
+  // 🧠 Determine image path
+  if (uploadedFile && uploadedFile.size > 0) {
+    imagePath = await saveStoreImage(uploadedFile);
+  } else if (alreadyFile) {
+    imagePath = alreadyFile;
+  }
 
   return {
     name: String(formData.get("name") || ""),
@@ -87,10 +96,11 @@ async function parseStoreFormData(
     slug: String(formData.get("slug") || ""),
     isPopular: ["true", "on", "1"].includes(String(formData.get("isPopular"))),
     isActive: ["true", "on", "1"].includes(String(formData.get("isActive"))),
-    content: String(formData.get("content") || ""), // ✅ optional default to ""
+    content: String(formData.get("content") || ""),
     imageFile: uploadedFile,
   };
 }
+
 
 
 /* ---------------------------- 🔹 CREATE ---------------------------- */
