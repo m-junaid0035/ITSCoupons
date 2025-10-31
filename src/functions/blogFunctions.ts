@@ -145,9 +145,10 @@ export const updateBlog = async (
 ) => {
   let imagePath = data.image ?? "";
   const existingBlog = await Blog.findById(id).lean();
-  if (data.imageFile && existingBlog?.image) {
+  if (data.imageFile && data.imageFile.size > 0 && existingBlog?.image) {
     await deleteUploadedFile(existingBlog.image);
   }
+
   const updatedData = sanitizeBlogData({
     ...data,
     image: imagePath,
