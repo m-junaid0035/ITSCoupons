@@ -7,19 +7,18 @@ import { connectToDatabase } from "@/lib/db"
 
 // 🧼 Clean + format user input, handles isActive
 const sanitizeUserData = async (data: {
-  name: string;
-  email: string;
-  password?: string | null;
-  roleId: string;
-  imageFile?: File | null;
-  existingImage?: string; // 👈 add this
-  existingPassword?: string;
-  isActive?: boolean;
+  name: string
+  email: string
+  password?: string | null
+  roleId: string
+  imageFile?: File | null
+  existingPassword?: string
+  isActive?: boolean
 }) => {
-  let imagePath = data.existingImage || ""; // 👈 preserve old by default
+  let imagePath = ""
 
   if (data.imageFile) {
-    imagePath = await saveUserProfileImage(data.imageFile);
+    imagePath = await saveUserProfileImage(data.imageFile)
   }
 
   return {
@@ -27,13 +26,12 @@ const sanitizeUserData = async (data: {
     email: data.email.toLowerCase().trim(),
     password: data.password
       ? await bcrypt.hash(data.password, 10)
-      : data.existingPassword,
+      : data.existingPassword, // keep old password if no new one
     role: new Types.ObjectId(data.roleId),
     image: imagePath,
-    isActive: data.isActive ?? true,
-  };
-};
-
+    isActive: data.isActive ?? true, // default true
+  }
+}
 
 // 📤 Format user object for frontend/client
 const serializeUser = (user: any) => ({
@@ -117,7 +115,6 @@ export const updateUser = async (
     roleId,
     imageFile,
     existingPassword: existingUser.password,
-    existingImage: existingUser.image,
     isActive,
   })
 

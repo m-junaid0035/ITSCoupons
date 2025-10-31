@@ -181,7 +181,7 @@ export const updateStore = async (
 ) => {
   let imagePath = data.image ?? "";
 
-  if (data.imageFile) {
+  if (data.imageFile && !imagePath) {
     imagePath = await saveStoreImage(data.imageFile);
   }
 
