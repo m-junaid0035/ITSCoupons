@@ -113,6 +113,8 @@ async function parseUpdatedStoreFormData(
   }
 
   if (uploadedFile && uploadedFile.size > 0) {
+    console.log("junaid here is that ->>>>>")
+    console.log(uploadedFile)
     // 🖼️ New upload — save and replace
     imagePath = await saveStoreImage(uploadedFile);
   } else if (existingImage) {
