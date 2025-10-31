@@ -137,7 +137,7 @@ const BlogClient: React.FC<BlogClientProps> = ({
                     />
                   )}
                   <a
-                    href={`/blog/${item.slug}`}
+                    href={`/blogs/${item.slug}`}
                     className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
                   >
                     {item.title}
