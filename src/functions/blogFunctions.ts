@@ -144,17 +144,10 @@ export const updateBlog = async (
   }
 ) => {
   let imagePath = data.image ?? "";
-
-  if (data.imageFile) {
-    imagePath = await saveBlogImage(data.imageFile);
-
-    const existingBlog = await Blog.findById(id).lean();
-    if (existingBlog?.image) {
-      await deleteUploadedFile(existingBlog.image);
-    }
+  const existingBlog = await Blog.findById(id).lean();
+  if (data.imageFile && existingBlog?.image) {
+    await deleteUploadedFile(existingBlog.image);
   }
-
-
   const updatedData = sanitizeBlogData({
     ...data,
     image: imagePath,

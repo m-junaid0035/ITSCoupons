@@ -41,16 +41,19 @@ export type BlogFormState = {
 /* ---------------------------- 🛠️ Helper Parser ---------------------------- */
 async function parseBlogFormData(
   formData: FormData,
-  requireImage = false
 ): Promise<BlogFormData & { imageFile?: File }> {
   const uploadedFile = formData.get("imageFile") as File | null;
 
   let imagePath = String(formData.get("image") || "");
+  let existingImagePath = String(formData.get("existingImage") || "");
   if (uploadedFile && uploadedFile.size > 0) {
     imagePath = await saveBlogImage(uploadedFile);
-  } else if (requireImage && !imagePath) {
+  } else if (existingImagePath) {
+    imagePath = existingImagePath;
+  } else if (!imagePath) {
     throw new Error("Image file is required");
   }
+
 
   return {
     title: String(formData.get("title") || ""),
@@ -76,7 +79,7 @@ export async function createBlogAction(
   await connectToDatabase();
 
   try {
-    const parsed = await parseBlogFormData(formData, true); // ✅ require image
+    const parsed = await parseBlogFormData(formData); // ✅ require image
     const result = blogSchema.safeParse(parsed);
 
     if (!result.success) return { error: result.error.flatten().fieldErrors };

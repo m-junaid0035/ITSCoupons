@@ -176,7 +176,7 @@ export default function EditBlogForm({
       // 🚫 No image at all → show error
       toast({
         title: "Validation Error",
-        description: "Store image is required",
+        description: "Blog image is required",
         variant: "destructive",
       });
       return;
