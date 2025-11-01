@@ -140,23 +140,13 @@ export const updateSetting = async (
   let logoPath = data.logo ?? "";
   let faviconPath = data.favicon ?? "";
 
-  // ✅ Fetch existing setting first
   const existingSetting = await Setting.findById(id).lean();
 
-  if (data.logoFile) {
-    // Delete old logo if it exists
-    if (existingSetting?.logo) {
+  if (data.logoFile && data.logoFile.size > 0 && existingSetting?.logo) {
       await deleteUploadedFile(existingSetting.logo);
-    }
-    logoPath = await saveSettingLogo(data.logoFile);
   }
-
-  if (data.faviconFile) {
-    // Delete old favicon if it exists
-    if (existingSetting?.favicon) {
+  if (data.faviconFile && data.faviconFile.size > 0 && existingSetting?.favicon) {
       await deleteUploadedFile(existingSetting.favicon);
-    }
-    faviconPath = await saveSettingFavicon(data.faviconFile);
   }
 
 

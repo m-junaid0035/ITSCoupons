@@ -10,6 +10,7 @@ import {
   getSettingById,
   updateSetting,
 } from "@/functions/settingFunctions";
+import { saveSettingFavicon, saveSettingLogo } from "@/lib/uploadSettingImage";
 
 // -------------------------------
 // ✅ Zod Validation Schema
@@ -67,8 +68,27 @@ async function parseSettingFormData(
   const logoFile = formData.get("logoFile") as File | null;
   const faviconFile = formData.get("faviconFile") as File | null;
 
-  let logoPath = String(formData.get("logo") || "");
-  let faviconPath = String(formData.get("favicon") || "");
+  let logoPath = String(formData.get("existingLogo") || "");
+  let faviconPath = String(formData.get("existingFavicon") || "");
+
+  if (logoFile && logoFile.size > 0) {
+    logoPath = await saveSettingLogo(logoFile); // your image saving function
+  } else if (logoPath) {
+    // keep existing logo path
+    logoPath = logoPath;
+  } else {
+    throw new Error("Logo file is required");
+  }
+
+  // 🔹 Handle favicon upload or fallback
+  if (faviconFile && faviconFile.size > 0) {
+    faviconPath = await saveSettingFavicon(faviconFile); // your image saving function
+  } else if (faviconPath) {
+    // keep existing favicon path
+    faviconPath = faviconPath;
+  } else {
+    throw new Error("Favicon file is required");
+  }
   return {
     siteName: String(formData.get("siteName") || ""),
     logo: logoPath,
