@@ -123,8 +123,11 @@ export const updateEvent = async (
   const existingEvent = await Event.findById(id).lean();
 
   if (data.imageFile && data.imageFile.size > 0 && existingEvent?.image) {
+    console.log("junaid its deleting....")
     await deleteUploadedFile(existingEvent.image);
   }
+  console.log("the image object it that -> " + data.imageFile)
+  
 
   const event = await Event.findByIdAndUpdate(
     id,
