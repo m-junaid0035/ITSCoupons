@@ -47,15 +47,19 @@ async function parseEventFormData(
   let imagePath: string | undefined = undefined;
 
   if (uploadedFile && uploadedFile.size > 0) {
+    console.log("junaid 1 if else", uploadedFile)
     imagePath = await saveEventImage(uploadedFile);
   } else {
     const existingImage = formData.get("image")?.toString().trim();
     if (existingImage) {
+      console.log("junaid 2 if else", existingImage)
+      console.log("junaid 2 if else", uploadedFile)
       imagePath = existingImage;
     } else if (requireImage) {
       throw new Error("Image is required");
     }
   }
+  console.log("there is the whole out of te if else", uploadedFile)
 
   return {
     title: String(formData.get("title") || ""),
