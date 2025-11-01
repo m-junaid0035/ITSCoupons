@@ -80,7 +80,6 @@ export default function Bar() {
 
     return { href, label };
   });
-;
 
   return (
     <ContentLayout title={breadcrumbItems.at(-1)?.label || "Dashboard"}>
