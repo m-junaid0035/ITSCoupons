@@ -127,6 +127,7 @@ export async function updateEventAction(
     const updated = await updateEvent(id, {
       ...result.data,
       image: parsed.image,
+      imageFile: parsed.imageFile,
     });
 
     if (!updated) return { error: { message: ["Event not found"] } };
