@@ -114,17 +114,16 @@ export const updateEvent = async (
     metaDescription?: string;
     metaKeywords?: string;
     focusKeywords?: string;
+    imageFile?: File; // ✅ optional
     slug?: string;
     store?: string; // 👈 new store
   }
 ): Promise<ReturnType<typeof serializeEvent> | null> => {
   const updatedData = await sanitizeEventData(data);
+  const existingEvent = await Event.findById(id).lean();
 
-  if (data.image instanceof File) {
-    const existingEvent = await Event.findById(id).lean();
-    if (existingEvent?.image) {
-      await deleteUploadedFile(existingEvent.image);
-    }
+  if (data.imageFile && data.imageFile.size > 0 && existingEvent?.image) {
+    await deleteUploadedFile(existingEvent.image);
   }
 
   const event = await Event.findByIdAndUpdate(

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, startTransition } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useActionState } from "react";
+
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,11 +14,12 @@ import { CalendarIcon, Loader2, X } from "lucide-react";
 import { format } from "date-fns";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+
+import { updateEventAction } from "@/actions/eventActions";
 import { toast } from "@/hooks/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import RichTextEditor from "@/components/RichTextEditor";
-
-import { updateEventAction } from "@/actions/eventActions";
 
 interface FieldErrors {
     [key: string]: string[];
@@ -31,15 +33,16 @@ interface FormState {
 const initialState: FormState = { error: {} };
 
 export default function EditEventForm({
-    initialEvent,
+    event,
+    stores,
     latestSEO,
 }: {
-    initialEvent: any;
+    event: any;
+    stores: { _id: string; name: string }[];
     latestSEO: any;
 }) {
-    const params = useParams();
     const router = useRouter();
-    const eventId = params.id as string;
+    const eventId = event?._id;
 
     const [formState, dispatch, isPending] = useActionState(
         async (prevState: FormState, formData: FormData) =>
@@ -47,50 +50,54 @@ export default function EditEventForm({
         initialState
     );
 
-    const [event, setEvent] = useState<any>(initialEvent);
+    // Initialize states with passed data
     const [eventDate, setEventDate] = useState<Date | undefined>(
-        initialEvent?.date ? new Date(initialEvent.date) : undefined
+        event?.date ? new Date(event.date) : undefined
     );
-    const [descriptionHtml, setDescriptionHtml] = useState(initialEvent?.description || "");
+    const [descriptionHtml, setDescriptionHtml] = useState(event?.description || "");
     const [successDialogOpen, setSuccessDialogOpen] = useState(false);
-
     const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(initialEvent?.image || null);
+    const [imagePreview, setImagePreview] = useState<string | null>(event?.image || null);
+    const [title, setTitle] = useState(event?.title || "");
+    const [selectedStore, setSelectedStore] = useState<string>(event?.store || "");
 
-    // ✅ SEO State
     const [seo, setSeo] = useState({
-        metaTitle: initialEvent?.metaTitle || "",
-        metaDescription: initialEvent?.metaDescription || "",
-        metaKeywords: initialEvent?.metaKeywords || "",
-        focusKeywords: initialEvent?.focusKeywords || "",
-        slug: initialEvent?.slug || "",
+        metaTitle: event?.metaTitle || "",
+        metaDescription: event?.metaDescription || "",
+        metaKeywords: event?.metaKeywords || "",
+        focusKeywords: event?.focusKeywords || "",
+        slug: event?.slug || "",
     });
 
-    const [title, setTitle] = useState(initialEvent?.title || "");
+    const updateSEO = (eventTitle: string) => {
+        if (!latestSEO) return;
 
+        const replaceEventTitle = (text: string) =>
+            text.replace(/{{blogTitle}}|s_n/gi, eventTitle);
 
-    // ✅ Auto SEO update when title changes
+        const slugSource = latestSEO.slug || eventTitle;
+        const processedSlug = replaceEventTitle(slugSource)
+            .toLowerCase()
+            .replace(/\s+/g, "-");
+
+        setSeo({
+            metaTitle: replaceEventTitle(latestSEO.metaTitle || ""),
+            metaDescription: replaceEventTitle(latestSEO.metaDescription || ""),
+            metaKeywords: (latestSEO.metaKeywords || [])
+                .map(replaceEventTitle)
+                .join(", "),
+            focusKeywords: (latestSEO.focusKeywords || [])
+                .map(replaceEventTitle)
+                .join(", "),
+            slug: processedSlug,
+        });
+    };
     useEffect(() => {
-        if (title.trim() && latestSEO) {
-            const replaceTitle = (text: string) => text.replace(/{{blogTitle}}|s_n/gi, title);
-
-            const slugSource = latestSEO.slug || title;
-            const processedSlug = replaceTitle(slugSource).toLowerCase().replace(/\s+/g, "_");
-
-            setSeo({
-                metaTitle: replaceTitle(latestSEO.metaTitle || ""),
-                metaDescription: replaceTitle(latestSEO.metaDescription || ""),
-                metaKeywords: (latestSEO.metaKeywords || []).map(replaceTitle).join(", "),
-                focusKeywords: (latestSEO.focusKeywords || []).map(replaceTitle).join(", "),
-                slug: processedSlug,
-            });
-        }
-    }, [title, latestSEO]);
+        if (title.trim()) updateSEO(title);
+    }, [title]);
 
     useEffect(() => {
-        if (formState.data && !formState.error) {
-            setSuccessDialogOpen(true);
-        }
+        if (formState.data && !formState.error) setSuccessDialogOpen(true);
         if (formState.error && "message" in formState.error) {
             toast({
                 title: "Error",
@@ -107,8 +114,6 @@ export default function EditEventForm({
             ? (formState.error as Record<string, string[]>)[field]?.[0]
             : null;
 
-
-    /** ---------------- Image Handling ---------------- */
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] || null;
         setImageFile(file);
@@ -116,34 +121,28 @@ export default function EditEventForm({
             const reader = new FileReader();
             reader.onload = () => setImagePreview(reader.result as string);
             reader.readAsDataURL(file);
-        } else setImagePreview(null);
+        }
     };
-    const removeImage = () => { setImageFile(null); setImagePreview(null); };
 
+    const removeImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+    };
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    if (!event) return <p className="text-red-500">Event not found</p>;
+
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
+
+        formData.set("title", title);
         if (eventDate) formData.set("date", eventDate.toISOString());
         formData.set("description", descriptionHtml);
-        formData.set("title", title);
+        formData.set("store", selectedStore);
 
-        async function urlToFile(url: string, filename: string, mimeType: string) {
-            const res = await fetch(url);
-            const blob = await res.blob();
-            return new File([blob], filename, { type: mimeType });
-        }
-        if (!imageFile && imagePreview) {
-            const existingFile = await urlToFile(imagePreview, "existing.jpg", "image/jpeg");
-            formData.set("imageFile", existingFile);
-        } else if (imageFile) {
-            formData.set("imageFile", imageFile);
-        } else {
-            toast({ title: "Validation Error", description: "Store image is required", variant: "destructive" });
-            return;
-        }
+        if (imageFile) formData.set("imageFile", imageFile);
+        else if (imagePreview) formData.set("image", imagePreview);
 
-        // ✅ attach SEO fields
         formData.set("metaTitle", seo.metaTitle);
         formData.set("metaDescription", seo.metaDescription);
         formData.set("metaKeywords", seo.metaKeywords);
@@ -152,8 +151,6 @@ export default function EditEventForm({
 
         startTransition(() => dispatch(formData));
     };
-
-    if (!event) return <p className="text-red-500">Event not found</p>;
 
     return (
         <>
@@ -179,6 +176,21 @@ export default function EditEventForm({
                                 className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
                             />
                             {errorFor("title") && <p className="text-sm text-red-500">{errorFor("title")}</p>}
+                        </div>
+
+                        {/* Store */}
+                        <div className="space-y-2">
+                            <Label>Store <span className="text-red-500">*</span></Label>
+                            <Select value={selectedStore} onValueChange={setSelectedStore}>
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select store" />
+                                </SelectTrigger>
+                                <SelectContent position="popper" align="start" className="max-h-60 overflow-auto">
+                                    {stores.map((store) => (
+                                        <SelectItem key={store._id} value={store._id}>{store.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         {/* Slug */}
@@ -215,7 +227,7 @@ export default function EditEventForm({
                                 </PopoverContent>
                             </Popover>
                             {errorFor("date") && <p className="text-sm text-red-500">{errorFor("date")}</p>}
-                        </div> 
+                        </div>
 
                         {/* Description */}
                         <div className="space-y-2">
@@ -223,26 +235,30 @@ export default function EditEventForm({
                             <RichTextEditor value={descriptionHtml} onChange={setDescriptionHtml} />
                         </div>
 
-                        {/* Hidden field for existing image */}
-                        {!imageFile && initialEvent?.image && (
-                            <input type="hidden" name="existingImage" value={initialEvent.image} />
-                        )}
-
-
                         {/* Image */}
                         <div className="space-y-2">
-                            <Label htmlFor="imageFile">
-                                Store Image <span className="text-red-500">*</span>
-                            </Label>
-                            <Input id="imageFile" name="imageFile" type="file" accept="image/*" onChange={handleImageChange} className="border-none shadow-sm bg-gray-50 dark:bg-gray-700" />
+                            <Label htmlFor="imageFile">Event Image</Label>
+                            <Input
+                                id="imageFile"
+                                name="imageFile"
+                                type="file"
+                                accept="image/*"
+                                className="border-none shadow-sm bg-gray-50 dark:bg-gray-700"
+                                onChange={handleImageChange}
+                            />
                             {imagePreview && (
                                 <div className="relative mt-2 max-h-40 w-fit">
                                     <img src={imagePreview} alt="Preview" className="rounded shadow-md max-h-40" />
-                                    <button type="button" onClick={removeImage} className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full">
+                                    <button
+                                        type="button"
+                                        onClick={removeImage}
+                                        className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-full"
+                                    >
                                         <X className="h-4 w-4" />
                                     </button>
                                 </div>
                             )}
+                            {errorFor("image") && <p className="text-sm text-red-500">{errorFor("image")}</p>}
                         </div>
 
                         {/* SEO Fields */}
