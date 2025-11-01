@@ -9,6 +9,8 @@ import {
 import type { CategoryWithCounts } from "@/types/categoryWithCounts";
 import type { CategoryData } from "@/types/category";
 import { Metadata } from "next";
+export const revalidate = 60; // Revalidate every 60 seconds
+export const dynamic = "force-dynamic"; // Prevent static caching
 
 export const metadata: Metadata = {
   title: "All Categories - ITSCoupons",
