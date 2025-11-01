@@ -144,8 +144,8 @@ export default function FeaturedStores({ stores, loading = false }: FeaturedStor
                         href={`/stores/${store.slug}`}
                         className="flex items-center justify-center bg-white overflow-hidden transition"
                         style={{
-                          width: "140px",
-                          height: "140px",
+                          width: "170px",
+                          height: "170px",
                           borderRadius: "100px",
                           border: "1px solid #C4C4C4",
                         }}
